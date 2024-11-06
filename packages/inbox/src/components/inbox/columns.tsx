@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Email } from "./types";
+import { Email, ThreadValues } from "./types";
 import { StatusBadge } from "./status";
 import { TighterText } from "@/components/ui/header";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
@@ -15,8 +15,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AIMessage, BaseMessage } from "@langchain/core/messages";
+import { ToolCall } from "@langchain/core/messages/tool";
 
-export const columns: ColumnDef<Email>[] = [
+export const columns: ColumnDef<ThreadValues>[] = [
   {
     accessorKey: "status",
     header: ({ column }) => {
@@ -32,16 +34,29 @@ export const columns: ColumnDef<Email>[] = [
       );
     },
     cell: ({ row }) => {
-      const status = row.getValue<Email["status"]>("status");
+      const { messages } = row.original;
+      const lastMessage = messages[messages.length - 1] as BaseMessage & {
+        type: string;
+      };
+      if (lastMessage.type !== "ai" || !(lastMessage as AIMessage).tool_calls) {
+        return null;
+      }
+      const aiMessage = lastMessage as AIMessage & {
+        tool_calls: ToolCall[];
+        type: string;
+      };
+      const toolCallName = aiMessage.tool_calls[0].name;
 
-      return <StatusBadge status={status} />;
+      return <StatusBadge toolCallName={toolCallName} />;
     },
   },
   {
     accessorKey: "subject",
     header: () => <TighterText className="text-left">Subject</TighterText>,
     cell: ({ row }) => {
-      const subject = row.getValue<string>("subject");
+      const {
+        email: { subject },
+      } = row.original;
       return (
         <div className="max-w-56">
           <p className="truncate ...">{subject}</p>
@@ -53,18 +68,22 @@ export const columns: ColumnDef<Email>[] = [
     accessorKey: "from_email",
     header: () => <TighterText className="text-left">From</TighterText>,
     cell: ({ row }) => {
-      const fromEmail = row.getValue<string>("from_email");
-      return <p>{fromEmail}</p>;
+      const {
+        email: { from_email },
+      } = row.original;
+      return <p>{from_email}</p>;
     },
   },
   {
     accessorKey: "page_content",
     header: () => <TighterText className="text-left">Content</TighterText>,
     cell: ({ row }) => {
-      const content = row.getValue<string>("page_content");
+      const {
+        email: { page_content },
+      } = row.original;
       return (
         <div className="max-w-sm">
-          <p className="text-pretty line-clamp-2">{content}</p>
+          <p className="text-pretty line-clamp-2">{page_content}</p>
         </div>
       );
     },
@@ -84,12 +103,14 @@ export const columns: ColumnDef<Email>[] = [
       );
     },
     cell: ({ row }) => {
-      const sendTime = row.getValue<string | undefined>("send_time");
-      if (!sendTime) {
+      const {
+        email: { send_time },
+      } = row.original;
+      if (!send_time) {
         return <p className="text-right">-</p>;
       }
       try {
-        const date = new Date(sendTime);
+        const date = new Date(send_time);
         return <p className="text-right">{format(date, "MM/dd/yyyy HH:mm")}</p>;
       } catch (e) {
         console.error("Failed to parse date", e);
@@ -113,7 +134,7 @@ export const columns: ColumnDef<Email>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(payment.id)}
+              onClick={() => navigator.clipboard.writeText("payment.id")}
             >
               Copy payment ID
             </DropdownMenuItem>

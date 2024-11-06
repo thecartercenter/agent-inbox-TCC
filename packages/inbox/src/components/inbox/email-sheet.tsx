@@ -1,31 +1,37 @@
 "use client";
 
 import { Row, flexRender } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetClose,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Email } from "./types";
+import { ThreadValues } from "./types";
 import { TableCell, TableRow } from "../ui/table";
-import { useState } from "react";
-import { Textarea } from "../ui/textarea";
+import React, { useState } from "react";
+import { AIMessage, BaseMessage } from "@langchain/core/messages";
+import { mapToolCallToString } from "./utils";
+import { Button } from "../ui/button";
 
 interface EmailSheetProps {
-  row: Row<Email>;
+  row: Row<ThreadValues>;
 }
 
-export function EmailSheet({ row }: EmailSheetProps) {
+export function EmailSheetComponent({ row }: EmailSheetProps) {
   const [open, setOpen] = useState(false);
   const rowData = row.original;
+  const lastMessage = rowData.messages[
+    rowData.messages.length - 1
+  ] as BaseMessage & { type: string };
+  const toolCall =
+    lastMessage.type === "ai" && (lastMessage as AIMessage)?.tool_calls?.[0]
+      ? (lastMessage as AIMessage).tool_calls?.[0]
+      : undefined;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -41,32 +47,48 @@ export function EmailSheet({ row }: EmailSheetProps) {
           ))}
         </TableRow>
       </SheetTrigger>
-      <SheetContent side="right" className="min-w-[80vw]">
+      <SheetContent
+        side="right"
+        className="min-w-[80vw]"
+        aria-describedby={undefined}
+      >
         <SheetHeader>
-          <SheetTitle>{rowData.subject}</SheetTitle>
+          <SheetTitle>{rowData.email.subject}</SheetTitle>
         </SheetHeader>
         <div className="flex flex-col gap-4 mt-4">
           <div className="flex flex-row items-center justify-start gap-2">
             <Label>From:</Label>
-            <pre>{rowData.from_email}</pre>
+            <pre>{rowData.email.from_email}</pre>
           </div>
           <div className="flex flex-row items-center justify-start gap-2">
             <Label>To:</Label>
-            <pre>{rowData.to_email}</pre>
+            <pre>{rowData.email.to_email}</pre>
           </div>
           <div className="flex flex-col items-start justify-start gap-2">
             <Label>Body:</Label>
             <p className="text-gray-600 max-w-[75%] text-pretty">
-              {rowData.page_content}
+              {rowData.email.page_content}
             </p>
           </div>
+          {toolCall && (
+            <>
+              <div className="flex flex-col items-start justify-start gap-2">
+                <Label>{toolCall.name}</Label>
+              </div>
+              <p className="text-gray-600 max-w-[75%] text-pretty">
+                {mapToolCallToString(toolCall)}
+              </p>
+            </>
+          )}
         </div>
-        {/* <SheetFooter className="flex h-full mt-auto">
+        <SheetFooter className="flex h-full mt-auto">
           <SheetClose asChild>
             <Button type="submit">Save changes</Button>
           </SheetClose>
-        </SheetFooter> */}
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );
 }
+
+export const EmailSheet = React.memo(EmailSheetComponent);

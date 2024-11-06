@@ -1,19 +1,20 @@
-import { Email } from "./types";
 import { Badge } from "../ui/badge";
 
-export function StatusBadge({ status }: { status: Email["status"] }) {
-  switch (status) {
-    case "in-queue":
-      return <Badge className="bg-gray-500 hover:bg-gray-500">In Queue</Badge>;
-    case "processing":
+export function StatusBadge({ toolCallName }: { toolCallName: string }) {
+  switch (toolCallName) {
+    case "NewEmailDraft":
       return (
-        <Badge className="bg-blue-500 hover:bg-blue-500">Processing</Badge>
+        <Badge className="bg-gray-500 hover:bg-gray-500">New Email Draft</Badge>
       );
-    case "hitl":
+    case "ResponseEmailDraft":
       return (
-        <Badge className="bg-red-500 hover:bg-red-500">Human in the Loop</Badge>
+        <Badge className="bg-blue-500 hover:bg-blue-500">
+          Response Email Draft
+        </Badge>
       );
-    case "done":
-      return <Badge className="bg-green-500 hover:bg-green-500">Done</Badge>;
+    case "Question":
+      return <Badge className="bg-red-500 hover:bg-red-500">Question</Badge>;
+    default:
+      return null;
   }
 }

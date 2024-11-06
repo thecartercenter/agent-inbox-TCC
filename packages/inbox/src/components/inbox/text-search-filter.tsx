@@ -1,7 +1,7 @@
 import { Table } from "@tanstack/react-table";
-import { Email } from "./types";
+import { ThreadValues } from "./types";
 import { Input } from "../ui/input";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,19 +29,6 @@ const columnToLabel = (column: string) => {
   }
 };
 
-const statusToLabel = (status: Email["status"]) => {
-  switch (status) {
-    case "in-queue":
-      return "In Queue";
-    case "processing":
-      return "Processing";
-    case "hitl":
-      return "Human in the Loop";
-    case "done":
-      return "Done";
-  }
-};
-
 function StatusFilter({
   filterByValue,
   setFilterByValue,
@@ -56,7 +43,7 @@ function StatusFilter({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-[180px]">
           <TighterText className="text-left">
-            Filter by {statusToLabel(filterByValue as Email["status"])}
+            Filter by NOT IMPLEMENTED
           </TighterText>
           {open ? (
             <ChevronUp className="ml-2 h-4 w-4" />
@@ -83,7 +70,7 @@ function StatusFilter({
   );
 }
 
-export function TextSearchFunction({ table }: { table: Table<Email> }) {
+export function TextSearchFunction({ table }: { table: Table<ThreadValues> }) {
   const [filterBy, setFilterBy] = useState<string>("from_email");
   const [filterByValue, setFilterByValue] = useState<string>("");
   const [open, setOpen] = useState(false);
