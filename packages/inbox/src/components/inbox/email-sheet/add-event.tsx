@@ -6,10 +6,17 @@ import { ToolCall } from "@langchain/core/messages/tool";
 
 interface AddEventProps {
   event: AddEvent;
+  threadId: string;
   handleSubmit: (values: Record<string, any>) => Promise<void>;
+  handleIgnore: (threadId: string) => Promise<void>;
 }
 
-export function AddEventComponent({ event, handleSubmit }: AddEventProps) {
+export function AddEventComponent({
+  event,
+  threadId,
+  handleSubmit,
+  handleIgnore,
+}: AddEventProps) {
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState("");
 
@@ -47,6 +54,12 @@ export function AddEventComponent({ event, handleSubmit }: AddEventProps) {
     setResponse("");
   };
 
+  const ignore = async () => {
+    setLoading(true);
+    await handleIgnore(threadId);
+    setLoading(false);
+  };
+
   return (
     <form
       onSubmit={submit}
@@ -59,9 +72,19 @@ export function AddEventComponent({ event, handleSubmit }: AddEventProps) {
         onChange={(e) => setResponse(e.target.value)}
         disabled={loading}
       />
-      <Button disabled={loading} type="submit" onClick={submit}>
-        Submit
-      </Button>
+      <div className="flex gap-2">
+        <Button disabled={loading} type="submit" onClick={submit}>
+          Send
+        </Button>
+        <Button
+          disabled={loading}
+          type="button"
+          variant="secondary"
+          onClick={ignore}
+        >
+          Ignore
+        </Button>
+      </div>
     </form>
   );
 }

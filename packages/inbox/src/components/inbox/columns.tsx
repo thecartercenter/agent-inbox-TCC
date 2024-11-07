@@ -12,7 +12,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -122,12 +121,11 @@ export const columns: ColumnDef<ThreadInterruptData>[] = [
     cell: ({ row }) => {
       const { thread_id } = row.original;
 
-      const handleIgnore = async (
-        e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-      ) => {
-        e.preventDefault();
-        console.log("TODO: implement ignore");
-      };
+      // const handleIgnore = async (
+      //   e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+      // ) => {
+      //   e.preventDefault();
+      // };
 
       return (
         <DropdownMenu>
@@ -151,7 +149,7 @@ export const columns: ColumnDef<ThreadInterruptData>[] = [
                 Copy thread ID
               </Button>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {/* <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Button
                 size="sm"
@@ -161,7 +159,7 @@ export const columns: ColumnDef<ThreadInterruptData>[] = [
               >
                 Ignore
               </Button>
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
           </DropdownMenuContent>
         </DropdownMenu>
       );

@@ -20,23 +20,10 @@ import { ThreadHistory } from "./thread-history";
 interface EmailSheetProps {
   row: Row<ThreadInterruptData>;
   excludeSelector?: string;
-  toastCallback: ({
-    title,
-    description,
-    variant,
-  }: {
-    title: string;
-    description: string;
-    variant?: "default" | "destructive";
-  }) => void;
 }
 
-export function EmailSheetComponent({
-  row,
-  excludeSelector,
-  toastCallback,
-}: EmailSheetProps) {
-  const { updateState } = useThreadsContext();
+export function EmailSheetComponent({ row, excludeSelector }: EmailSheetProps) {
+  const { updateState, ignoreThread } = useThreadsContext();
   const [open, setOpen] = useState(false);
 
   const {
@@ -61,42 +48,17 @@ export function EmailSheetComponent({
 
   const handleSubmitAddEvent = async (addValues: Record<string, any>) => {
     setOpen(false);
-
-    try {
-      await updateState(threadId, addValues, "human_node");
-
-      toastCallback({
-        title: "Success",
-        description: "Added event.",
-      });
-    } catch (e) {
-      console.error("Error adding event", e);
-      toastCallback({
-        title: "Error",
-        description: "Failed to add event",
-        variant: "destructive",
-      });
-    }
+    await updateState(threadId, addValues, "human_node");
   };
 
   const handleSubmitEditEvent = async (addValues: Record<string, any>) => {
     setOpen(false);
+    await updateState(threadId, addValues, "human_node");
+  };
 
-    try {
-      await updateState(threadId, addValues, "human_node");
-
-      toastCallback({
-        title: "Success",
-        description: "Submitted event.",
-      });
-    } catch (e) {
-      console.error("Error editing event", e);
-      toastCallback({
-        title: "Error",
-        description: "Failed to submit event",
-        variant: "destructive",
-      });
-    }
+  const handleSubmitIgnoreEvent = async (threadId: string) => {
+    setOpen(false);
+    await ignoreThread(threadId);
   };
 
   return (
@@ -141,13 +103,17 @@ export function EmailSheetComponent({
           {interruptValue?.type === ActionType.ADD && (
             <AddEventComponent
               event={interruptValue}
+              threadId={threadId}
               handleSubmit={handleSubmitAddEvent}
+              handleIgnore={handleSubmitIgnoreEvent}
             />
           )}
           {interruptValue?.type === ActionType.EDIT && (
             <EditEventComponent
               event={interruptValue}
+              threadId={threadId}
               handleSubmit={handleSubmitEditEvent}
+              handleIgnore={handleSubmitIgnoreEvent}
             />
           )}
           {interruptValue?.type === ActionType.NOTIFY && (

@@ -28,10 +28,8 @@ import { ThreadInterruptData } from "./types";
 import React from "react";
 import { EmailSheet } from "./email-sheet";
 import { useThreadsContext } from "@/contexts/ThreadContext";
-import { useToast } from "@/hooks/use-toast";
 
 function DataTableComponent() {
-  const { toast } = useToast();
   const { threadInterrupts, loading, fetchThreads } = useThreadsContext();
 
   useEffect(() => {
@@ -76,20 +74,15 @@ function DataTableComponent() {
     const rowModel = table.getRowModel();
 
     if (rowModel.rows?.length) {
-      return table.getRowModel().rows.map((row) => (
-        <EmailSheet
-          toastCallback={() => {
-            setTimeout(() => {
-              toast({
-                title: "Success",
-              });
-            }, 1000);
-          }}
-          key={row.original.thread_id}
-          row={row}
-          excludeSelector=".dropdown-menu-content"
-        />
-      ));
+      return table
+        .getRowModel()
+        .rows.map((row) => (
+          <EmailSheet
+            key={row.original.thread_id}
+            row={row}
+            excludeSelector=".dropdown-menu-content"
+          />
+        ));
     }
 
     if (!loading && !threadInterrupts.length) {

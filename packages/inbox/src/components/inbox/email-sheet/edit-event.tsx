@@ -6,10 +6,17 @@ import { ToolCall } from "@langchain/core/messages/tool";
 
 interface EditEventProps {
   event: EditEvent;
+  threadId: string;
   handleSubmit: (values: Record<string, any>) => Promise<void>;
+  handleIgnore: (threadId: string) => Promise<void>;
 }
 
-export function EditEventComponent({ event, handleSubmit }: EditEventProps) {
+export function EditEventComponent({
+  event,
+  threadId,
+  handleSubmit,
+  handleIgnore,
+}: EditEventProps) {
   const toolCall = event.tool_call || (event.metadata as ToolCall);
 
   const [loading, setLoading] = useState(false);
@@ -49,8 +56,10 @@ export function EditEventComponent({ event, handleSubmit }: EditEventProps) {
     setResponse("");
   };
 
-  const ignore = () => {
-    console.log("ignore");
+  const ignore = async () => {
+    setLoading(true);
+    await handleIgnore(threadId);
+    setLoading(false);
   };
 
   return (

@@ -3,6 +3,7 @@ import {
   ThreadInterruptData,
   ThreadValues,
 } from "@/components/inbox/types";
+import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
 import { Thread, ThreadState } from "@langchain/langgraph-sdk";
 import {
@@ -16,6 +17,7 @@ import {
 type ThreadContentType = {
   loading: boolean;
   threadInterrupts: ThreadInterruptData[];
+  ignoreThread: (threadId: string) => Promise<void>;
   updateState: (
     threadId: string,
     values: Record<string, any>,
@@ -27,6 +29,7 @@ type ThreadContentType = {
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
 
 export function ThreadsProvider({ children }: { children: ReactNode }) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [threadInterrupts, setThreadInterrupts] = useState<
     ThreadInterruptData[]
@@ -45,7 +48,7 @@ export function ThreadsProvider({ children }: { children: ReactNode }) {
       interruptedThreads.map((t) => t.thread_id)
     );
 
-    const interruptValues = threadStates.map((tState) => {
+    const interruptValues = threadStates.flatMap((tState) => {
       const lastTask =
         tState.thread_state.tasks[tState.thread_state.tasks.length - 1];
       const lastInterrupt = lastTask.interrupts[lastTask.interrupts.length - 1];
@@ -56,17 +59,20 @@ export function ThreadsProvider({ children }: { children: ReactNode }) {
         throw new Error(`Thread not found: ${tState.thread_id}`);
       }
 
-      return {
-        thread_id: tState.thread_id,
-        interrupt_value:
-          "value" in lastInterrupt
-            ? (lastInterrupt.value as HumanLoopEvent)
-            : undefined,
-        thread: thread,
-        next: tState.thread_state.next,
-      };
-    });
+      if (!lastInterrupt || !("value" in lastInterrupt)) {
+        return [];
+      }
 
+      return [
+        {
+          thread_id: tState.thread_id,
+          interrupt_value: lastInterrupt.value as HumanLoopEvent,
+          thread: thread,
+          next: tState.thread_state.next,
+        },
+      ];
+    });
+    console.log(interruptValues);
     setThreadInterrupts(interruptValues);
     setLoading(false);
   }, []);
@@ -112,21 +118,63 @@ export function ThreadsProvider({ children }: { children: ReactNode }) {
     asNode?: string
   ) => {
     const client = createClient();
-    await client.threads.updateState(threadId, {
-      values,
-      asNode,
-    });
-    await client.runs.create(threadId, "support");
-    setThreadInterrupts((prev) => {
-      return prev.filter((p) => p.thread_id !== threadId);
-    });
-    // Void so it is not blocking.
-    void fetchThreads();
+
+    try {
+      await client.threads.updateState(threadId, {
+        values,
+        asNode,
+      });
+      await client.runs.create(threadId, "support");
+
+      setThreadInterrupts((prev) => {
+        return prev.filter((p) => p.thread_id !== threadId);
+      });
+      toast({
+        title: "Success",
+        description: "Updated thread",
+        duration: 3000,
+      });
+    } catch (e) {
+      console.error("Error updating thread state", e);
+      toast({
+        title: "Error",
+        description: "Failed to update thread",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
+  const ignoreThread = async (threadId: string) => {
+    const client = createClient();
+    try {
+      await client.threads.updateState(threadId, {
+        values: null,
+      });
+
+      setThreadInterrupts((prev) => {
+        return prev.filter((p) => p.thread_id !== threadId);
+      });
+      toast({
+        title: "Success",
+        description: "Ignored thread",
+        duration: 3000,
+      });
+    } catch (e) {
+      console.error("Error ignoring thread", e);
+      toast({
+        title: "Error",
+        description: "Failed to ignore thread",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   };
 
   const contextValue: ThreadContentType = {
     loading,
     threadInterrupts,
+    ignoreThread,
     updateState,
     fetchThreads,
   };
