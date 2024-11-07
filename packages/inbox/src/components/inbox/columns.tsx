@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Email, ThreadValues } from "./types";
+import { ThreadInterruptData } from "./types";
 import { StatusBadge } from "./status";
 import { TighterText } from "@/components/ui/header";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
@@ -15,10 +15,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AIMessage, BaseMessage } from "@langchain/core/messages";
-import { ToolCall } from "@langchain/core/messages/tool";
 
-export const columns: ColumnDef<ThreadValues>[] = [
+export const columns: ColumnDef<ThreadInterruptData>[] = [
   {
     accessorKey: "status",
     header: ({ column }) => {
@@ -34,20 +32,8 @@ export const columns: ColumnDef<ThreadValues>[] = [
       );
     },
     cell: ({ row }) => {
-      const { messages } = row.original;
-      const lastMessage = messages[messages.length - 1] as BaseMessage & {
-        type: string;
-      };
-      if (lastMessage.type !== "ai" || !(lastMessage as AIMessage).tool_calls) {
-        return null;
-      }
-      const aiMessage = lastMessage as AIMessage & {
-        tool_calls: ToolCall[];
-        type: string;
-      };
-      const toolCallName = aiMessage.tool_calls[0].name;
-
-      return <StatusBadge toolCallName={toolCallName} />;
+      const { type } = row.original.interrupt_value || { type: "none" as any };
+      return <StatusBadge type={type} />;
     },
   },
   {
@@ -56,7 +42,7 @@ export const columns: ColumnDef<ThreadValues>[] = [
     cell: ({ row }) => {
       const {
         email: { subject },
-      } = row.original;
+      } = row.original.thread.values;
       return (
         <div className="max-w-56">
           <p className="truncate ...">{subject}</p>
@@ -70,7 +56,7 @@ export const columns: ColumnDef<ThreadValues>[] = [
     cell: ({ row }) => {
       const {
         email: { from_email },
-      } = row.original;
+      } = row.original.thread.values;
       return <p>{from_email}</p>;
     },
   },
@@ -80,7 +66,7 @@ export const columns: ColumnDef<ThreadValues>[] = [
     cell: ({ row }) => {
       const {
         email: { page_content },
-      } = row.original;
+      } = row.original.thread.values;
       return (
         <div className="max-w-sm">
           <p className="text-pretty line-clamp-2">{page_content}</p>
@@ -95,7 +81,7 @@ export const columns: ColumnDef<ThreadValues>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="flex ml-auto"
+          className="flex items-center justify-end ml-auto"
         >
           <TighterText>Sent Date</TighterText>
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -105,7 +91,7 @@ export const columns: ColumnDef<ThreadValues>[] = [
     cell: ({ row }) => {
       const {
         email: { send_time },
-      } = row.original;
+      } = row.original.thread.values;
       if (!send_time) {
         return <p className="text-right">-</p>;
       }
@@ -121,7 +107,14 @@ export const columns: ColumnDef<ThreadValues>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const payment = row.original;
+      const { thread_id } = row.original;
+
+      const handleIgnore = async (
+        e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+      ) => {
+        e.preventDefault();
+        console.log("TODO: implement ignore");
+      };
 
       return (
         <DropdownMenu>
@@ -131,16 +124,31 @@ export const columns: ColumnDef<ThreadValues>[] = [
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="dropdown-menu-content">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText("payment.id")}
-            >
-              Copy payment ID
+            <DropdownMenuItem asChild>
+              <Button
+                variant="ghost"
+                className="w-full"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(thread_id);
+                }}
+              >
+                Copy thread ID
+              </Button>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-full"
+                onClick={handleIgnore}
+              >
+                Ignore
+              </Button>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

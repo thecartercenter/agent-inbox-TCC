@@ -1,11 +1,12 @@
 import { CircleCheck, LoaderCircle, RefreshCcw } from "lucide-react";
-import { useEffect, useState } from "react";
 import { differenceInMinutes, differenceInHours, format } from "date-fns";
 import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 
 interface LastSyncedProps {
   fetchData: () => Promise<void>;
   loading: boolean;
+  lastSynced: Date | undefined;
+  setLastSynced: React.Dispatch<React.SetStateAction<Date | undefined>>;
 }
 
 function formatLastSynced(date: Date): string {
@@ -26,9 +27,12 @@ function formatLastSynced(date: Date): string {
   }
 }
 
-export function LastSynced({ fetchData, loading }: LastSyncedProps) {
-  const [lastSynced, setLastSynced] = useState<Date>();
-
+export function LastSynced({
+  fetchData,
+  loading,
+  lastSynced,
+  setLastSynced,
+}: LastSyncedProps) {
   const sync = async () => {
     await fetchData();
     setLastSynced(new Date());
@@ -37,24 +41,6 @@ export function LastSynced({ fetchData, loading }: LastSyncedProps) {
       new Date().toISOString()
     );
   };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!lastSynced) {
-      const lastSyncedString = window.localStorage.getItem(
-        "agent_inbox_last_synced"
-      );
-      if (lastSyncedString) {
-        try {
-          setLastSynced(new Date(lastSyncedString));
-        } catch (e) {
-          console.error("Error parsing last synced date", e);
-        }
-      } else {
-        sync();
-      }
-    }
-  }, []);
 
   return (
     <div className="flex items-center justify-end gap-4 w-full">

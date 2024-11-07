@@ -3,9 +3,15 @@ import { ToolCall } from "@langchain/core/messages/tool";
 export function mapToolCallToString(toolCall: ToolCall): string {
   switch (toolCall.name) {
     case "NewEmailDraft":
-      return `Recipients: ${toolCall.args.recipients.join(", ")}\n\n${toolCall.args.content}`;
+      const recipientsString =
+        toolCall.args.recipients.length &&
+        `Recipients: ${toolCall.args.recipients.join(", ")}\n\n`;
+      return `${recipientsString}${toolCall.args.content}`;
     case "ResponseEmailDraft":
-      return `Recipients: ${toolCall.args.new_recipients.join(", ")}\n\n${toolCall.args.content}`;
+      const newRecipientsString =
+        toolCall.args.new_recipients.length &&
+        `Recipients: ${toolCall.args.new_recipients.join(", ")}\n\n`;
+      return `${newRecipientsString}${toolCall.args.content}`;
     case "Question":
       return toolCall.args.content;
     default:
