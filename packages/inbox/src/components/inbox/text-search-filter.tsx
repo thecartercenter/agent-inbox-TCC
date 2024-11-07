@@ -12,37 +12,28 @@ import { TighterText } from "../ui/header";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { StatusBadge } from "./status";
 import { Input } from "../ui/input";
-import { debounce } from "lodash";
 
 interface FilterComponentProps {
   table: Table<ThreadInterruptData>;
-  searchValue: string;
-  setSearchValue: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export function FilterComponent({
-  table,
-  searchValue,
-  setSearchValue,
-}: FilterComponentProps) {
+export function FilterComponent({ table }: FilterComponentProps) {
   const [filterBy, setFilterBy] = useState<ActionType>();
-  const [inputValue, setInputValue] = useState(searchValue);
   const [open, setOpen] = useState(false);
 
-  const debouncedSetSearchValue = React.useCallback(
-    debounce((value: string) => {
-      setSearchValue(value);
-    }, 500),
-    []
-  );
+  const handleSetFilterBy = (value: ActionType | "reset") => {
+    if (value === "reset") {
+      table.setColumnFilters([]);
+      setFilterBy(undefined);
+      return;
+    }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    debouncedSetSearchValue(e.target.value);
-  };
-
-  const handleSetFilterBy = (value: ActionType) => {
-    table.resetColumnFilters();
+    table.setColumnFilters([
+      {
+        id: "status",
+        value,
+      },
+    ]);
     setFilterBy(value);
   };
 
@@ -65,6 +56,12 @@ export function FilterComponent({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[180px]">
+          <DropdownMenuItem
+            onClick={() => handleSetFilterBy("reset")}
+            className="px-4"
+          >
+            Reset
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleSetFilterBy(ActionType.EDIT)}>
             <StatusBadge type={ActionType.EDIT} />
           </DropdownMenuItem>
@@ -81,8 +78,17 @@ export function FilterComponent({
       <Input
         isSearch
         placeholder="Search"
-        value={inputValue}
-        onChange={handleInputChange}
+        value={
+          (table.getColumn("page_content")?.getFilterValue() as string) ?? ""
+        }
+        onChange={(event) => {
+          const pageContentColumn = table.getColumn("page_content");
+          if (!pageContentColumn) {
+            console.error("pageContentColumn not defined");
+            return;
+          }
+          pageContentColumn.setFilterValue(event.target.value);
+        }}
       />
     </div>
   );

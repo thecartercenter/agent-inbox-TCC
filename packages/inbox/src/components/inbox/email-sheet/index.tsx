@@ -15,6 +15,7 @@ import { AddEventComponent } from "./add-event";
 import { EditEventComponent } from "./edit-event";
 import { NotifyEventComponent } from "./notify-event";
 import { useThreadsContext } from "@/contexts/ThreadContext";
+import { ThreadHistory } from "./thread-history";
 
 interface EmailSheetProps {
   row: Row<ThreadInterruptData>;
@@ -68,7 +69,6 @@ export function EmailSheetComponent({
         title: "Success",
         description: "Added event.",
       });
-      console.log("After toast");
     } catch (e) {
       console.error("Error adding event", e);
       toastCallback({
@@ -133,19 +133,20 @@ export function EmailSheetComponent({
           <p className="max-w-[75%] text-pretty">
             {thread.values.email.page_content}
           </p>
+
+          <hr />
+          <ThreadHistory threadValues={thread.values} />
           <hr />
 
           {interruptValue?.type === ActionType.ADD && (
             <AddEventComponent
               event={interruptValue}
-              thread={thread}
               handleSubmit={handleSubmitAddEvent}
             />
           )}
           {interruptValue?.type === ActionType.EDIT && (
             <EditEventComponent
               event={interruptValue}
-              thread={thread}
               handleSubmit={handleSubmitEditEvent}
             />
           )}

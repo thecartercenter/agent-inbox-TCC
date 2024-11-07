@@ -16,9 +16,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+/**
+ * This function is used to return the core values from the row data
+ * (content, from email, subject, and thread id) to be used for filtering.
+ */
+const accessorFn = (row: ThreadInterruptData) => {
+  const { thread_id } = row;
+  const { page_content, from_email, subject } = row.thread.values.email;
+  return `${page_content} ${from_email} ${subject} ${thread_id}`;
+};
+
 export const columns: ColumnDef<ThreadInterruptData>[] = [
   {
+    accessorFn: (row) => row.interrupt_value?.type,
     accessorKey: "status",
+    id: "status",
     header: ({ column }) => {
       return (
         <Button
@@ -61,6 +73,7 @@ export const columns: ColumnDef<ThreadInterruptData>[] = [
     },
   },
   {
+    accessorFn,
     accessorKey: "page_content",
     header: () => <TighterText className="text-left">Content</TighterText>,
     cell: ({ row }) => {

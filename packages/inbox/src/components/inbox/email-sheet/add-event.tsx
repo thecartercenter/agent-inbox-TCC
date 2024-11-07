@@ -1,12 +1,10 @@
-import { AddEvent, ThreadValues } from "../types";
+import { AddEvent } from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ToolCall } from "@langchain/core/messages/tool";
-import { Thread } from "@langchain/langgraph-sdk";
 
 interface AddEventProps {
-  thread: Thread<ThreadValues>;
   event: AddEvent;
   handleSubmit: (values: Record<string, any>) => Promise<void>;
 }

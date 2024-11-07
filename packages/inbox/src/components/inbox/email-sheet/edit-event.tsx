@@ -1,12 +1,10 @@
-import { EditEvent, ThreadValues } from "../types";
+import { EditEvent } from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ToolCall } from "@langchain/core/messages/tool";
-import { Thread } from "@langchain/langgraph-sdk";
 
 interface EditEventProps {
-  thread: Thread<ThreadValues>;
   event: EditEvent;
   handleSubmit: (values: Record<string, any>) => Promise<void>;
 }
@@ -18,7 +16,7 @@ export function EditEventComponent({ event, handleSubmit }: EditEventProps) {
   const [response, setResponse] = useState<string>(
     toolCall?.args?.[event.target_field] || ""
   );
-  console.log("interruptValue", event);
+
   const submit = async (
     e: React.FormEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {

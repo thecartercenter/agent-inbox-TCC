@@ -42,7 +42,6 @@ function DataTableComponent() {
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
   const [lastSynced, setLastSynced] = useState<Date>();
 
   useEffect(() => {
@@ -66,25 +65,73 @@ function DataTableComponent() {
     state: {
       sorting,
       columnFilters,
-      globalFilter,
     },
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
   });
 
   useEffect(() => {
     table.reset();
   }, [threadInterrupts, table]);
 
+  const RowsRenderer = () => {
+    const rowModel = table.getRowModel();
+
+    if (rowModel.rows?.length) {
+      return table.getRowModel().rows.map((row) => (
+        <EmailSheet
+          toastCallback={() => {
+            setTimeout(() => {
+              toast({
+                title: "Success",
+              });
+            }, 1000);
+          }}
+          key={row.original.thread_id}
+          row={row}
+          excludeSelector=".dropdown-menu-content"
+        />
+      ));
+    }
+
+    if (!loading && !threadInterrupts.length) {
+      // Not loading, and no threads means we're all caught up
+      return (
+        <TableRow>
+          <TableCell colSpan={columns.length} className="h-24 text-center">
+            You&apos;re all caught up!
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!loading && threadInterrupts.length) {
+      // Not loading, no rows in table, but there are threads in state
+      // likely means a filter has been applied which resulted in no rows
+      return (
+        <TableRow>
+          <TableCell colSpan={columns.length} className="h-24 text-center">
+            No results found.
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (loading && !threadInterrupts.length) {
+      // Loading is true, and no threads mean we're fetching the data
+      return (
+        <TableRow>
+          <TableCell colSpan={columns.length} className="h-24 text-center">
+            Loading...
+          </TableCell>
+        </TableRow>
+      );
+    }
+  };
+
   return (
     <div className="p-1">
       <div className="flex items-center justify-between">
         <div className="flex w-full mr-auto">
-          <FilterComponent
-            searchValue={globalFilter}
-            setSearchValue={setGlobalFilter}
-            table={table}
-          />
+          <FilterComponent table={table} />
         </div>
         <div className="flex w-full ml-auto">
           <LastSynced
@@ -118,41 +165,7 @@ function DataTableComponent() {
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length > 0 &&
-                table.getRowModel().rows.map((row) => (
-                  <EmailSheet
-                    toastCallback={() => {
-                      setTimeout(() => {
-                        toast({
-                          title: "Success",
-                        });
-                      }, 1000);
-                    }}
-                    key={row.original.thread_id}
-                    row={row}
-                    excludeSelector=".dropdown-menu-content"
-                  />
-                ))}
-              {!table.getRowModel().rows?.length && !loading && (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    You&apos;re all caught up!
-                  </TableCell>
-                </TableRow>
-              )}
-              {loading && !table.getRowModel().rows?.length && (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              )}
+              <RowsRenderer />
             </TableBody>
           </Table>
         </div>
