@@ -16,6 +16,9 @@ import { EditEventComponent } from "./edit-event";
 import { NotifyEventComponent } from "./notify-event";
 import { useThreadsContext } from "@/contexts/ThreadContext";
 import { ThreadHistory } from "./thread-history";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { ToFromEmails } from "./to-from-emails";
 
 interface EmailSheetProps {
   row: Row<ThreadInterruptData>;
@@ -77,27 +80,37 @@ export function EmailSheetComponent({ row, excludeSelector }: EmailSheetProps) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="flex flex-col h-full min-w-[50vw]"
+        className="flex flex-col h-full min-w-[70vw] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
         aria-describedby={undefined}
       >
         <SheetHeader>
-          <SheetTitle>{thread.values.email.subject}</SheetTitle>
+          <SheetTitle className="text-xl">
+            {thread.values.email.subject}
+          </SheetTitle>
         </SheetHeader>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col items-start justify-start gap-1 text-sm">
-            <pre>{thread.values.email.from_email}</pre>
-            <div className="flex flex-row items-center justify-start gap-1">
-              <p>to</p>
-              <pre>{thread.values.email.to_email}</pre>
-            </div>
-          </div>
-
-          <p className="max-w-[75%] text-pretty">
-            {thread.values.email.page_content}
-          </p>
+          <ToFromEmails
+            fromEmailText={thread.values.email.from_email}
+            toEmailText={thread.values.email.to_email}
+          />
 
           <hr />
+
           <ThreadHistory threadValues={thread.values} />
+
+          <hr />
+
+          <Markdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ children }) => (
+                <p className="text-sm leading-5">{children}</p>
+              ),
+            }}
+          >
+            {thread.values.email.page_content}
+          </Markdown>
+
           <hr />
 
           {interruptValue?.type === ActionType.ADD && (

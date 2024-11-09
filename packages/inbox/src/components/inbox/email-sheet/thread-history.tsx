@@ -38,8 +38,10 @@ export function ThreadHistory({ threadValues }: ThreadHistoryProps) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex flex-row items-center justify-between w-full pb-4border-b-[1px] border-gray-300">
-        <TighterText className="text-lg">Message History</TighterText>
+      <CollapsibleTrigger className="flex flex-row items-center justify-between w-full">
+        <TighterText className="text-xl font-medium">
+          Message History
+        </TighterText>
         <motion.div
           initial={false}
           animate={{ rotate: open ? 180 : 0 }}
@@ -50,7 +52,7 @@ export function ThreadHistory({ threadValues }: ThreadHistoryProps) {
       </CollapsibleTrigger>
       <AnimatePresence initial={false}>
         {open && (
-          <CollapsibleContent asChild forceMount className="">
+          <CollapsibleContent asChild forceMount>
             <motion.div
               className="flex flex-col gap-2"
               initial={{ height: 0, opacity: 0 }}
@@ -90,7 +92,7 @@ export function ThreadHistory({ threadValues }: ThreadHistoryProps) {
                     <>
                       <div
                         className={cn(
-                          "flex flex-col gap-1 items-center justify-start text-sm text-gray-600 pt-4 px-6",
+                          "flex flex-col gap-1 items-center justify-start text-sm text-gray-600 pt-4 pl-2",
                           !isLast && "pb-4"
                         )}
                         key={msg.id || `msg-${idx}`}
@@ -126,7 +128,7 @@ export function ThreadHistory({ threadValues }: ThreadHistoryProps) {
                     <>
                       <div
                         className={cn(
-                          "flex gap-1 items-center justify-start text-sm text-gray-600 pt-4 px-6",
+                          "flex gap-1 items-center justify-start text-sm text-gray-600 pt-4 pl-2",
                           !isLast && "pb-4"
                         )}
                         key={msg.id || `msg-${idx}`}
@@ -153,7 +155,7 @@ export function ThreadHistory({ threadValues }: ThreadHistoryProps) {
                     <>
                       <div
                         className={cn(
-                          "flex flex-col gap-1 items-center justify-start text-sm text-gray-600 pt-4 px-6",
+                          "flex flex-col gap-1 items-center justify-start text-sm text-gray-600 pt-4 pl-2",
                           !isLast && "pb-4"
                         )}
                         key={msg.id || `msg-${idx}`}
