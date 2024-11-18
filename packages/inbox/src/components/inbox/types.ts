@@ -1,6 +1,7 @@
 import { BaseMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
 import { Thread } from "@langchain/langgraph-sdk";
+import { HumanInterrupt } from "../v2/types";
 
 export type Email = {
   id: string;
@@ -87,7 +88,7 @@ export type HumanLoopEvent = EditEvent | AddEvent | NotifyEvent;
 
 export interface ThreadInterruptData {
   thread_id: string;
-  interrupt_value?: HumanLoopEvent;
+  interrupt_value: HumanInterrupt[];
   next: string[];
   thread: Thread<ThreadValues>;
 }

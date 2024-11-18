@@ -3,6 +3,7 @@ import {
   ThreadInterruptData,
   ThreadValues,
 } from "@/components/inbox/types";
+import { HumanInterrupt } from "@/components/v2/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
 import { Thread, ThreadState } from "@langchain/langgraph-sdk";
@@ -66,13 +67,12 @@ export function ThreadsProvider({ children }: { children: ReactNode }) {
       return [
         {
           thread_id: tState.thread_id,
-          interrupt_value: lastInterrupt.value as HumanLoopEvent,
+          interrupt_value: lastInterrupt.value as HumanInterrupt[],
           thread: thread,
           next: tState.thread_state.next,
         },
       ];
     });
-    console.log(interruptValues);
     setThreadInterrupts(interruptValues);
     setLoading(false);
   }, []);

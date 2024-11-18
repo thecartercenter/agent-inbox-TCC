@@ -1,6 +1,7 @@
 "use client";
 
 import { Row, flexRender } from "@tanstack/react-table";
+import { motion } from "framer-motion";
 import {
   Sheet,
   SheetContent,
@@ -67,16 +68,45 @@ export function EmailSheetComponent({ row, excludeSelector }: EmailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <TableRow
+        <motion.tr
+          className="relative"
+          initial={{ height: "40px" }}
+          animate={{ height: "40px" }}
+          whileHover={{
+            height: "160px", // Expand to double height
+            zIndex: 50,
+            transition: { duration: 0.2 },
+          }}
+          style={{
+            position: "relative",
+            transformOrigin: "top", // Change to top for downward expansion
+          }}
           data-state={row.getIsSelected() && "selected"}
           onClick={handleTableRowClick}
         >
+          {/* Background overlay */}
+          <td
+            className="absolute inset-0 bg-white dark:bg-gray-950 shadow-lg border-b border-gray-100"
+            style={{
+              pointerEvents: "none",
+              zIndex: -1,
+              height: "100%", // Make sure background expands with the row
+            }}
+          />
           {row.getVisibleCells().map((cell) => (
-            <TableCell key={cell.id}>
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            <TableCell
+              key={cell.id}
+              className="relative"
+              style={{
+                height: "100%", // Make cells expand with the row
+              }}
+            >
+              <div className="h-full">
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </div>
             </TableCell>
           ))}
-        </TableRow>
+        </motion.tr>
       </SheetTrigger>
       <SheetContent
         side="right"

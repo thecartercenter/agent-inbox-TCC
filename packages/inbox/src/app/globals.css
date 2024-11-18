@@ -8,6 +8,7 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  --row-height: 53px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,6 +37,16 @@ a {
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(34, 197, 94, 1);
   }
 }
 
@@ -145,4 +156,8 @@ a {
   padding: 2px 4px;
   border-radius: 4px;
   font-size: 0.9em;
+}
+
+tr {
+  height: var(--row-height);
 }
