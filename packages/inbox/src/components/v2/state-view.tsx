@@ -358,7 +358,7 @@ export function StateView() {
           <X className="w-4 h-4" />
         </Button>
       </div>
-      <div className="flex flex-col gap-1 pl-6 pt-6 pr-2">
+      <div className="flex flex-col gap-1 pl-6 pt-6 pr-2 pb-2">
         {Object.entries(threadValues).map(([k, v], idx) => (
           <StateViewObject
             expanded={expanded}

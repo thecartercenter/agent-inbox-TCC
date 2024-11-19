@@ -1,8 +1,8 @@
-import { ThreadInterruptData } from "@/components/v2/types";
+import { HumanResponse, ThreadInterruptData } from "@/components/v2/types";
 import { HumanInterrupt } from "@/components/v2/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
-import { Thread, ThreadState } from "@langchain/langgraph-sdk";
+import { Run, Thread, ThreadState } from "@langchain/langgraph-sdk";
 import {
   createContext,
   ReactNode,
@@ -23,6 +23,10 @@ type ThreadContentType<
     asNode?: string
   ) => Promise<void>;
   fetchThreads: () => Promise<void>;
+  sendHumanResponse: (
+    threadId: string,
+    response: HumanResponse[]
+  ) => Promise<Run | undefined>;
 };
 
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
@@ -171,12 +175,33 @@ export function ThreadsProvider<
     }
   };
 
+  const sendHumanResponse = async (
+    threadId: string,
+    response: HumanResponse[]
+  ) => {
+    const client = createClient();
+    try {
+      console.log("Sending in this value", {
+        resume: response,
+      });
+      return client.runs.create(threadId, "support", {
+        command: {
+          resume: response,
+        },
+      });
+    } catch (e) {
+      console.error("Error sending human response", e);
+      return undefined;
+    }
+  };
+
   const contextValue: ThreadContentType = {
     loading,
     threadInterrupts,
     ignoreThread,
     updateState,
     fetchThreads,
+    sendHumanResponse,
   };
 
   return (

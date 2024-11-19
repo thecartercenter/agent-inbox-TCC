@@ -20,8 +20,8 @@ export interface HumanInterrupt {
 }
 
 export type HumanResponse = {
-  type: "accept" | "ignore" | "response" | "edit"; // Literal types use union syntax in TS
-  args: null | string | ActionRequest; // Union becomes union with |
+  type: "accept" | "ignore" | "response" | "edit";
+  args: null | string | ActionRequest;
 };
 
 export type Email = {

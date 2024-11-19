@@ -1,31 +1,35 @@
 import { cn } from "@/lib/utils";
-import { HumanInterrupt, ThreadInterruptData } from "./types";
+import {
+  ActionRequest,
+  HumanInterrupt,
+  HumanResponse,
+  ThreadInterruptData,
+} from "./types";
 import { Textarea } from "../ui/textarea";
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { Input } from "../ui/input";
 import { prettifyText } from "./utils";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { InboxItemStatuses } from "./components/statuses";
+import { useThreadsContext } from "@/contexts/ThreadContext";
 
 interface InboxItemInputProps {
   actionColor: { bg: string; border: string };
   interruptValue: HumanInterrupt;
   actionLetter: string;
+  humanResponse: HumanResponse[];
+  setHumanResponse: React.Dispatch<React.SetStateAction<HumanResponse[]>>;
 }
 
 function InboxItemInput({
   actionColor,
   interruptValue,
   actionLetter,
+  humanResponse,
+  setHumanResponse,
 }: InboxItemInputProps) {
-  const [value, setValue] = React.useState("");
-  const [args, setArgs] = React.useState<Record<string, string>>(
-    interruptValue.action_request.args
-  );
-
   return (
     <div
       className={cn(
@@ -44,49 +48,137 @@ function InboxItemInput({
         {actionLetter}
       </div>
       <div className="flex flex-col gap-2 items-start w-full">
-        <div className="flex flex-col gap-1 items-start justify-start mr-auto">
-          {Object.entries(interruptValue.action_request.args).map(([k, v]) => (
-            <div
-              key={`args-${k}`}
-              className="p-2 rounded-lg items-center justify-start w-full bg-gray-50 border-[1px] border-gray-300"
-            >
-              <p className="text-sm text-gray-600">
-                <strong>{prettifyText(k)}: </strong>
-                {typeof v === "string" ? v : JSON.stringify(v, null)}
-              </p>
-            </div>
-          ))}
-        </div>
+        {!interruptValue.config.allow_edit && (
+          <div className="flex flex-col gap-1 items-start justify-start mr-auto">
+            {Object.entries(interruptValue.action_request.args).map(
+              ([k, v]) => {
+                let value = "";
+                if (["string", "number"].includes(typeof v)) {
+                  value = v as string;
+                } else {
+                  value = JSON.stringify(v, null);
+                }
+
+                return (
+                  <div
+                    key={`args-${k}`}
+                    className="p-2 rounded-lg items-center justify-start w-full bg-gray-50 border-[1px] border-gray-300"
+                  >
+                    <p className="text-sm text-gray-600">
+                      <strong>{prettifyText(k)}: </strong>
+                      {value}
+                    </p>
+                  </div>
+                );
+              }
+            )}
+          </div>
+        )}
         {interruptValue.description && (
           <p className="text-sm font-medium">{interruptValue.description}</p>
         )}
-        {interruptValue.config.allow_respond && (
-          <Textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            rows={2}
-            placeholder="Your response here..."
-            className="w-full"
-          />
-        )}
-        {/* TODO: Ensure users can edit/update values */}
-        {interruptValue.config.allow_edit && (
-          <div className="flex flex-col gap-2 items-start w-full">
-            {Object.entries(interruptValue.action_request.args).map(([k]) => (
-              <div
-                className="flex gap-1 items-center justify-start"
-                key={`allow-edit-args-${k}`}
-              >
-                <strong>{prettifyText(k)}: </strong>
-                <Input
-                  value={args[k]}
-                  onChange={(e) => setArgs({ ...args, [k]: e.target.value })}
+        <div className="flex flex-col gap-2 items-start w-full">
+          {humanResponse.map((response, idx) => (
+            <div
+              className="flex flex-col gap-1 items-start w-full"
+              key={`human-res-${response.type}-${idx}`}
+            >
+              {/* <p className="text-sm min-w-fit">{prettifyText(response.type)}: </p> */}
+              {typeof response.args === "object" && response.args && (
+                <>
+                  {Object.entries(response.args.args).map(([k, v], idx) => (
+                    <div
+                      className="flex flex-col gap-1 items-start w-full"
+                      key={`allow-edit-args-${k}-${idx}`}
+                    >
+                      <p className="text-sm min-w-fit">{prettifyText(k)}: </p>
+                      <Textarea
+                        value={v}
+                        onChange={(e) => {
+                          setHumanResponse((prev) => {
+                            if (
+                              typeof response.args !== "object" ||
+                              !response.args
+                            ) {
+                              console.error(
+                                "Mismatched response type",
+                                !!response.args,
+                                typeof response.args
+                              );
+                              return prev;
+                            }
+
+                            const newEdit: HumanResponse = {
+                              type: response.type,
+                              args: {
+                                action: response.args.action,
+                                args: {
+                                  ...response.args.args,
+                                  [k]: e.target.value,
+                                },
+                              },
+                            };
+                            if (
+                              prev.find(
+                                (p) =>
+                                  p.type === response.type &&
+                                  typeof p.args === "object" &&
+                                  p.args?.action ===
+                                    (response.args as ActionRequest).action
+                              )
+                            ) {
+                              return prev.map((p) => {
+                                if (
+                                  p.type === response.type &&
+                                  typeof p.args === "object" &&
+                                  p.args?.action ===
+                                    (response.args as ActionRequest).action
+                                ) {
+                                  return newEdit;
+                                }
+                                return p;
+                              });
+                            }
+                            return [...prev, newEdit];
+                          });
+                        }}
+                        className="w-full"
+                        rows={2}
+                      />
+                    </div>
+                  ))}
+                </>
+              )}
+              {typeof response.args === "string" && (
+                <Textarea
+                  value={response.args}
+                  onChange={(e) => {
+                    setHumanResponse((prev) => {
+                      const newResponse: HumanResponse = {
+                        type: response.type,
+                        args: e.target.value,
+                      };
+
+                      if (prev.find((p) => p.type === response.type)) {
+                        return prev.map((p) => {
+                          if (p.type === response.type) {
+                            return newResponse;
+                          }
+                          return p;
+                        });
+                      }
+                      return [...prev, newResponse];
+                    });
+                  }}
+                  rows={2}
+                  placeholder="Your response here..."
                   className="w-full"
                 />
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+              {/* TODO: Handle accept/ignore. This should be okay to leave for now since the email assistant is setup to set `accept`/`ignore` to true alongside `edit`. */}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -102,6 +194,7 @@ interface InboxItemProps<
 export function InboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ interruptData }: InboxItemProps<ThreadValues>) {
+  const { ignoreThread, sendHumanResponse } = useThreadsContext<ThreadValues>();
   const { interrupt_value } = interruptData;
   const { toast } = useToast();
   const router = useRouter();
@@ -109,6 +202,9 @@ export function InboxItem<
   const searchParams = useSearchParams();
 
   const [active, setActive] = React.useState(false);
+  const [humanResponse, setHumanResponse] = React.useState<HumanResponse[]>([]);
+  const [loading, setLoading] = React.useState(false);
+
   const actionTypeColorMap = {
     question: { bg: "#FCA5A5", border: "#EF4444" },
     notify: { bg: "#93C5FD", border: "#3B82F6" },
@@ -137,27 +233,61 @@ export function InboxItem<
     updateQueryParam("view_state_thread_id", threadId);
   };
 
+  useEffect(() => {
+    if (!interruptData.interrupt_value) return;
+    const defaultHumanResponse: HumanResponse[] =
+      interruptData.interrupt_value.flatMap((v) => {
+        if (v.config.allow_edit) {
+          return {
+            type: "edit",
+            args: v.action_request,
+          };
+        }
+        if (v.config.allow_respond) {
+          return {
+            type: "response",
+            args: "",
+          };
+        }
+        if (v.config.allow_accept) {
+          return {
+            type: "accept",
+            args: null,
+          };
+        }
+        if (v.config.allow_ignore) {
+          return {
+            type: "ignore",
+            args: null,
+          };
+        }
+
+        return [];
+      });
+
+    setHumanResponse(defaultHumanResponse);
+  }, []);
+
   return (
     <div
+      onClick={() => {
+        if (!active) {
+          setActive(true);
+          handleToggleViewState();
+        }
+      }}
       className={cn(
         "flex flex-col gap-6 items-start justify-start",
         "rounded-xl border-[1px] ",
-        "p-6 w-[675px] min-h-[50px]",
-        active ? "border-gray-200 shadow-md" : "border-gray-200/75"
+        "p-6 min-h-[50px]",
+        active ? "border-gray-200 shadow-md" : "border-gray-200/75",
+        !active && "cursor-pointer",
+        "max-w-[45%] w-full"
       )}
     >
       <motion.span
-        onClick={() => {
-          if (!active) {
-            setActive(true);
-            handleToggleViewState();
-          }
-        }}
         animate={{ marginBottom: active ? "0px" : "0px" }}
-        className={cn(
-          "flex flex-col gap-3 items-center justify-start w-full",
-          !active && "cursor-pointer"
-        )}
+        className="flex flex-col gap-3 items-center justify-start w-full"
       >
         <div className="flex items-center justify-between w-full">
           <div className="w-full flex items-center justify-start gap-2">
@@ -195,7 +325,7 @@ export function InboxItem<
             transition={{ duration: 0.2 }}
             className="flex flex-col gap-6 items-start w-full overflow-hidden"
           >
-            <div className="flex flex-col gap-4 items-start w-full">
+            {/* <div className="flex flex-col gap-4 items-start w-full">
               {interrupt_value.map((value, idx) => (
                 <InboxItemInput
                   key={`inbox-item-input-${idx}`}
@@ -204,6 +334,15 @@ export function InboxItem<
                   interruptValue={value}
                 />
               ))}
+            </div> */}
+            <div className="flex flex-col gap-4 items-start w-full">
+              <InboxItemInput
+                actionColor={actionColor}
+                actionLetter={actionLetter}
+                interruptValue={interrupt_value[0]}
+                humanResponse={humanResponse}
+                setHumanResponse={setHumanResponse}
+              />
             </div>
             <div className="flex items-center justify-between w-full">
               <div className="flex gap-2 items-center justify-start">
@@ -217,6 +356,7 @@ export function InboxItem<
               <div className="flex gap-2 items-center justify-end">
                 <Button
                   variant="outline"
+                  disabled={loading}
                   onClick={() => {
                     setActive(false);
                     const currQueryParamThreadId = searchParams.get(
@@ -232,8 +372,13 @@ export function InboxItem<
                 {isIgnoreAllowed && (
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      // TODO: HANDLE IGNORE
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true);
+
+                      await ignoreThread(interruptData.thread_id);
+
+                      setLoading(true);
                       setActive(false);
                     }}
                     className="border-red-500 text-red-500 hover:text-red-600"
@@ -243,13 +388,29 @@ export function InboxItem<
                 )}
                 <Button
                   variant="default"
-                  onClick={() => {
-                    // TODO: HANDLE SUBMIT
+                  disabled={loading}
+                  onClick={async () => {
+                    if (!humanResponse) {
+                      toast({
+                        title: "Error",
+                        description: "Please enter a response.",
+                        duration: 5000,
+                      });
+                      return;
+                    }
+                    setLoading(true);
+
+                    await sendHumanResponse(
+                      interruptData.thread_id,
+                      humanResponse
+                    );
+
                     toast({
                       title: "Success",
                       description: "Response submitted successfully.",
                       duration: 5000,
                     });
+                    setLoading(false);
                     setActive(false);
                   }}
                 >
