@@ -1,8 +1,4 @@
-import {
-  HumanLoopEvent,
-  ThreadInterruptData,
-  ThreadValues,
-} from "@/components/inbox/types";
+import { ThreadInterruptData } from "@/components/v2/types";
 import { HumanInterrupt } from "@/components/v2/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
@@ -15,9 +11,11 @@ import {
   useState,
 } from "react";
 
-type ThreadContentType = {
+type ThreadContentType<
+  ThreadValues extends Record<string, any> = Record<string, any>,
+> = {
   loading: boolean;
-  threadInterrupts: ThreadInterruptData[];
+  threadInterrupts: ThreadInterruptData<ThreadValues>[];
   ignoreThread: (threadId: string) => Promise<void>;
   updateState: (
     threadId: string,
@@ -29,11 +27,13 @@ type ThreadContentType = {
 
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
 
-export function ThreadsProvider({ children }: { children: ReactNode }) {
+export function ThreadsProvider<
+  ThreadValues extends Record<string, any> = Record<string, any>,
+>({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [threadInterrupts, setThreadInterrupts] = useState<
-    ThreadInterruptData[]
+    ThreadInterruptData<ThreadValues>[]
   >([]);
 
   const fetchThreads = useCallback(async () => {
@@ -186,8 +186,10 @@ export function ThreadsProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useThreadsContext() {
-  const context = useContext(ThreadsContext);
+export function useThreadsContext<
+  T extends Record<string, any> = Record<string, any>,
+>() {
+  const context = useContext(ThreadsContext) as ThreadContentType<T>;
   if (context === undefined) {
     throw new Error("useThreadsContext must be used within a ThreadsProvider");
   }

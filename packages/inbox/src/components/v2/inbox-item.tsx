@@ -1,11 +1,10 @@
 import { cn } from "@/lib/utils";
-import { HumanInterrupt } from "./types";
+import { HumanInterrupt, ThreadInterruptData } from "./types";
 import { Textarea } from "../ui/textarea";
 import React from "react";
 import { Button } from "../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { ThreadInterruptData } from "../inbox/types";
 import { Input } from "../ui/input";
 import { prettifyText } from "./utils";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -70,23 +69,22 @@ function InboxItemInput({
             className="w-full"
           />
         )}
+        {/* TODO: Ensure users can edit/update values */}
         {interruptValue.config.allow_edit && (
           <div className="flex flex-col gap-2 items-start w-full">
-            {Object.entries(interruptValue.action_request.args).map(
-              ([k, v]) => (
-                <div
-                  className="flex gap-1 items-center justify-start"
-                  key={`allow-edit-args-${k}`}
-                >
-                  <strong>{prettifyText(k)}: </strong>
-                  <Input
-                    value={args[k]}
-                    onChange={(e) => setArgs({ ...args, [k]: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              )
-            )}
+            {Object.entries(interruptValue.action_request.args).map(([k]) => (
+              <div
+                className="flex gap-1 items-center justify-start"
+                key={`allow-edit-args-${k}`}
+              >
+                <strong>{prettifyText(k)}: </strong>
+                <Input
+                  value={args[k]}
+                  onChange={(e) => setArgs({ ...args, [k]: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -94,12 +92,16 @@ function InboxItemInput({
   );
 }
 
-interface InboxItemProps {
-  interruptData: ThreadInterruptData;
+interface InboxItemProps<
+  ThreadValues extends Record<string, any> = Record<string, any>,
+> {
+  interruptData: ThreadInterruptData<ThreadValues>;
   threadContextRenderer?: React.ReactNode;
 }
 
-export function InboxItem({ interruptData }: InboxItemProps) {
+export function InboxItem<
+  ThreadValues extends Record<string, any> = Record<string, any>,
+>({ interruptData }: InboxItemProps<ThreadValues>) {
   const { interrupt_value } = interruptData;
   const { toast } = useToast();
   const router = useRouter();
@@ -119,14 +121,6 @@ export function InboxItem({ interruptData }: InboxItemProps) {
         ]
       : { bg: "#FDBA74", border: "#F97316" };
   const actionLetter = actionType.slice(0, 1).toUpperCase();
-
-  const isActionRequired = interrupt_value.some(
-    (v) =>
-      v.config.allow_respond || v.config.allow_accept || v.config.allow_edit
-  );
-  const isDone = interrupt_value.some(
-    (v) => v.action_request.action.toLowerCase() === "notify"
-  );
   const isIgnoreAllowed = interrupt_value.every((v) => v.config.allow_ignore);
 
   const updateQueryParam = React.useCallback(
@@ -156,6 +150,7 @@ export function InboxItem({ interruptData }: InboxItemProps) {
         onClick={() => {
           if (!active) {
             setActive(true);
+            handleToggleViewState();
           }
         }}
         animate={{ marginBottom: active ? "0px" : "0px" }}

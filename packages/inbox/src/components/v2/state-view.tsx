@@ -82,7 +82,7 @@ function MessagesRenderer({ messages }: { messages: BaseMessage[] }) {
 
 const objectToString = (item: unknown) => {
   if (isBaseMessage(item)) {
-    let contentText =
+    const contentText =
       typeof item.content === "string"
         ? item.content
         : JSON.stringify(item.content, null);
@@ -101,7 +101,7 @@ const objectToString = (item: unknown) => {
     "type" in item &&
     "content" in item
   ) {
-    let contentText =
+    const contentText =
       typeof item.content === "string"
         ? item.content
         : JSON.stringify(item.content, null);
@@ -208,7 +208,7 @@ function StateViewRecursive(props: StateViewRecursiveProps) {
         {/* Vertical line */}
         <div className="absolute left-[-24px] top-0 h-full w-[1px] bg-gray-200" />
 
-        {Object.entries(props.value).map(([key, value], idx, arr) => (
+        {Object.entries(props.value).map(([key, value], idx) => (
           <div
             key={`state-view-object-${key}-${idx}`}
             className="relative w-full"

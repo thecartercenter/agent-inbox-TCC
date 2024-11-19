@@ -1,11 +1,13 @@
 import { useThreadsContext } from "@/contexts/ThreadContext";
 import { useEffect } from "react";
 import { InboxItem } from "./inbox-item";
-import { EmailRenderer } from "./email-renderer";
 import { StateView } from "./state-view";
 
-export function Inbox() {
-  const { threadInterrupts, loading, fetchThreads } = useThreadsContext();
+export function Inbox<
+  ThreadValues extends Record<string, any> = Record<string, any>,
+>() {
+  const { threadInterrupts, loading, fetchThreads } =
+    useThreadsContext<ThreadValues>();
 
   useEffect(() => {
     if (typeof window === "undefined") return;

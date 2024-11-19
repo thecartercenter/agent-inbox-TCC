@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, ButtonProps, buttonVariants } from "./button";
+import { Button, ButtonProps } from "./button";
 import { cn } from "@/lib/utils";
 
 const PillButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -13,5 +13,6 @@ const PillButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
   }
 );
+PillButton.displayName = "PillButton";
 
 export { PillButton };
