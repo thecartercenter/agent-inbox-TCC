@@ -131,7 +131,6 @@ export function InboxItem<
           </p>
         )}
       </motion.span>
-
       <AnimatePresence>
         {active && (
           <motion.div
