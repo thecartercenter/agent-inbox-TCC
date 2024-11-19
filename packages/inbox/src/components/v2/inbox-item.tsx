@@ -83,7 +83,6 @@ function InboxItemInput({
               className="flex flex-col gap-1 items-start w-full"
               key={`human-res-${response.type}-${idx}`}
             >
-              {/* <p className="text-sm min-w-fit">{prettifyText(response.type)}: </p> */}
               {typeof response.args === "object" && response.args && (
                 <>
                   {Object.entries(response.args.args).map(([k, v], idx) => (
