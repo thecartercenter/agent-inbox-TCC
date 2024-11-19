@@ -13,6 +13,105 @@ import { useQueryParams } from "../hooks/use-query-params";
 import { LoaderCircle } from "lucide-react";
 import { ThreadIdTooltip } from "./thread-id-tooltip";
 
+interface InboxItemFooterProps {
+  handleToggleViewState: () => void;
+  setActive: React.Dispatch<React.SetStateAction<boolean>>;
+  handleSubmit: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => Promise<void>;
+  handleIgnore: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => Promise<void>;
+  streaming: boolean;
+  streamFinished: boolean;
+  currentNode: string;
+  loading: boolean;
+  threadId: string;
+  isIgnoreAllowed: boolean;
+}
+
+function InboxItemFooter({
+  streaming,
+  streamFinished,
+  currentNode,
+  loading,
+  threadId,
+  isIgnoreAllowed,
+  handleSubmit,
+  handleIgnore,
+  setActive,
+  handleToggleViewState,
+}: InboxItemFooterProps) {
+  const { searchParams, updateQueryParam } = useQueryParams();
+
+  return (
+    <div className="flex items-center justify-between w-full">
+      <div className="flex gap-2 items-center justify-start">
+        <p
+          onClick={() => handleToggleViewState()}
+          className="text-gray-700 hover:text-black transition-colors ease-in-out font-medium underline underline-offset-2 cursor-pointer"
+        >
+          View State
+        </p>
+      </div>
+      <div className="flex gap-2 items-center justify-end">
+        {streaming && !currentNode && (
+          <p className="text-sm text-gray-600">Waiting for Graph to start...</p>
+        )}
+        {streaming && currentNode && (
+          <div className="flex gap-2">
+            <span className="text-sm text-gray-600 flex items-center justify-start gap-1">
+              <p>Running</p>
+              <LoaderCircle className="w-3 h-3 animate-spin" />
+            </span>
+            <p className="text-black text-sm font-mono">
+              <span className="font-sans text-gray-700">Node: </span>
+              {prettifyText(currentNode)}
+            </p>
+          </div>
+        )}
+        {streamFinished && (
+          <p className="text-base text-green-600 font-medium">
+            Successfully finished Graph invocation.
+          </p>
+        )}
+        {!streaming && !streamFinished && (
+          <>
+            <Button
+              variant="outline"
+              disabled={loading}
+              onClick={() => {
+                setActive(false);
+                const currQueryParamThreadId = searchParams.get(
+                  VIEW_STATE_THREAD_QUERY_PARAM
+                );
+                if (currQueryParamThreadId === threadId) {
+                  updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM);
+                }
+              }}
+            >
+              Close
+            </Button>
+            {isIgnoreAllowed && (
+              <Button
+                variant="outline"
+                disabled={loading}
+                onClick={handleIgnore}
+                className="border-red-500 text-red-500 hover:text-red-600"
+              >
+                Ignore
+              </Button>
+            )}
+            <Button variant="default" disabled={loading} onClick={handleSubmit}>
+              Submit
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface InboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
@@ -144,7 +243,6 @@ export function InboxItem<
 
         setStreamFinished(true);
       } catch (e) {
-        // Something went wrong.
         console.error("Error sending human response", e);
         toast({
           title: "Error",
@@ -170,6 +268,16 @@ export function InboxItem<
     }
 
     setLoading(false);
+    setActive(false);
+  };
+
+  const handleIgnore = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    setLoading(true);
+    await ignoreThread(interruptData.thread_id);
+    setLoading(true);
     setActive(false);
   };
 
@@ -230,6 +338,7 @@ export function InboxItem<
             transition={{ duration: 0.2 }}
             className="flex flex-col gap-6 items-start w-full overflow-hidden"
           >
+            {/* TODO: HANDLE LIST OF INTERRUPT VALUES */}
             {/* <div className="flex flex-col gap-4 items-start w-full">
               {interrupt_value.map((value, idx) => (
                 <InboxItemInput
@@ -249,85 +358,18 @@ export function InboxItem<
                 setHumanResponse={setHumanResponse}
               />
             </div>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex gap-2 items-center justify-start">
-                <p
-                  onClick={() => handleToggleViewState()}
-                  className="text-gray-700 hover:text-black transition-colors ease-in-out font-medium underline underline-offset-2 cursor-pointer"
-                >
-                  View State
-                </p>
-              </div>
-              <div className="flex gap-2 items-center justify-end">
-                {streaming && !currentNode && (
-                  <p className="text-sm text-gray-600">
-                    Waiting for Graph to start...
-                  </p>
-                )}
-                {streaming && currentNode && (
-                  <div className="flex gap-2">
-                    <span className="text-sm text-gray-600 flex items-center justify-start gap-1">
-                      <p>Running</p>
-                      <LoaderCircle className="w-3 h-3 animate-spin" />
-                    </span>
-                    <p className="text-black text-sm font-mono">
-                      <span className="font-sans text-gray-700">Node: </span>
-                      {prettifyText(currentNode)}
-                    </p>
-                  </div>
-                )}
-                {streamFinished && (
-                  <p className="text-base text-green-600 font-medium">
-                    Successfully finished Graph invocation.
-                  </p>
-                )}
-                {!streaming && !streamFinished && (
-                  <>
-                    <Button
-                      variant="outline"
-                      disabled={loading}
-                      onClick={() => {
-                        setActive(false);
-                        const currQueryParamThreadId = searchParams.get(
-                          VIEW_STATE_THREAD_QUERY_PARAM
-                        );
-                        if (
-                          currQueryParamThreadId === interruptData.thread_id
-                        ) {
-                          updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM);
-                        }
-                      }}
-                    >
-                      Close
-                    </Button>
-                    {isIgnoreAllowed && (
-                      <Button
-                        variant="outline"
-                        disabled={loading}
-                        onClick={async () => {
-                          setLoading(true);
-
-                          await ignoreThread(interruptData.thread_id);
-
-                          setLoading(true);
-                          setActive(false);
-                        }}
-                        className="border-red-500 text-red-500 hover:text-red-600"
-                      >
-                        Ignore
-                      </Button>
-                    )}
-                    <Button
-                      variant="default"
-                      disabled={loading}
-                      onClick={handleSubmit}
-                    >
-                      Submit
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
+            <InboxItemFooter
+              streaming={streaming}
+              streamFinished={streamFinished}
+              currentNode={currentNode}
+              loading={loading}
+              threadId={interruptData.thread_id}
+              isIgnoreAllowed={isIgnoreAllowed}
+              handleSubmit={handleSubmit}
+              handleIgnore={handleIgnore}
+              setActive={setActive}
+              handleToggleViewState={handleToggleViewState}
+            />
           </motion.div>
         )}
       </AnimatePresence>
