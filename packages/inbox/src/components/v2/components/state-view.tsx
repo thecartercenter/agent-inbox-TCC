@@ -2,6 +2,7 @@ import { ChevronRight, X, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   baseMessageObject,
+  constructOpenInStudioURL,
   isArrayOfMessages,
   prettifyText,
   unknownToPrettyDate,
@@ -16,7 +17,14 @@ import { useThreadsContext } from "@/contexts/ThreadContext";
 import { TighterText } from "../../ui/header";
 import { ToolCallTable } from "./tool-call-table";
 import { useQueryParams } from "../hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import {
+  STUDIO_URL_LOCAL_STORAGE_KEY,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+} from "../constants";
+import NextImage from "next/image";
+import GraphIcon from "@/components/icons/GraphIcon.svg";
+import { useLocalStorage } from "../hooks/use-local-storage";
+import { useToast } from "@/hooks/use-toast";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -238,22 +246,53 @@ export function StateViewObject(props: StateViewProps) {
 
 export function StateView() {
   const { searchParams, updateQueryParam } = useQueryParams();
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const { threadInterrupts } = useThreadsContext();
+  const { getItem } = useLocalStorage();
+  const { toast } = useToast();
 
   const threadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const threadValues = threadInterrupts.find((t) => t.thread_id === threadId)
     ?.thread?.values;
 
-  if (!threadValues) {
+  if (!threadValues || !threadId) {
     return null;
   }
 
+  const handleOpenInStudio = () => {
+    const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
+    if (!deploymentUrl) {
+      toast({
+        title: "Error",
+        description: "Please set the LangGraph deployment URL in settings.",
+        duration: 5000,
+      });
+      return;
+    }
+
+    const studioUrl = constructOpenInStudioURL(deploymentUrl, threadId);
+    window.open(studioUrl, "_blank");
+  };
+
   return (
     <div className="fixed top-0 right-0 w-1/2 h-screen overflow-y-auto border-l-[1px]">
-      <TighterText className="pl-6 pt-16 font-medium text-3xl">
-        Thread State
-      </TighterText>
+      <div className="flex pl-6 pt-16 gap-3 items-center">
+        <TighterText className="font-medium text-3xl">Thread State</TighterText>
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex items-center gap-1"
+          onClick={handleOpenInStudio}
+        >
+          <NextImage
+            src={GraphIcon}
+            height={16}
+            width={16}
+            alt="LangGraph Icon"
+          />
+          <span>Open in Studio</span>
+        </Button>
+      </div>
       <div className="flex gap-2 items-center justify-center fixed right-4 top-4">
         <Button
           onClick={() => setExpanded((prev) => !prev)}
