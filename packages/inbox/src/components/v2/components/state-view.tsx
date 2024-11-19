@@ -1,17 +1,22 @@
 import { ChevronRight, X, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState } from "react";
-import { prettifyText } from "./utils";
-import { format } from "date-fns";
+import {
+  baseMessageObject,
+  isArrayOfMessages,
+  prettifyText,
+  unknownToPrettyDate,
+} from "../utils";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { BaseMessage, isBaseMessage } from "@langchain/core/messages";
+import { BaseMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import React from "react";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import { useThreadsContext } from "@/contexts/ThreadContext";
-import { TighterText } from "../ui/header";
-import { ToolCallTable } from "./components/tool-call-table";
+import { TighterText } from "../../ui/header";
+import { ToolCallTable } from "./tool-call-table";
+import { useQueryParams } from "../hooks/use-query-params";
+import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -73,75 +78,10 @@ function MessagesRenderer({ messages }: { messages: BaseMessage[] }) {
   );
 }
 
-const objectToString = (item: unknown) => {
-  if (isBaseMessage(item)) {
-    const contentText =
-      typeof item.content === "string"
-        ? item.content
-        : JSON.stringify(item.content, null);
-    let toolCallText = "";
-    if ("tool_calls" in item) {
-      toolCallText = JSON.stringify(item.tool_calls, null);
-    }
-    if ("type" in item) {
-      return `${item.type}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
-    } else if ("_getType" in item) {
-      return `${item._getType()}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
-    }
-  } else if (
-    typeof item === "object" &&
-    item &&
-    "type" in item &&
-    "content" in item
-  ) {
-    const contentText =
-      typeof item.content === "string"
-        ? item.content
-        : JSON.stringify(item.content, null);
-    let toolCallText = "";
-    if ("tool_calls" in item) {
-      toolCallText = JSON.stringify(item.tool_calls, null);
-    }
-    return `${item.type}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
-  }
-
-  if (typeof item === "object") {
-    return JSON.stringify(item, null);
-  } else {
-    return item as string;
-  }
-};
-
-const isArrayOfMessages = (
-  value: Record<string, any>[]
-): value is BaseMessage[] => {
-  if (
-    value.every(isBaseMessage) ||
-    value.every(
-      (v) =>
-        "id" in v && "type" in v && "content" in v && "additional_kwargs" in v
-    )
-  ) {
-    return true;
-  }
-  return false;
-};
-
 function StateViewRecursive(props: StateViewRecursiveProps) {
-  try {
-    if (
-      Object.prototype.toString.call(props.value) === "[object Date]" ||
-      new Date(props.value as string)
-    ) {
-      const date = new Date(props.value as string);
-      return (
-        <p className="font-light text-gray-600">
-          {format(date, "MM/dd/yyyy hh:mm a")}
-        </p>
-      );
-    }
-  } catch (_) {
-    // failed to parse date. no-op
+  const date = unknownToPrettyDate(props.value);
+  if (date) {
+    return <p className="font-light text-gray-600">{date}</p>;
   }
 
   if (["string", "number"].includes(typeof props.value)) {
@@ -174,7 +114,7 @@ function StateViewRecursive(props: StateViewRecursiveProps) {
       <div className="flex flex-row gap-1 items-start justify-start w-full">
         <span className="font-normal text-black">[</span>
         {valueArray.map((item, idx) => {
-          const itemRenderValue = objectToString(item);
+          const itemRenderValue = baseMessageObject(item);
           return (
             <div
               key={`state-view-${idx}`}
@@ -297,28 +237,13 @@ export function StateViewObject(props: StateViewProps) {
 }
 
 export function StateView() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { searchParams, updateQueryParam } = useQueryParams();
   const [expanded, setExpanded] = useState(true);
   const { threadInterrupts } = useThreadsContext();
 
-  const threadId = searchParams.get("view_state_thread_id");
+  const threadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const threadValues = threadInterrupts.find((t) => t.thread_id === threadId)
     ?.thread?.values;
-
-  const removeThreadIdFromParams = React.useCallback(
-    (key: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete(key);
-      if (params.size) {
-        router.push(`${pathname}?${params.toString()}`);
-      } else {
-        router.push(pathname);
-      }
-    },
-    [router, pathname, searchParams]
-  );
 
   if (!threadValues) {
     return null;
@@ -343,7 +268,7 @@ export function StateView() {
           )}
         </Button>
         <Button
-          onClick={() => removeThreadIdFromParams("view_state_thread_id")}
+          onClick={() => updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM)}
           variant="ghost"
           className="text-gray-600"
           size="sm"

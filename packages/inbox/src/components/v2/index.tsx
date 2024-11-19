@@ -1,7 +1,7 @@
 import { useThreadsContext } from "@/contexts/ThreadContext";
 import { useEffect } from "react";
-import { InboxItem } from "./inbox-item";
-import { StateView } from "./state-view";
+import { InboxItem } from "./components/inbox-item";
+import { StateView } from "./components/state-view";
 
 export function Inbox<
   ThreadValues extends Record<string, any> = Record<string, any>,

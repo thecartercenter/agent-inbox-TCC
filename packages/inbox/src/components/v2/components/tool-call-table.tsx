@@ -1,5 +1,5 @@
 import { ToolCall } from "@langchain/core/messages/tool";
-import { format } from "date-fns";
+import { unknownToPrettyDate } from "../utils";
 
 export function ToolCallTable({ toolCall }: { toolCall: ToolCall }) {
   return (
@@ -18,27 +18,23 @@ export function ToolCallTable({ toolCall }: { toolCall: ToolCall }) {
             if (["string", "number"].includes(typeof value)) {
               valueStr = value.toString();
             }
-            // Parse date
-            try {
-              if (
-                Object.prototype.toString.call(value) === "[object Date]" ||
-                new Date(value as string)
-              ) {
-                valueStr = format(
-                  new Date(value as string),
-                  "MM/dd/yyyy hh:mm a"
-                );
-              }
-            } catch (_) {
-              // failed to parse date. no-op
+
+            const date = unknownToPrettyDate(value);
+            if (date) {
+              valueStr = date;
             }
-            valueStr = valueStr || JSON.stringify(value, null);
+
+            try {
+              valueStr = valueStr || JSON.stringify(value, null);
+            } catch (_) {
+              // failed to stringify, just assign an empty string
+              valueStr = "";
+            }
+
             return (
               <tr key={key} className="border-t">
                 <td className="px-2 py-1 font-medium w-1/3 text-xs">{key}</td>
-                <td className="px-2 py-1 font-mono text-xs">
-                  {JSON.stringify(value, null, 2)}
-                </td>
+                <td className="px-2 py-1 font-mono text-xs">{valueStr}</td>
               </tr>
             );
           })}

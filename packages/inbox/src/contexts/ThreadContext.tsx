@@ -181,9 +181,6 @@ export function ThreadsProvider<
   ) => {
     const client = createClient();
     try {
-      console.log("Sending in this value", {
-        resume: response,
-      });
       return client.runs.create(threadId, "support", {
         command: {
           resume: response,
