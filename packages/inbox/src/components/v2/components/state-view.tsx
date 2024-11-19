@@ -276,22 +276,29 @@ export function StateView() {
 
   return (
     <div className="fixed top-0 right-0 w-1/2 h-screen overflow-y-auto border-l-[1px]">
-      <div className="flex pl-6 pt-16 gap-3 items-center">
-        <TighterText className="font-medium text-3xl">Thread State</TighterText>
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex items-center gap-1"
-          onClick={handleOpenInStudio}
-        >
-          <NextImage
-            src={GraphIcon}
-            height={16}
-            width={16}
-            alt="LangGraph Icon"
-          />
-          <span>Open in Studio</span>
-        </Button>
+      <div className="flex flex-col pl-6 pt-16 gap-3 items-start">
+        <div className="flex gap-3 items-center">
+          <TighterText className="font-medium text-3xl">
+            Thread State
+          </TighterText>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex items-center gap-1"
+            onClick={handleOpenInStudio}
+          >
+            <NextImage
+              src={GraphIcon}
+              height={16}
+              width={16}
+              alt="LangGraph Icon"
+            />
+            <span>Open in Studio</span>
+          </Button>
+        </div>
+        <p className="font-mono tracking-tighter bg-gray-100 text-xs p-1 rounded-md">
+          {threadId}
+        </p>
       </div>
       <div className="flex gap-2 items-center justify-center fixed right-4 top-4">
         <Button

@@ -23,10 +23,18 @@ type ThreadContentType<
     asNode?: string
   ) => Promise<void>;
   fetchThreads: () => Promise<void>;
-  sendHumanResponse: (
+  sendHumanResponse: <TStream extends boolean = false>(
     threadId: string,
-    response: HumanResponse[]
-  ) => Promise<Run | undefined>;
+    response: HumanResponse[],
+    options?: {
+      stream?: TStream;
+    }
+  ) => TStream extends true
+    ? AsyncGenerator<{
+        event: Record<string, any>;
+        data: any;
+      }>
+    : Promise<Run>;
 };
 
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
@@ -175,20 +183,36 @@ export function ThreadsProvider<
     }
   };
 
-  const sendHumanResponse = async (
+  const sendHumanResponse = <TStream extends boolean = false>(
     threadId: string,
-    response: HumanResponse[]
-  ) => {
+    response: HumanResponse[],
+    options?: {
+      stream?: TStream;
+    }
+  ): TStream extends true
+    ? AsyncGenerator<{
+        event: Record<string, any>;
+        data: any;
+      }>
+    : Promise<Run> => {
     const client = createClient();
     try {
+      if (options?.stream) {
+        return client.runs.stream(threadId, "support", {
+          command: {
+            resume: response,
+          },
+          streamMode: "events",
+        }) as any; // Type assertion needed due to conditional return type
+      }
       return client.runs.create(threadId, "support", {
         command: {
           resume: response,
         },
-      });
+      }) as any; // Type assertion needed due to conditional return type
     } catch (e) {
       console.error("Error sending human response", e);
-      return undefined;
+      throw e;
     }
   };
 

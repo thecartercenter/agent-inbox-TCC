@@ -10,6 +10,8 @@ import { useThreadsContext } from "@/contexts/ThreadContext";
 import { InboxItemInput } from "./inbox-item-input";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
+import { LoaderCircle } from "lucide-react";
+import { ThreadIdTooltip } from "./thread-id-tooltip";
 
 interface InboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -21,7 +23,8 @@ interface InboxItemProps<
 export function InboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ interruptData }: InboxItemProps<ThreadValues>) {
-  const { ignoreThread, sendHumanResponse } = useThreadsContext<ThreadValues>();
+  const { ignoreThread, sendHumanResponse, fetchThreads } =
+    useThreadsContext<ThreadValues>();
   const { interrupt_value } = interruptData;
   const { toast } = useToast();
   const { searchParams, updateQueryParam } = useQueryParams();
@@ -29,6 +32,9 @@ export function InboxItem<
   const [active, setActive] = React.useState(false);
   const [humanResponse, setHumanResponse] = React.useState<HumanResponse[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [streaming, setStreaming] = React.useState(false);
+  const [currentNode, setCurrentNode] = React.useState("");
+  const [streamFinished, setStreamFinished] = React.useState(false);
 
   const actionTypeColorMap = {
     question: { bg: "#FCA5A5", border: "#EF4444" },
@@ -84,6 +90,83 @@ export function InboxItem<
     setHumanResponse(defaultHumanResponse);
   }, []);
 
+  const handleSubmit = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    if (!humanResponse) {
+      toast({
+        title: "Error",
+        description: "Please enter a response.",
+        duration: 5000,
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    if (
+      humanResponse.some((r) => ["response", "edit", "accept"].includes(r.type))
+    ) {
+      toast({
+        title: "Success",
+        description: "Response submitted successfully.",
+        duration: 5000,
+      });
+      setStreaming(true);
+      setStreamFinished(false);
+
+      try {
+        const response = sendHumanResponse(
+          interruptData.thread_id,
+          humanResponse,
+          {
+            stream: true,
+          }
+        );
+
+        for await (const chunk of response) {
+          if (
+            chunk.data?.event === "on_chain_start" &&
+            chunk.data?.metadata?.langgraph_node
+          ) {
+            setCurrentNode(chunk.data.metadata.langgraph_node);
+          }
+          console.log(chunk);
+        }
+
+        setStreamFinished(true);
+      } catch (e) {
+        // Something went wrong.
+        console.error("Error sending human response", e);
+        toast({
+          title: "Error",
+          description: "Failed to submit response.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+
+      setCurrentNode("");
+      setStreaming(false);
+      // Void so we do not block.
+      await fetchThreads();
+      setStreamFinished(false);
+      console.log("Finished!");
+    } else {
+      await sendHumanResponse(interruptData.thread_id, humanResponse);
+
+      toast({
+        title: "Success",
+        description: "Response submitted successfully.",
+        duration: 5000,
+      });
+    }
+
+    setLoading(false);
+    setActive(false);
+  };
+
   return (
     <div
       onClick={() => {
@@ -120,6 +203,7 @@ export function InboxItem<
             <p className="font-semibold">
               {prettifyText(interrupt_value[0].action_request.action)}
             </p>
+            <ThreadIdTooltip threadId={interruptData.thread_id} />
           </div>
           <InboxItemStatuses config={interrupt_value[0].config} />
         </div>
@@ -169,68 +253,73 @@ export function InboxItem<
                 </p>
               </div>
               <div className="flex gap-2 items-center justify-end">
-                <Button
-                  variant="outline"
-                  disabled={loading}
-                  onClick={() => {
-                    setActive(false);
-                    const currQueryParamThreadId = searchParams.get(
-                      VIEW_STATE_THREAD_QUERY_PARAM
-                    );
-                    if (currQueryParamThreadId === interruptData.thread_id) {
-                      updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM);
-                    }
-                  }}
-                >
-                  Close
-                </Button>
-                {isIgnoreAllowed && (
-                  <Button
-                    variant="outline"
-                    disabled={loading}
-                    onClick={async () => {
-                      setLoading(true);
-
-                      await ignoreThread(interruptData.thread_id);
-
-                      setLoading(true);
-                      setActive(false);
-                    }}
-                    className="border-red-500 text-red-500 hover:text-red-600"
-                  >
-                    Ignore
-                  </Button>
+                {streaming && !currentNode && (
+                  <p className="text-sm text-gray-600">
+                    Waiting for Graph to start...
+                  </p>
                 )}
-                <Button
-                  variant="default"
-                  disabled={loading}
-                  onClick={async () => {
-                    if (!humanResponse) {
-                      toast({
-                        title: "Error",
-                        description: "Please enter a response.",
-                        duration: 5000,
-                      });
-                      return;
-                    }
-                    setLoading(true);
+                {streaming && currentNode && (
+                  <div className="flex gap-2">
+                    <span className="text-sm text-gray-600 flex items-center justify-start gap-1">
+                      <p>Running</p>
+                      <LoaderCircle className="w-3 h-3 animate-spin" />
+                    </span>
+                    <p className="text-black text-sm font-mono">
+                      <span className="font-sans text-gray-700">Node: </span>
+                      {prettifyText(currentNode)}
+                    </p>
+                  </div>
+                )}
+                {streamFinished && (
+                  <p className="text-base text-green-600 font-medium">
+                    Successfully finished Graph invocation.
+                  </p>
+                )}
+                {!streaming && !streamFinished && (
+                  <>
+                    <Button
+                      variant="outline"
+                      disabled={loading}
+                      onClick={() => {
+                        setActive(false);
+                        const currQueryParamThreadId = searchParams.get(
+                          VIEW_STATE_THREAD_QUERY_PARAM
+                        );
+                        if (
+                          currQueryParamThreadId === interruptData.thread_id
+                        ) {
+                          updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM);
+                        }
+                      }}
+                    >
+                      Close
+                    </Button>
+                    {isIgnoreAllowed && (
+                      <Button
+                        variant="outline"
+                        disabled={loading}
+                        onClick={async () => {
+                          setLoading(true);
 
-                    await sendHumanResponse(
-                      interruptData.thread_id,
-                      humanResponse
-                    );
+                          await ignoreThread(interruptData.thread_id);
 
-                    toast({
-                      title: "Success",
-                      description: "Response submitted successfully.",
-                      duration: 5000,
-                    });
-                    setLoading(false);
-                    setActive(false);
-                  }}
-                >
-                  Submit
-                </Button>
+                          setLoading(true);
+                          setActive(false);
+                        }}
+                        className="border-red-500 text-red-500 hover:text-red-600"
+                      >
+                        Ignore
+                      </Button>
+                    )}
+                    <Button
+                      variant="default"
+                      disabled={loading}
+                      onClick={handleSubmit}
+                    >
+                      Submit
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
