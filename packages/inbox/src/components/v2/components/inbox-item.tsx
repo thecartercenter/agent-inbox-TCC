@@ -23,7 +23,7 @@ interface InboxItemProps<
 export function InboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ interruptData }: InboxItemProps<ThreadValues>) {
-  const { ignoreThread, sendHumanResponse, fetchThreads } =
+  const { ignoreThread, sendHumanResponse, fetchThreads, threadInterrupts } =
     useThreadsContext<ThreadValues>();
   const { interrupt_value } = interruptData;
   const { toast } = useToast();
@@ -88,7 +88,15 @@ export function InboxItem<
       });
 
     setHumanResponse(defaultHumanResponse);
-  }, []);
+  }, [interruptData]);
+
+  useEffect(() => {
+    if (active) return;
+    const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+    if (threadIdQueryParam === interruptData.thread_id && !active) {
+      setActive(true);
+    }
+  }, [searchParams, threadInterrupts]);
 
   const handleSubmit = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -132,7 +140,6 @@ export function InboxItem<
           ) {
             setCurrentNode(chunk.data.metadata.langgraph_node);
           }
-          console.log(chunk);
         }
 
         setStreamFinished(true);
@@ -149,10 +156,9 @@ export function InboxItem<
 
       setCurrentNode("");
       setStreaming(false);
-      // Void so we do not block.
+      // Fetch new threads so that the inbox item is updated.
       await fetchThreads();
       setStreamFinished(false);
-      console.log("Finished!");
     } else {
       await sendHumanResponse(interruptData.thread_id, humanResponse);
 

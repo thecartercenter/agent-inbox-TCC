@@ -28,9 +28,7 @@ export function SettingsPopover() {
       | React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-    console.log("Before save");
     setItem(STUDIO_URL_LOCAL_STORAGE_KEY, deploymentUrl);
-    console.log("after save");
     setOpen(false);
   };
 

@@ -250,6 +250,7 @@ export function StateView() {
   const { threadInterrupts } = useThreadsContext();
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
+  const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
 
   const threadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const threadValues = threadInterrupts.find((t) => t.thread_id === threadId)
@@ -260,7 +261,6 @@ export function StateView() {
   }
 
   const handleOpenInStudio = () => {
-    const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
     if (!deploymentUrl) {
       toast({
         title: "Error",
@@ -281,22 +281,24 @@ export function StateView() {
           <TighterText className="font-medium text-3xl">
             Thread State
           </TighterText>
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex items-center gap-1"
-            onClick={handleOpenInStudio}
-          >
-            <NextImage
-              src={GraphIcon}
-              height={16}
-              width={16}
-              alt="LangGraph Icon"
-            />
-            <span>Open in Studio</span>
-          </Button>
+          {deploymentUrl && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={handleOpenInStudio}
+            >
+              <NextImage
+                src={GraphIcon}
+                height={16}
+                width={16}
+                alt="LangGraph Icon"
+              />
+              <span>Open in Studio</span>
+            </Button>
+          )}
         </div>
-        <p className="font-mono tracking-tighter bg-gray-100 text-xs p-1 rounded-md">
+        <p className="font-mono bg-gray-100 text-xs px-2 py-1 rounded-md">
           {threadId}
         </p>
       </div>
