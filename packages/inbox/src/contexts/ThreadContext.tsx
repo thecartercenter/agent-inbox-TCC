@@ -1,4 +1,8 @@
-import { HumanResponse, ThreadInterruptData } from "@/components/v2/types";
+import {
+  HumanResponse,
+  ThreadDataV2,
+  ThreadInterruptData,
+} from "@/components/v2/types";
 import { HumanInterrupt } from "@/components/v2/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
@@ -16,6 +20,7 @@ type ThreadContentType<
 > = {
   loading: boolean;
   threadInterrupts: ThreadInterruptData<ThreadValues>[];
+  threadData: ThreadDataV2<ThreadValues>[];
   ignoreThread: (threadId: string) => Promise<void>;
   updateState: (
     threadId: string,
@@ -23,6 +28,7 @@ type ThreadContentType<
     asNode?: string
   ) => Promise<void>;
   fetchThreads: () => Promise<void>;
+  fetchThreadsV2: () => Promise<void>;
   sendHumanResponse: <TStream extends boolean = false>(
     threadId: string,
     response: HumanResponse[],
@@ -47,6 +53,70 @@ export function ThreadsProvider<
   const [threadInterrupts, setThreadInterrupts] = useState<
     ThreadInterruptData<ThreadValues>[]
   >([]);
+  const [threadData, setThreadData] = useState<ThreadDataV2<ThreadValues>[]>(
+    []
+  );
+
+  const fetchThreadsV2 = useCallback(async () => {
+    const client = createClient();
+    const [interrupts, ...rest] = await Promise.all([
+      client.threads.search({
+        limit: 25,
+        status: "interrupted",
+      }),
+      client.threads.search({
+        limit: 25,
+        status: "idle",
+      }),
+      client.threads.search({
+        limit: 25,
+        status: "busy",
+      }),
+      client.threads.search({
+        limit: 25,
+        status: "error",
+      }),
+    ]);
+
+    const interruptedStates = await bulkGetThreadStates(
+      interrupts.map((t) => t.thread_id)
+    );
+
+    // Push interrupted data first, then the other states
+    const data: ThreadDataV2<ThreadValues>[] = interruptedStates.flatMap(
+      (state) => {
+        const lastTask =
+          state.thread_state.tasks[state.thread_state.tasks.length - 1];
+        const lastInterrupt =
+          lastTask.interrupts[lastTask.interrupts.length - 1];
+        const thread = interrupts.find((t) => t.thread_id === state.thread_id);
+        if (!thread) {
+          throw new Error(`Thread not found: ${state.thread_id}`);
+        }
+
+        if (!lastInterrupt || !("value" in lastInterrupt)) {
+          return [];
+        }
+
+        return {
+          status: "interrupted",
+          thread: thread as Thread<ThreadValues>,
+          interrupts: lastInterrupt.value as HumanInterrupt[],
+        };
+      }
+    );
+
+    rest.forEach((threads) => {
+      data.push(
+        ...threads.map((t) => ({
+          status: t.status as "idle" | "busy" | "error",
+          thread: t as Thread<ThreadValues>,
+        }))
+      );
+    });
+
+    setThreadData(data);
+  }, []);
 
   const fetchThreads = useCallback(async () => {
     setLoading(true);
@@ -219,6 +289,8 @@ export function ThreadsProvider<
   const contextValue: ThreadContentType = {
     loading,
     threadInterrupts,
+    threadData,
+    fetchThreadsV2,
     ignoreThread,
     updateState,
     fetchThreads,

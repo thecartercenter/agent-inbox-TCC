@@ -247,14 +247,15 @@ export function StateViewObject(props: StateViewProps) {
 export function StateView() {
   const { searchParams, updateQueryParam } = useQueryParams();
   const [expanded, setExpanded] = useState(false);
-  const { threadInterrupts } = useThreadsContext();
+  const { threadData } = useThreadsContext();
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
   const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
 
   const threadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
-  const threadValues = threadInterrupts.find((t) => t.thread_id === threadId)
-    ?.thread?.values;
+  const threadValues = threadData.find(
+    ({ thread }) => thread.thread_id === threadId
+  )?.thread?.values;
 
   if (!threadValues || !threadId) {
     return null;
