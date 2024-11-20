@@ -34,7 +34,6 @@ export function InboxItem<
   }
 
   if (inbox !== "interrupted" && threadData.status !== "interrupted") {
-    console.log("inbox and status not interrupted", threadData);
     return <GenericInboxItem threadData={threadData} />;
   }
 

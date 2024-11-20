@@ -27,6 +27,7 @@ export function Inbox<
     inboxStatus: ThreadStatus | "all"
   ) => {
     if (!selectedThreadId) return false;
+    if (inboxStatus === "all") return false;
     return !threads.find(
       (t) => t.thread.thread_id === selectedThreadId && t.status === inboxStatus
     );
