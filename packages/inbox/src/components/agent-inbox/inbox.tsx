@@ -5,6 +5,7 @@ import { StateView } from "./components/state-view";
 import React from "react";
 import { useQueryParams } from "./hooks/use-query-params";
 import {
+  INBOX_PARAM,
   LIMIT_PARAM,
   OFFSET_PARAM,
   VIEW_STATE_THREAD_QUERY_PARAM,
@@ -43,13 +44,12 @@ export function Inbox<
   React.useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const currentInbox = getSearchParam("inbox") as
+    const currentInbox = getSearchParam(INBOX_PARAM) as
       | ThreadStatusWithAll
       | undefined;
     if (!currentInbox) {
-      console.log("updating to", selectedInbox);
       // Set default inbox if none selected
-      updateQueryParams("inbox", selectedInbox);
+      updateQueryParams(INBOX_PARAM, selectedInbox);
     } else {
       setSelectedInbox(currentInbox);
     }
@@ -66,7 +66,10 @@ export function Inbox<
   }, [searchParams]);
 
   const changeInbox = async (inbox: ThreadStatusWithAll) => {
-    updateQueryParams(["inbox", OFFSET_PARAM, LIMIT_PARAM], [inbox, "0", "10"]);
+    updateQueryParams(
+      [INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM],
+      [inbox, "0", "10"]
+    );
     setSelectedInbox(inbox);
   };
 
@@ -89,7 +92,7 @@ export function Inbox<
   const noThreadsFound = !threadDataToRender.length;
 
   return (
-    <div className="w-full h-full py-10 px-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+    <div className="w-full h-full pb-10 pt-2 px-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
       <div
         className={cn(
           "flex items-center justify-between pt-6",

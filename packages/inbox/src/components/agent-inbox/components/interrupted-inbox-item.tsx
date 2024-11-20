@@ -8,7 +8,7 @@ import { prettifyText } from "../utils";
 import { InboxItemStatuses } from "./statuses";
 import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { InboxItemInput } from "./inbox-item-input";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
 import { LoaderCircle } from "lucide-react";
 import { ThreadIdTooltip } from "./thread-id";
@@ -225,7 +225,7 @@ export function InterruptedInboxItem<
       });
       return;
     }
-    const selectedInbox = getSearchParam("inbox") as
+    const selectedInbox = getSearchParam(INBOX_PARAM) as
       | ThreadStatusWithAll
       | undefined;
     if (!selectedInbox) {
@@ -325,11 +325,12 @@ export function InterruptedInboxItem<
       }}
       className={cn(
         "flex flex-col gap-6 items-start justify-start",
+        "transition-all ease-in-out",
         "rounded-xl border-[1px] ",
-        "p-6 min-h-[50px]",
-        active ? "border-gray-200 shadow-md" : "border-gray-200/75",
+        "p-6 min-h-[50px] border-gray-200",
         !active && "cursor-pointer",
-        isStateViewOpen ? "max-w-[60%] w-full" : "w-full"
+        isStateViewOpen ? "max-w-[60%] w-full" : "w-full",
+        isCurrentThreadStateView && "border-gray-300 shadow-md"
       )}
     >
       <motion.span
@@ -358,7 +359,7 @@ export function InterruptedInboxItem<
           )}
         </div>
 
-        {descriptionPreview && (
+        {descriptionPreview && !active && (
           <p className="text-sm text-gray-500 mr-auto flex gap-1">
             <strong>Agent Response: </strong>
             <Markdown remarkPlugins={[remarkGfm]}>

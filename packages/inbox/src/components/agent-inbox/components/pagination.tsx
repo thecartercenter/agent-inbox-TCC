@@ -13,7 +13,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQueryParams } from "../hooks/use-query-params";
 import { ThreadStatusWithAll } from "../types";
 import { useToast } from "@/hooks/use-toast";
-import { LIMIT_PARAM, OFFSET_PARAM } from "../constants";
+import { INBOX_PARAM, LIMIT_PARAM, OFFSET_PARAM } from "../constants";
 
 function DisplayLimitSelect() {
   const { getSearchParam, updateQueryParams } = useQueryParams();
@@ -49,17 +49,14 @@ function DisplayLimitSelect() {
 export function Pagination() {
   const { getSearchParam, updateQueryParams } = useQueryParams();
   const { toast } = useToast();
-  const selectedInbox = getSearchParam("inbox") as
-    | ThreadStatusWithAll
-    | undefined;
-  const showDisplayLimitSelect = selectedInbox !== "all";
   const { hasMoreThreads, loading } = useThreadsContext();
+
   const isPreviousDisabled =
     Number(getSearchParam(OFFSET_PARAM) || 0) === 0 || loading;
   const isNextDisabled = !hasMoreThreads || loading;
 
   const handleClickNext = async () => {
-    const selectedInbox = getSearchParam("inbox") as
+    const selectedInbox = getSearchParam(INBOX_PARAM) as
       | ThreadStatusWithAll
       | undefined;
     if (!selectedInbox) {
@@ -79,7 +76,7 @@ export function Pagination() {
   };
 
   const handleClickPrevious = async () => {
-    const selectedInbox = getSearchParam("inbox") as
+    const selectedInbox = getSearchParam(INBOX_PARAM) as
       | ThreadStatusWithAll
       | undefined;
     if (!selectedInbox) {
@@ -100,7 +97,7 @@ export function Pagination() {
 
   return (
     <div className="flex gap-2 items-center">
-      {showDisplayLimitSelect && <DisplayLimitSelect />}
+      <DisplayLimitSelect />
       <div className="flex gap-1 items-center">
         <Button
           size="sm"

@@ -52,9 +52,6 @@ export function InboxItemInput({
           })}
         </div>
       )}
-      {interruptValue.description && (
-        <p className="text-sm font-medium">{interruptValue.description}</p>
-      )}
       <div className="flex flex-col gap-2 items-start w-full">
         {humanResponse.map((response, idx) => (
           <div

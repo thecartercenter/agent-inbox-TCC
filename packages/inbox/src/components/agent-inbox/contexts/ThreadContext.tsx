@@ -16,7 +16,7 @@ import {
   useState,
 } from "react";
 import { useQueryParams } from "../hooks/use-query-params";
-import { LIMIT_PARAM, OFFSET_PARAM } from "../constants";
+import { INBOX_PARAM, LIMIT_PARAM, OFFSET_PARAM } from "../constants";
 
 type ThreadContentType<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -55,7 +55,7 @@ export function ThreadsProvider<
     if (typeof window === "undefined") {
       return;
     }
-    const inboxSearchParam = getSearchParam("inbox") as ThreadStatusWithAll;
+    const inboxSearchParam = getSearchParam(INBOX_PARAM) as ThreadStatusWithAll;
     if (!inboxSearchParam) {
       return;
     }
