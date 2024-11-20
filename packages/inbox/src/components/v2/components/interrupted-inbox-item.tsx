@@ -13,6 +13,8 @@ import { useQueryParams } from "../hooks/use-query-params";
 import { LoaderCircle } from "lucide-react";
 import { ThreadIdTooltip } from "./thread-id-tooltip";
 import { Thread } from "@langchain/langgraph-sdk";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface InboxItemFooterProps {
   handleToggleViewState: () => void;
@@ -138,6 +140,8 @@ export function InterruptedInboxItem<
 
   const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
+  const isCurrentThreadStateView =
+    threadIdQueryParam === threadData.thread.thread_id;
 
   const [active, setActive] = React.useState(false);
   const [humanResponse, setHumanResponse] = React.useState<HumanResponse[]>([]);
@@ -332,13 +336,17 @@ export function InterruptedInboxItem<
             </p>
             <ThreadIdTooltip threadId={threadData.thread.thread_id} />
           </div>
-          <InboxItemStatuses config={threadData.interrupts[0].config} />
+          {!isCurrentThreadStateView && !active && (
+            <InboxItemStatuses config={threadData.interrupts[0].config} />
+          )}
         </div>
 
         {threadData.interrupts[0].description && (
-          <p className="text-sm text-gray-500 mr-auto">
+          <p className="text-sm text-gray-500 mr-auto flex gap-1">
             <strong>Agent Response: </strong>
-            {threadData.interrupts[0].description}
+            <Markdown remarkPlugins={[remarkGfm]}>
+              {threadData.interrupts[0].description}
+            </Markdown>
           </p>
         )}
       </motion.span>
@@ -356,19 +364,16 @@ export function InterruptedInboxItem<
               {threadData.interrupts.map((value, idx) => (
                 <InboxItemInput
                   key={`inbox-item-input-${idx}`}
-                  actionColor={actionColor}
-                  actionLetter={actionLetter}
                   interruptValue={value}
                 />
               ))}
             </div> */}
             <div className="flex flex-col gap-4 items-start w-full">
               <InboxItemInput
-                actionColor={actionColor}
-                actionLetter={actionLetter}
                 interruptValue={threadData.interrupts[0]}
                 humanResponse={humanResponse}
                 setHumanResponse={setHumanResponse}
+                streaming={streaming}
               />
             </div>
             <InboxItemFooter

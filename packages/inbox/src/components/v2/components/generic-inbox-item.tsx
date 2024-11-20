@@ -24,6 +24,8 @@ export function GenericInboxItem<
   const [active, setActive] = React.useState(false);
   const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
+  const isCurrentThreadStateView =
+    threadIdQueryParam === threadData.thread.thread_id;
 
   React.useEffect(() => {
     if (threadIdQueryParam === threadData.thread.thread_id && !active) {
@@ -89,7 +91,9 @@ export function GenericInboxItem<
           <p className="font-semibold">Add some title here</p>
           <ThreadIdTooltip threadId={threadData.thread.thread_id} />
         </div>
-        <ThreadStatusBadge status={threadData.status} />
+        {!isCurrentThreadStateView && (
+          <ThreadStatusBadge status={threadData.status} />
+        )}
       </div>
     </div>
   );
