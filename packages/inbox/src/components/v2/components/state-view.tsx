@@ -25,6 +25,8 @@ import NextImage from "next/image";
 import GraphIcon from "@/components/icons/GraphIcon.svg";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useToast } from "@/hooks/use-toast";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -68,7 +70,11 @@ function MessagesRenderer({ messages }: { messages: BaseMessage[] }) {
             className="flex flex-col gap-[2px] ml-2 w-full"
           >
             <p className="font-medium text-gray-700">{messageTypeLabel}:</p>
-            {content && <p className="text-gray-600">{content}</p>}
+            {content && (
+              <Markdown className="text-gray-600" remarkPlugins={[remarkGfm]}>
+                {content}
+              </Markdown>
+            )}
             {"tool_calls" in msg && msg.tool_calls ? (
               <div className="flex flex-col gap-1 items-start w-full">
                 {(msg.tool_calls as ToolCall[]).map((tc, idx) => (
@@ -94,17 +100,23 @@ function StateViewRecursive(props: StateViewRecursiveProps) {
 
   if (["string", "number"].includes(typeof props.value)) {
     return (
-      <p className="font-light text-gray-600 whitespace-pre-wrap">
-        {props.value as string | number}
-      </p>
+      <Markdown
+        className="font-light text-gray-600"
+        remarkPlugins={[remarkGfm]}
+      >
+        {props.value as string}
+      </Markdown>
     );
   }
 
   if (typeof props.value === "boolean") {
     return (
-      <p className="font-light text-gray-600 whitespace-pre-wrap">
+      <Markdown
+        className="font-light text-gray-600"
+        remarkPlugins={[remarkGfm]}
+      >
         {JSON.stringify(props.value)}
-      </p>
+      </Markdown>
     );
   }
 
@@ -247,20 +259,21 @@ export function StateViewObject(props: StateViewProps) {
 export function StateView() {
   const { searchParams, updateQueryParam } = useQueryParams();
   const [expanded, setExpanded] = useState(false);
-  const { threadInterrupts } = useThreadsContext();
+  const { threadData } = useThreadsContext();
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
+  const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
 
   const threadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
-  const threadValues = threadInterrupts.find((t) => t.thread_id === threadId)
-    ?.thread?.values;
+  const threadValues = threadData.find(
+    ({ thread }) => thread.thread_id === threadId
+  )?.thread?.values;
 
   if (!threadValues || !threadId) {
     return null;
   }
 
   const handleOpenInStudio = () => {
-    const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
     if (!deploymentUrl) {
       toast({
         title: "Error",
@@ -275,23 +288,32 @@ export function StateView() {
   };
 
   return (
-    <div className="fixed top-0 right-0 w-1/2 h-screen overflow-y-auto border-l-[1px]">
-      <div className="flex pl-6 pt-16 gap-3 items-center">
-        <TighterText className="font-medium text-3xl">Thread State</TighterText>
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex items-center gap-1"
-          onClick={handleOpenInStudio}
-        >
-          <NextImage
-            src={GraphIcon}
-            height={16}
-            width={16}
-            alt="LangGraph Icon"
-          />
-          <span>Open in Studio</span>
-        </Button>
+    <div className="fixed top-0 right-0 w-[40%] h-screen overflow-y-auto border-l-[1px] pl-6">
+      <div className="flex flex-col pt-16 gap-3 items-start">
+        <div className="flex gap-3 items-center">
+          <TighterText className="font-medium text-3xl">
+            Thread State
+          </TighterText>
+          {deploymentUrl && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={handleOpenInStudio}
+            >
+              <NextImage
+                src={GraphIcon}
+                height={16}
+                width={16}
+                alt="LangGraph Icon"
+              />
+              <span>Open in Studio</span>
+            </Button>
+          )}
+        </div>
+        <p className="font-mono bg-gray-100 text-xs px-2 py-1 rounded-md">
+          {threadId}
+        </p>
       </div>
       <div className="flex gap-2 items-center justify-center fixed right-4 top-4">
         <Button
@@ -315,7 +337,7 @@ export function StateView() {
           <X className="w-4 h-4" />
         </Button>
       </div>
-      <div className="flex flex-col gap-1 pl-6 pt-6 pr-2 pb-2 w-full">
+      <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
         {Object.entries(threadValues).map(([k, v], idx) => (
           <StateViewObject
             expanded={expanded}

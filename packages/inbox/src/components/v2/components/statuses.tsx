@@ -52,3 +52,38 @@ export function InboxItemStatuses({
     </div>
   );
 }
+
+export function ThreadStatusBadge({
+  status,
+}: {
+  status: "idle" | "busy" | "error";
+}) {
+  const colorMap = {
+    idle: {
+      bg: "rgb(75 85 99)",
+      shadow: "rgb(75 85 99, 0.6)",
+    },
+    busy: {
+      bg: "rgb(234 179 8)",
+      shadow: "rgba(234 179 8, 0.6)",
+    },
+    error: {
+      bg: "rgb(180 83 9)",
+      shadow: "rgb(180 83 9, 0.6)",
+    },
+  };
+  const statusColor = colorMap[status];
+
+  return (
+    <div className="flex items-center justify-end  gap-1 rounded-lg border-[1px] border-gray-200 px-2 py-1 min-w-fit">
+      <div
+        className="w-2 h-2 rounded-full animate-[glow_2s_ease-in-out_infinite]"
+        style={{
+          background: statusColor.bg,
+          boxShadow: statusColor.shadow,
+        }}
+      />
+      <p className="text-gray-500 text-xs">{prettifyText(status)}</p>
+    </div>
+  );
+}

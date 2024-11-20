@@ -45,11 +45,17 @@ export interface ThreadValues {
   };
 }
 
-export interface ThreadInterruptData<
+export type ThreadData<
   ThreadValues extends Record<string, any> = Record<string, any>,
-> {
-  thread_id: string;
-  interrupt_value: HumanInterrupt[];
-  next: string[];
+> = {
   thread: Thread<ThreadValues>;
-}
+} & (
+  | {
+      status: "interrupted";
+      interrupts: HumanInterrupt[];
+    }
+  | {
+      status: "idle" | "busy" | "error";
+      interrupts?: never;
+    }
+);
