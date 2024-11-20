@@ -1,10 +1,5 @@
 import { cn } from "@/lib/utils";
-import {
-  HumanInterrupt,
-  HumanResponse,
-  ThreadDataV2,
-  ThreadInterruptData,
-} from "../types";
+import { HumanInterrupt, HumanResponse } from "../types";
 import React, { useEffect } from "react";
 import { Button } from "../../ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +12,7 @@ import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
 import { LoaderCircle } from "lucide-react";
 import { ThreadIdTooltip } from "./thread-id-tooltip";
-import { Thread, ThreadStatus } from "@langchain/langgraph-sdk";
+import { Thread } from "@langchain/langgraph-sdk";
 
 interface InboxItemFooterProps {
   handleToggleViewState: () => void;
@@ -132,8 +127,12 @@ interface InterruptedInboxItem<
 export function InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ threadData }: InterruptedInboxItem<ThreadValues>) {
-  const { ignoreThread, sendHumanResponse, fetchThreads, threadInterrupts } =
-    useThreadsContext<ThreadValues>();
+  const {
+    ignoreThread,
+    sendHumanResponse,
+    fetchThreads,
+    threadData: threadDataState,
+  } = useThreadsContext<ThreadValues>();
   const { toast } = useToast();
   const { searchParams, updateQueryParam } = useQueryParams();
 
@@ -207,7 +206,7 @@ export function InterruptedInboxItem<
     if (threadIdQueryParam === threadData.thread.thread_id && !active) {
       setActive(true);
     }
-  }, [searchParams, threadInterrupts]);
+  }, [searchParams, threadDataState]);
 
   const handleSubmit = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
