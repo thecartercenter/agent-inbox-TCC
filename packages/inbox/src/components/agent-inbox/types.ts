@@ -1,5 +1,5 @@
 import { BaseMessage } from "@langchain/core/messages";
-import { Thread } from "@langchain/langgraph-sdk";
+import { Thread, ThreadStatus } from "@langchain/langgraph-sdk";
 
 export interface HumanInterruptConfig {
   allow_ignore: boolean;
@@ -59,3 +59,5 @@ export type ThreadData<
       interrupts?: never;
     }
 );
+
+export type ThreadStatusWithAll = ThreadStatus | "all";

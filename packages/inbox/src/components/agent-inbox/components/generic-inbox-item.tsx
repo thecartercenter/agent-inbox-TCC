@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Thread } from "@langchain/langgraph-sdk";
 import React from "react";
-import { ThreadIdCopyable, ThreadIdTooltip } from "./thread-id";
+import { ThreadIdCopyable } from "./thread-id";
 import { ThreadStatusBadge } from "./statuses";
 import { useQueryParams } from "../hooks/use-query-params";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
@@ -19,9 +19,9 @@ interface GenericInboxItemProps<
 export function GenericInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ threadData }: GenericInboxItemProps<ThreadValues>) {
-  const { searchParams, updateQueryParam } = useQueryParams();
+  const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
   const [active, setActive] = React.useState(false);
-  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadIdQueryParam = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
   const isCurrentThreadStateView =
     threadIdQueryParam === threadData.thread.thread_id;
@@ -35,7 +35,7 @@ export function GenericInboxItem<
   }, [searchParams, threadData]);
 
   const handleToggleViewState = () => {
-    updateQueryParam(
+    updateQueryParams(
       VIEW_STATE_THREAD_QUERY_PARAM,
       threadData.thread.thread_id
     );

@@ -1,4 +1,4 @@
-import { LANGGRAPH_API_URL } from "../../../constants";
+import { LANGGRAPH_API_URL } from "@/components/agent-inbox/constants";
 import { NextRequest, NextResponse } from "next/server";
 
 function getCorsHeaders() {

@@ -258,17 +258,25 @@ export function StateViewObject(props: StateViewProps) {
 }
 
 export function StateView() {
-  const { searchParams, updateQueryParam } = useQueryParams();
+  const { getSearchParam, updateQueryParams } = useQueryParams();
   const [expanded, setExpanded] = useState(false);
   const { threadData } = useThreadsContext();
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
   const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
 
-  const threadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadId = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
   const threadValues = threadData.find(
     ({ thread }) => thread.thread_id === threadId
   )?.thread?.values;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!threadValues || !threadId) {
+      updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+    }
+  }, [threadValues, threadId]);
 
   if (!threadValues || !threadId) {
     return null;
@@ -328,7 +336,7 @@ export function StateView() {
           )}
         </Button>
         <Button
-          onClick={() => updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM)}
+          onClick={() => updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM)}
           variant="ghost"
           className="text-gray-600"
           size="sm"
