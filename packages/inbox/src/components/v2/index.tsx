@@ -10,6 +10,7 @@ import { TighterText } from "../ui/header";
 import { SettingsPopover } from "./components/settings-popover";
 import { PillButton } from "../ui/pill-button";
 import { ThreadData } from "./types";
+import { cn } from "@/lib/utils";
 
 export function Inbox<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -20,6 +21,9 @@ export function Inbox<
   const [selectedInbox, setSelectedInbox] = React.useState<
     ThreadStatus | "all"
   >("interrupted");
+
+  const selectedThreadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+  const isStateViewOpen = !!selectedThreadId;
 
   const shouldClearSelectedThread = (
     selectedThreadId: string | null,
@@ -37,8 +41,6 @@ export function Inbox<
     if (typeof window === "undefined") return;
 
     const currentInbox = searchParams.get("inbox") as ThreadStatus | null;
-    const selectedThreadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
-
     if (!currentInbox) {
       // Set default inbox if none selected
       updateQueryParam("inbox", selectedInbox);
@@ -70,7 +72,12 @@ export function Inbox<
 
   return (
     <div className="w-full max-h-screen py-10 px-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-      <div className="flex items-center justify-between pt-6 pr-20 w-1/2">
+      <div
+        className={cn(
+          "flex items-center justify-between pt-6",
+          isStateViewOpen ? "max-w-[60%] w-full" : "w-full"
+        )}
+      >
         <TighterText className="text-3xl font-medium">Inbox</TighterText>
         <SettingsPopover />
       </div>

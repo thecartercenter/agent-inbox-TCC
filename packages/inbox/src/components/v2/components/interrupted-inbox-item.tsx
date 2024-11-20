@@ -136,6 +136,9 @@ export function InterruptedInboxItem<
   const { toast } = useToast();
   const { searchParams, updateQueryParam } = useQueryParams();
 
+  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+  const isStateViewOpen = !!threadIdQueryParam;
+
   const [active, setActive] = React.useState(false);
   const [humanResponse, setHumanResponse] = React.useState<HumanResponse[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -202,7 +205,6 @@ export function InterruptedInboxItem<
 
   useEffect(() => {
     if (active) return;
-    const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
     if (threadIdQueryParam === threadData.thread.thread_id && !active) {
       setActive(true);
     }
@@ -306,7 +308,7 @@ export function InterruptedInboxItem<
         "p-6 min-h-[50px]",
         active ? "border-gray-200 shadow-md" : "border-gray-200/75",
         !active && "cursor-pointer",
-        "max-w-[45%] w-full"
+        isStateViewOpen ? "max-w-[60%] w-full" : "w-full"
       )}
     >
       <motion.span

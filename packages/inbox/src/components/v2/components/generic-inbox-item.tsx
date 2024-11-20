@@ -22,9 +22,10 @@ export function GenericInboxItem<
 >({ threadData }: GenericInboxItemProps<ThreadValues>) {
   const { searchParams, updateQueryParam } = useQueryParams();
   const [active, setActive] = React.useState(false);
+  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+  const isStateViewOpen = !!threadIdQueryParam;
 
   React.useEffect(() => {
-    const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
     if (threadIdQueryParam === threadData.thread.thread_id && !active) {
       setActive(true);
     } else if (threadIdQueryParam !== threadData.thread.thread_id && active) {
@@ -70,7 +71,7 @@ export function GenericInboxItem<
         "p-6 min-h-[50px]",
         active ? "border-gray-200 shadow-md" : "border-gray-200/75",
         !active && "cursor-pointer",
-        "max-w-[45%] w-full"
+        isStateViewOpen ? "max-w-[60%] w-full" : "w-full"
       )}
     >
       <div className="flex items-center justify-between w-full">

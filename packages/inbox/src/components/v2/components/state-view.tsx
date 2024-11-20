@@ -25,6 +25,8 @@ import NextImage from "next/image";
 import GraphIcon from "@/components/icons/GraphIcon.svg";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useToast } from "@/hooks/use-toast";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -68,7 +70,11 @@ function MessagesRenderer({ messages }: { messages: BaseMessage[] }) {
             className="flex flex-col gap-[2px] ml-2 w-full"
           >
             <p className="font-medium text-gray-700">{messageTypeLabel}:</p>
-            {content && <p className="text-gray-600">{content}</p>}
+            {content && (
+              <Markdown className="text-gray-600" remarkPlugins={[remarkGfm]}>
+                {content}
+              </Markdown>
+            )}
             {"tool_calls" in msg && msg.tool_calls ? (
               <div className="flex flex-col gap-1 items-start w-full">
                 {(msg.tool_calls as ToolCall[]).map((tc, idx) => (
@@ -94,17 +100,23 @@ function StateViewRecursive(props: StateViewRecursiveProps) {
 
   if (["string", "number"].includes(typeof props.value)) {
     return (
-      <p className="font-light text-gray-600 whitespace-pre-wrap">
-        {props.value as string | number}
-      </p>
+      <Markdown
+        className="font-light text-gray-600"
+        remarkPlugins={[remarkGfm]}
+      >
+        {props.value as string}
+      </Markdown>
     );
   }
 
   if (typeof props.value === "boolean") {
     return (
-      <p className="font-light text-gray-600 whitespace-pre-wrap">
+      <Markdown
+        className="font-light text-gray-600"
+        remarkPlugins={[remarkGfm]}
+      >
         {JSON.stringify(props.value)}
-      </p>
+      </Markdown>
     );
   }
 
@@ -276,8 +288,8 @@ export function StateView() {
   };
 
   return (
-    <div className="fixed top-0 right-0 w-1/2 h-screen overflow-y-auto border-l-[1px]">
-      <div className="flex flex-col pl-6 pt-16 gap-3 items-start">
+    <div className="fixed top-0 right-0 w-[40%] h-screen overflow-y-auto border-l-[1px] pl-6">
+      <div className="flex flex-col pt-16 gap-3 items-start">
         <div className="flex gap-3 items-center">
           <TighterText className="font-medium text-3xl">
             Thread State
@@ -325,7 +337,7 @@ export function StateView() {
           <X className="w-4 h-4" />
         </Button>
       </div>
-      <div className="flex flex-col gap-1 pl-6 pt-6 pr-2 pb-2 w-full">
+      <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
         {Object.entries(threadValues).map(([k, v], idx) => (
           <StateViewObject
             expanded={expanded}
