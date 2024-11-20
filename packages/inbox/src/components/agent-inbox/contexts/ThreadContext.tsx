@@ -1,5 +1,5 @@
-import { HumanResponse, ThreadData } from "@/components/v2/types";
-import { HumanInterrupt } from "@/components/v2/types";
+import { HumanResponse, ThreadData } from "@/components/agent-inbox/types";
+import { HumanInterrupt } from "@/components/agent-inbox/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
 import { Run, Thread, ThreadState } from "@langchain/langgraph-sdk";

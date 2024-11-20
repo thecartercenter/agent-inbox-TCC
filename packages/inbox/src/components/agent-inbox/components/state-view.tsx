@@ -13,7 +13,7 @@ import { BaseMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
 import React from "react";
 import { Button } from "../../ui/button";
-import { useThreadsContext } from "@/contexts/ThreadContext";
+import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { TighterText } from "../../ui/header";
 import { ToolCallTable } from "./tool-call-table";
 import { useQueryParams } from "../hooks/use-query-params";
@@ -27,6 +27,7 @@ import { useLocalStorage } from "../hooks/use-local-storage";
 import { useToast } from "@/hooks/use-toast";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ThreadIdCopyable } from "./thread-id";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -311,9 +312,7 @@ export function StateView() {
             </Button>
           )}
         </div>
-        <p className="font-mono bg-gray-100 text-xs px-2 py-1 rounded-md">
-          {threadId}
-        </p>
+        <ThreadIdCopyable threadId={threadId} />
       </div>
       <div className="flex gap-2 items-center justify-center fixed right-4 top-4">
         <Button

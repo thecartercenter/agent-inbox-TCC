@@ -1,4 +1,4 @@
-import { useThreadsContext } from "@/contexts/ThreadContext";
+import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { useEffect } from "react";
 import { InboxItem } from "./components/inbox-item";
 import { StateView } from "./components/state-view";
@@ -125,9 +125,6 @@ export function Inbox<
                 <InboxItem<ThreadValues>
                   key={`inbox-item-${idx}`}
                   threadData={threadData}
-                  // threadContextRenderer={
-                  //   <EmailRenderer values={interruptData.thread.values.email} />
-                  // }
                 />
               );
             })}

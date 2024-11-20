@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Thread } from "@langchain/langgraph-sdk";
 import React from "react";
-import { ThreadIdTooltip } from "./thread-id-tooltip";
+import { ThreadIdCopyable, ThreadIdTooltip } from "./thread-id";
 import { ThreadStatusBadge } from "./statuses";
 import { useQueryParams } from "../hooks/use-query-params";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
@@ -14,7 +14,6 @@ interface GenericInboxItemProps<
     status: "idle" | "busy" | "error";
     interrupts?: never;
   };
-  threadContextRenderer?: React.ReactNode;
 }
 
 export function GenericInboxItem<
@@ -88,8 +87,8 @@ export function GenericInboxItem<
           >
             {actionLetter}
           </div>
-          <p className="font-semibold">Add some title here</p>
-          <ThreadIdTooltip threadId={threadData.thread.thread_id} />
+          <p>Thread ID:</p>
+          <ThreadIdCopyable threadId={threadData.thread.thread_id} />
         </div>
         {!isCurrentThreadStateView && (
           <ThreadStatusBadge status={threadData.status} />

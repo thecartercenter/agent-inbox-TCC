@@ -9,7 +9,6 @@ interface InboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
   threadData: ThreadData<ThreadValues>;
-  threadContextRenderer?: React.ReactNode;
 }
 
 export function InboxItem<

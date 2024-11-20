@@ -6,12 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { prettifyText } from "../utils";
 import { InboxItemStatuses } from "./statuses";
-import { useThreadsContext } from "@/contexts/ThreadContext";
+import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { InboxItemInput } from "./inbox-item-input";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
 import { LoaderCircle } from "lucide-react";
-import { ThreadIdTooltip } from "./thread-id-tooltip";
+import { ThreadIdTooltip } from "./thread-id";
 import { Thread } from "@langchain/langgraph-sdk";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -123,7 +123,6 @@ interface InterruptedInboxItem<
     status: "interrupted";
     interrupts: HumanInterrupt[];
   };
-  threadContextRenderer?: React.ReactNode;
 }
 
 export function InterruptedInboxItem<
