@@ -13,8 +13,7 @@ import { BaseMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
 import React from "react";
 import { Button } from "../../ui/button";
-import { useThreadsContext } from "@/contexts/ThreadContext";
-import { TighterText } from "../../ui/header";
+import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { ToolCallTable } from "./tool-call-table";
 import { useQueryParams } from "../hooks/use-query-params";
 import {
@@ -27,6 +26,8 @@ import { useLocalStorage } from "../hooks/use-local-storage";
 import { useToast } from "@/hooks/use-toast";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ThreadIdCopyable } from "./thread-id";
+import { PillButton } from "@/components/ui/pill-button";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -256,18 +257,49 @@ export function StateViewObject(props: StateViewProps) {
   );
 }
 
+const dummyMarkdown = `Subject: Request for Guidance
+
+Dear Professor Craig,
+
+I hope this message finds you well. I am reaching out to seek your guidance on [specific topic or question]. I have been working on [briefly explain your work or project], and I would appreciate your insights or any recommendations you might have.
+
+Thank you for your time, and I look forward to your response.
+
+Best regards,
+
+wdwdndnwan
+
+[this is a link](https://google.com)
+
+braceasproul@gmail.com
+
+[Your Name]\
+[Your Student ID]\
+[Your Course Name]\
+**[Your Contact Information]**
+`;
+
 export function StateView() {
-  const { searchParams, updateQueryParam } = useQueryParams();
+  const { getSearchParam, updateQueryParams } = useQueryParams();
   const [expanded, setExpanded] = useState(false);
   const { threadData } = useThreadsContext();
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
   const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
+  const [view, setView] = useState<"description" | "state">("description");
 
-  const threadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadId = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
   const threadValues = threadData.find(
     ({ thread }) => thread.thread_id === threadId
   )?.thread?.values;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!threadValues || !threadId) {
+      updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+    }
+  }, [threadValues, threadId]);
 
   if (!threadValues || !threadId) {
     return null;
@@ -289,11 +321,20 @@ export function StateView() {
 
   return (
     <div className="fixed top-0 right-0 w-[40%] h-screen overflow-y-auto border-l-[1px] pl-6">
-      <div className="flex flex-col pt-16 gap-3 items-start">
-        <div className="flex gap-3 items-center">
-          <TighterText className="font-medium text-3xl">
-            Thread State
-          </TighterText>
+      <div className="flex flex-col pt-8 gap-3 items-start">
+        <div className="flex flex-wrap gap-3 items-center w-full">
+          <PillButton
+            onClick={() => setView("description")}
+            variant={view === "description" ? "default" : "outline"}
+          >
+            Description
+          </PillButton>
+          <PillButton
+            onClick={() => setView("state")}
+            variant={view === "state" ? "default" : "outline"}
+          >
+            State
+          </PillButton>
           {deploymentUrl && (
             <Button
               size="sm"
@@ -311,25 +352,31 @@ export function StateView() {
             </Button>
           )}
         </div>
-        <p className="font-mono bg-gray-100 text-xs px-2 py-1 rounded-md">
-          {threadId}
-        </p>
+        <ThreadIdCopyable threadId={threadId} />
       </div>
-      <div className="flex gap-2 items-center justify-center fixed right-4 top-4">
+      {view === "description" && (
+        <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
+          <Markdown remarkPlugins={[remarkGfm]}>{dummyMarkdown}</Markdown>
+        </div>
+      )}
+      <div className="flex gap-2 items-center justify-center fixed right-4 top-8">
+        {view === "state" && (
+          <Button
+            onClick={() => setExpanded((prev) => !prev)}
+            variant="ghost"
+            className="text-gray-600"
+            size="sm"
+          >
+            {expanded ? (
+              <ChevronsUpDown className="w-4 h-4" />
+            ) : (
+              <ChevronsDownUp className="w-4 h-4" />
+            )}
+          </Button>
+        )}
+
         <Button
-          onClick={() => setExpanded((prev) => !prev)}
-          variant="ghost"
-          className="text-gray-600"
-          size="sm"
-        >
-          {expanded ? (
-            <ChevronsUpDown className="w-4 h-4" />
-          ) : (
-            <ChevronsDownUp className="w-4 h-4" />
-          )}
-        </Button>
-        <Button
-          onClick={() => updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM)}
+          onClick={() => updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM)}
           variant="ghost"
           className="text-gray-600"
           size="sm"
@@ -337,16 +384,18 @@ export function StateView() {
           <X className="w-4 h-4" />
         </Button>
       </div>
-      <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
-        {Object.entries(threadValues).map(([k, v], idx) => (
-          <StateViewObject
-            expanded={expanded}
-            key={`state-view-${k}-${idx}`}
-            keyName={k}
-            value={v}
-          />
-        ))}
-      </div>
+      {view === "state" && (
+        <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
+          {Object.entries(threadValues).map(([k, v], idx) => (
+            <StateViewObject
+              expanded={expanded}
+              key={`state-view-${k}-${idx}`}
+              keyName={k}
+              value={v}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { ToolCallTable } from "@/components/v2/components/tool-call-table";
+import { ToolCallTable } from "@/components/agent-inbox/components/tool-call-table";
 
 export default function Test() {
   return (

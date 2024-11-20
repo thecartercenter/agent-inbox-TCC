@@ -1,17 +1,17 @@
 import { cn } from "@/lib/utils";
-import { HumanInterrupt, HumanResponse } from "../types";
+import { HumanInterrupt, HumanResponse, ThreadStatusWithAll } from "../types";
 import React, { useEffect } from "react";
 import { Button } from "../../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { prettifyText } from "../utils";
 import { InboxItemStatuses } from "./statuses";
-import { useThreadsContext } from "@/contexts/ThreadContext";
+import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { InboxItemInput } from "./inbox-item-input";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
 import { LoaderCircle } from "lucide-react";
-import { ThreadIdTooltip } from "./thread-id-tooltip";
+import { ThreadIdTooltip } from "./thread-id";
 import { Thread } from "@langchain/langgraph-sdk";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -45,7 +45,7 @@ function InboxItemFooter({
   setActive,
   handleToggleViewState,
 }: InboxItemFooterProps) {
-  const { searchParams, updateQueryParam } = useQueryParams();
+  const { getSearchParam, updateQueryParams } = useQueryParams();
 
   return (
     <div className="flex items-center justify-between w-full">
@@ -85,11 +85,11 @@ function InboxItemFooter({
               disabled={loading}
               onClick={() => {
                 setActive(false);
-                const currQueryParamThreadId = searchParams.get(
+                const currQueryParamThreadId = getSearchParam(
                   VIEW_STATE_THREAD_QUERY_PARAM
                 );
                 if (currQueryParamThreadId === threadId) {
-                  updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM);
+                  updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
                 }
               }}
             >
@@ -123,7 +123,6 @@ interface InterruptedInboxItem<
     status: "interrupted";
     interrupts: HumanInterrupt[];
   };
-  threadContextRenderer?: React.ReactNode;
 }
 
 export function InterruptedInboxItem<
@@ -136,9 +135,9 @@ export function InterruptedInboxItem<
     threadData: threadDataState,
   } = useThreadsContext<ThreadValues>();
   const { toast } = useToast();
-  const { searchParams, updateQueryParam } = useQueryParams();
+  const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
 
-  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadIdQueryParam = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
   const isCurrentThreadStateView =
     threadIdQueryParam === threadData.thread.thread_id;
@@ -168,7 +167,7 @@ export function InterruptedInboxItem<
 
   const handleToggleViewState = () => {
     const threadId = threadData.thread.thread_id;
-    updateQueryParam(VIEW_STATE_THREAD_QUERY_PARAM, threadId);
+    updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM, threadId);
   };
 
   useEffect(() => {
@@ -226,6 +225,18 @@ export function InterruptedInboxItem<
       });
       return;
     }
+    const selectedInbox = getSearchParam(INBOX_PARAM) as
+      | ThreadStatusWithAll
+      | undefined;
+    if (!selectedInbox) {
+      toast({
+        title: "Error",
+        description: "No inbox selected",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
 
     setLoading(true);
 
@@ -272,7 +283,7 @@ export function InterruptedInboxItem<
       setCurrentNode("");
       setStreaming(false);
       // Fetch new threads so that the inbox item is updated.
-      await fetchThreads();
+      await fetchThreads(selectedInbox);
       setStreamFinished(false);
     } else {
       await sendHumanResponse(threadData.thread.thread_id, humanResponse);
@@ -297,6 +308,12 @@ export function InterruptedInboxItem<
     setLoading(true);
     setActive(false);
   };
+  const descriptionPreview =
+    threadData.interrupts[0].description &&
+    threadData.interrupts[0].description.slice(0, 75);
+  const descriptionTruncated =
+    threadData.interrupts[0].description &&
+    threadData.interrupts[0].description.length > 75;
 
   return (
     <div
@@ -308,11 +325,12 @@ export function InterruptedInboxItem<
       }}
       className={cn(
         "flex flex-col gap-6 items-start justify-start",
+        "transition-all ease-in-out",
         "rounded-xl border-[1px] ",
-        "p-6 min-h-[50px]",
-        active ? "border-gray-200 shadow-md" : "border-gray-200/75",
+        "p-6 min-h-[50px] border-gray-200",
         !active && "cursor-pointer",
-        isStateViewOpen ? "max-w-[60%] w-full" : "w-full"
+        isStateViewOpen ? "max-w-[60%] w-full" : "w-full",
+        isCurrentThreadStateView && "border-gray-300 shadow-md"
       )}
     >
       <motion.span
@@ -341,11 +359,11 @@ export function InterruptedInboxItem<
           )}
         </div>
 
-        {threadData.interrupts[0].description && (
+        {descriptionPreview && !active && (
           <p className="text-sm text-gray-500 mr-auto flex gap-1">
             <strong>Agent Response: </strong>
             <Markdown remarkPlugins={[remarkGfm]}>
-              {threadData.interrupts[0].description}
+              {`${descriptionPreview}${descriptionTruncated ? "..." : ""}`}
             </Markdown>
           </p>
         )}
@@ -359,15 +377,7 @@ export function InterruptedInboxItem<
             transition={{ duration: 0.2 }}
             className="flex flex-col gap-6 items-start w-full overflow-hidden"
           >
-            {/* TODO: HANDLE LIST OF INTERRUPT VALUES */}
-            {/* <div className="flex flex-col gap-4 items-start w-full">
-              {threadData.interrupts.map((value, idx) => (
-                <InboxItemInput
-                  key={`inbox-item-input-${idx}`}
-                  interruptValue={value}
-                />
-              ))}
-            </div> */}
+            {/* TODO: HANDLE ARRAY OF INTERRUPT VALUES */}
             <div className="flex flex-col gap-4 items-start w-full">
               <InboxItemInput
                 interruptValue={threadData.interrupts[0]}
