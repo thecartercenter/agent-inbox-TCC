@@ -300,7 +300,7 @@ export function StateView() {
   };
 
   return (
-    <div className="fixed top-0 right-0 w-[40%] h-screen overflow-y-auto border-l-[1px] pl-6">
+    <div className="fixed top-0 right-0 w-[40%] h-screen overflow-y-auto border-l-[1px] pl-6 bg-gray-50/10 shadow-inner-left">
       <div className="flex flex-col pt-8 gap-3 items-start">
         <div className="flex flex-wrap gap-3 items-center w-full">
           <PillButton
