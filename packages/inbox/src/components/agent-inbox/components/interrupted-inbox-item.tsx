@@ -84,13 +84,13 @@ function InboxItemFooter({
               variant="outline"
               disabled={loading}
               onClick={() => {
-                setActive(false);
                 const currQueryParamThreadId = getSearchParam(
                   VIEW_STATE_THREAD_QUERY_PARAM
                 );
                 if (currQueryParamThreadId === threadId) {
                   updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
                 }
+                setActive(false);
               }}
             >
               Close
@@ -207,8 +207,9 @@ export function InterruptedInboxItem<
   }, [threadData.interrupts]);
 
   useEffect(() => {
+    const threadIdParam = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
     if (active) return;
-    if (threadIdQueryParam === threadData.thread.thread_id && !active) {
+    if (threadIdParam === threadData.thread.thread_id && !active) {
       setActive(true);
     }
   }, [searchParams, threadDataState]);
