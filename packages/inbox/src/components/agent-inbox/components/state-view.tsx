@@ -257,28 +257,6 @@ export function StateViewObject(props: StateViewProps) {
   );
 }
 
-const dummyMarkdown = `Subject: Request for Guidance
-
-Dear Professor Craig,
-
-I hope this message finds you well. I am reaching out to seek your guidance on [specific topic or question]. I have been working on [briefly explain your work or project], and I would appreciate your insights or any recommendations you might have.
-
-Thank you for your time, and I look forward to your response.
-
-Best regards,
-
-wdwdndnwan
-
-[this is a link](https://google.com)
-
-braceasproul@gmail.com
-
-[Your Name]\
-[Your Student ID]\
-[Your Course Name]\
-**[Your Contact Information]**
-`;
-
 export function StateView() {
   const { getSearchParam, updateQueryParams } = useQueryParams();
   const [expanded, setExpanded] = useState(false);
@@ -292,6 +270,8 @@ export function StateView() {
   const threadValues = threadData.find(
     ({ thread }) => thread.thread_id === threadId
   )?.thread?.values;
+  const description = threadData.find((t) => t.thread.thread_id === threadId)
+    ?.interrupts?.[0].description;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -356,7 +336,9 @@ export function StateView() {
       </div>
       {view === "description" && (
         <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
-          <Markdown remarkPlugins={[remarkGfm]}>{dummyMarkdown}</Markdown>
+          <Markdown remarkPlugins={[remarkGfm]}>
+            {description || "No description provided"}
+          </Markdown>
         </div>
       )}
       <div className="flex gap-2 items-center justify-center fixed right-4 top-8">
