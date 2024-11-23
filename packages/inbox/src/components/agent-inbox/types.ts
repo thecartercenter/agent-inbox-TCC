@@ -24,7 +24,11 @@ export type HumanResponse = {
   args: null | string | ActionRequest;
 };
 
-export type HumanResponseWithEdits = HumanResponse & ({ acceptAllowed?: false, editsMade?: never } | { acceptAllowed?: true, editsMade?: boolean });
+export type HumanResponseWithEdits = HumanResponse &
+  (
+    | { acceptAllowed?: false; editsMade?: never }
+    | { acceptAllowed?: true; editsMade?: boolean }
+  );
 
 export type Email = {
   id: string;

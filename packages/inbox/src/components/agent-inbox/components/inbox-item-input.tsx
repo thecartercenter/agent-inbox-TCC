@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
-import { ActionRequest, HumanInterrupt, HumanResponseWithEdits } from "../types";
+import {
+  ActionRequest,
+  HumanInterrupt,
+  HumanResponseWithEdits,
+} from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import React from "react";
 import { prettifyText } from "../utils";
@@ -10,7 +14,9 @@ interface InboxItemInputProps {
   interruptValue: HumanInterrupt;
   humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
-  setHumanResponse: React.Dispatch<React.SetStateAction<HumanResponseWithEdits[]>>;
+  setHumanResponse: React.Dispatch<
+    React.SetStateAction<HumanResponseWithEdits[]>
+  >;
 }
 
 export function InboxItemInput({
@@ -84,7 +90,9 @@ export function InboxItemInput({
                       className="flex flex-col gap-1 items-start w-full h-full"
                       key={`allow-edit-args--${k}-${idx}`}
                     >
-                      <p className="text-sm min-w-fit font-medium">{prettifyText(k)}: </p>
+                      <p className="text-sm min-w-fit font-medium">
+                        {prettifyText(k)}:{" "}
+                      </p>
                       <Textarea
                         disabled={streaming}
                         className="h-full"
@@ -134,7 +142,7 @@ export function InboxItemInput({
                                       ...newEdit,
                                       acceptAllowed: true,
                                       editsMade: true,
-                                    }
+                                    };
                                   }
 
                                   return newEdit;
@@ -174,14 +182,16 @@ export function InboxItemInput({
                                 ...newResponse,
                                 acceptAllowed: true,
                                 editsMade: true,
-                              }
+                              };
                             }
                             return newResponse;
                           }
                           return p;
                         });
                       } else {
-                        throw new Error("No human response found for string response");
+                        throw new Error(
+                          "No human response found for string response"
+                        );
                       }
                     });
                   }}
