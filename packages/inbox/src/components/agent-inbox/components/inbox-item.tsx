@@ -14,9 +14,9 @@ interface InboxItemProps<
 export function InboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ threadData }: InboxItemProps<ThreadValues>) {
-  const { getSearchParam } = useQueryParams();
+  const { searchParams } = useQueryParams();
 
-  const inbox = (getSearchParam(INBOX_PARAM) ||
+  const inbox = (searchParams.get(INBOX_PARAM) ||
     "interrupted") as ThreadStatusWithAll;
 
   if (inbox === "all") {

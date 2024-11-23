@@ -26,7 +26,7 @@ export function Inbox<
   const [selectedInbox, setSelectedInbox] =
     React.useState<ThreadStatusWithAll>("interrupted");
 
-  const selectedThreadId = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
+  const selectedThreadId = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!selectedThreadId;
 
   const shouldClearSelectedThread = (

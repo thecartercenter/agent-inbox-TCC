@@ -1,5 +1,10 @@
 import { cn } from "@/lib/utils";
-import { HumanInterrupt, HumanResponse, ThreadStatusWithAll } from "../types";
+import {
+  HumanInterrupt,
+  HumanResponse,
+  HumanResponseWithEdits,
+  ThreadStatusWithAll,
+} from "../types";
 import React, { useEffect } from "react";
 import { Button } from "../../ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -137,13 +142,15 @@ export function InterruptedInboxItem<
   const { toast } = useToast();
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
 
-  const threadIdQueryParam = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
   const isCurrentThreadStateView =
     threadIdQueryParam === threadData.thread.thread_id;
 
   const [active, setActive] = React.useState(false);
-  const [humanResponse, setHumanResponse] = React.useState<HumanResponse[]>([]);
+  const [humanResponse, setHumanResponse] = React.useState<
+    HumanResponseWithEdits[]
+  >([]);
   const [loading, setLoading] = React.useState(false);
   const [streaming, setStreaming] = React.useState(false);
   const [currentNode, setCurrentNode] = React.useState("");
@@ -172,36 +179,34 @@ export function InterruptedInboxItem<
 
   useEffect(() => {
     if (!threadData.interrupts) return;
-    const defaultHumanResponse: HumanResponse[] = threadData.interrupts.flatMap(
-      (v) => {
+    const defaultHumanResponse: HumanResponseWithEdits[] =
+      threadData.interrupts.flatMap((v) => {
+        const humanRes: HumanResponseWithEdits[] = [];
         if (v.config.allow_edit) {
-          return {
-            type: "edit",
-            args: v.action_request,
-          };
+          if (v.config.allow_accept) {
+            humanRes.push({
+              type: "edit",
+              args: v.action_request,
+              acceptAllowed: true,
+              editsMade: false,
+            });
+          } else {
+            humanRes.push({
+              type: "edit",
+              args: v.action_request,
+              acceptAllowed: false,
+            });
+          }
         }
         if (v.config.allow_respond) {
-          return {
+          humanRes.push({
             type: "response",
             args: "",
-          };
-        }
-        if (v.config.allow_accept) {
-          return {
-            type: "accept",
-            args: null,
-          };
-        }
-        if (v.config.allow_ignore) {
-          return {
-            type: "ignore",
-            args: null,
-          };
+          });
         }
 
-        return [];
-      }
-    );
+        return humanRes;
+      });
 
     setHumanResponse(defaultHumanResponse);
   }, [threadData.interrupts]);
@@ -253,9 +258,35 @@ export function InterruptedInboxItem<
       setStreamFinished(false);
 
       try {
+        const humanResponseInput: HumanResponse[] = humanResponse.flatMap(
+          (r) => {
+            if (r.type === "edit") {
+              if (r.acceptAllowed && !r.editsMade) {
+                return {
+                  type: "accept",
+                  args: r.args,
+                };
+              } else {
+                return {
+                  type: "edit",
+                  args: r.args,
+                };
+              }
+            }
+
+            if (r.type === "response" && !r.args) {
+              // If response was allowed but no response was given, do not include in the response
+              return [];
+            }
+            return {
+              type: r.type,
+              args: r.args,
+            };
+          }
+        );
         const response = sendHumanResponse(
           threadData.thread.thread_id,
-          humanResponse,
+          humanResponseInput,
           {
             stream: true,
           }

@@ -258,7 +258,7 @@ export function StateViewObject(props: StateViewProps) {
 }
 
 export function StateView() {
-  const { getSearchParam, updateQueryParams } = useQueryParams();
+  const { updateQueryParams, searchParams } = useQueryParams();
   const [expanded, setExpanded] = useState(false);
   const { threadData } = useThreadsContext();
   const { getItem } = useLocalStorage();
@@ -266,22 +266,23 @@ export function StateView() {
   const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
   const [view, setView] = useState<"description" | "state">("description");
 
-  const threadId = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadIdParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const threadValues = threadData.find(
-    ({ thread }) => thread.thread_id === threadId
+    ({ thread }) => thread.thread_id === threadIdParam
   )?.thread?.values;
-  const description = threadData.find((t) => t.thread.thread_id === threadId)
-    ?.interrupts?.[0].description;
+  const description = threadData.find(
+    (t) => t.thread.thread_id === threadIdParam
+  )?.interrupts?.[0].description;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (!threadValues || !threadId) {
+    if (!threadValues || !threadIdParam) {
       updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
     }
-  }, [threadValues, threadId]);
+  }, [threadValues, threadIdParam]);
 
-  if (!threadValues || !threadId) {
+  if (!threadValues || !threadIdParam) {
     return null;
   }
 
@@ -295,7 +296,7 @@ export function StateView() {
       return;
     }
 
-    const studioUrl = constructOpenInStudioURL(deploymentUrl, threadId);
+    const studioUrl = constructOpenInStudioURL(deploymentUrl, threadIdParam);
     window.open(studioUrl, "_blank");
   };
 
@@ -332,7 +333,7 @@ export function StateView() {
             </Button>
           )}
         </div>
-        <ThreadIdCopyable threadId={threadId} />
+        <ThreadIdCopyable threadId={threadIdParam} />
       </div>
       {view === "description" && (
         <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">

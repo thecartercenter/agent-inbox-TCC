@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
-import { ActionRequest, HumanInterrupt, HumanResponse } from "../types";
+import {
+  ActionRequest,
+  HumanInterrupt,
+  HumanResponseWithEdits,
+} from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import React from "react";
 import { prettifyText } from "../utils";
@@ -8,9 +12,11 @@ import remarkGfm from "remark-gfm";
 
 interface InboxItemInputProps {
   interruptValue: HumanInterrupt;
-  humanResponse: HumanResponse[];
+  humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
-  setHumanResponse: React.Dispatch<React.SetStateAction<HumanResponse[]>>;
+  setHumanResponse: React.Dispatch<
+    React.SetStateAction<HumanResponseWithEdits[]>
+  >;
 }
 
 export function InboxItemInput({
@@ -84,7 +90,9 @@ export function InboxItemInput({
                       className="flex flex-col gap-1 items-start w-full h-full"
                       key={`allow-edit-args--${k}-${idx}`}
                     >
-                      <p className="text-sm min-w-fit">{prettifyText(k)}: </p>
+                      <p className="text-sm min-w-fit font-medium">
+                        {prettifyText(k)}:{" "}
+                      </p>
                       <Textarea
                         disabled={streaming}
                         className="h-full"
@@ -103,7 +111,7 @@ export function InboxItemInput({
                               return prev;
                             }
 
-                            const newEdit: HumanResponse = {
+                            const newEdit: HumanResponseWithEdits = {
                               type: response.type,
                               args: {
                                 action: response.args.action,
@@ -129,12 +137,21 @@ export function InboxItemInput({
                                   p.args?.action ===
                                     (response.args as ActionRequest).action
                                 ) {
+                                  if (p.acceptAllowed) {
+                                    return {
+                                      ...newEdit,
+                                      acceptAllowed: true,
+                                      editsMade: true,
+                                    };
+                                  }
+
                                   return newEdit;
                                 }
                                 return p;
                               });
+                            } else {
+                              throw new Error("No matching response found");
                             }
-                            return [...prev, newEdit];
                           });
                         }}
                         rows={numRows}
@@ -145,30 +162,43 @@ export function InboxItemInput({
               </>
             )}
             {typeof response.args === "string" && (
-              <Textarea
-                disabled={streaming}
-                value={response.args}
-                onChange={(e) => {
-                  setHumanResponse((prev) => {
-                    const newResponse: HumanResponse = {
-                      type: response.type,
-                      args: e.target.value,
-                    };
+              <div className="flex flex-col gap-1 items-start w-full border-t-[1px] border-gray-200 mt-3 pt-3">
+                <p className="text-sm min-w-fit font-medium">Response:</p>
+                <Textarea
+                  disabled={streaming}
+                  value={response.args}
+                  onChange={(e) => {
+                    setHumanResponse((prev) => {
+                      const newResponse: HumanResponseWithEdits = {
+                        type: response.type,
+                        args: e.target.value,
+                      };
 
-                    if (prev.find((p) => p.type === response.type)) {
-                      return prev.map((p) => {
-                        if (p.type === response.type) {
-                          return newResponse;
-                        }
-                        return p;
-                      });
-                    }
-                    return [...prev, newResponse];
-                  });
-                }}
-                rows={8}
-                placeholder="Your response here..."
-              />
+                      if (prev.find((p) => p.type === response.type)) {
+                        return prev.map((p) => {
+                          if (p.type === response.type) {
+                            if (p.acceptAllowed) {
+                              return {
+                                ...newResponse,
+                                acceptAllowed: true,
+                                editsMade: true,
+                              };
+                            }
+                            return newResponse;
+                          }
+                          return p;
+                        });
+                      } else {
+                        throw new Error(
+                          "No human response found for string response"
+                        );
+                      }
+                    });
+                  }}
+                  rows={8}
+                  placeholder="Your response here..."
+                />
+              </div>
             )}
             {/* TODO: Handle accept/ignore. This should be okay to leave for now since the email assistant is setup to set `accept`/`ignore` to true alongside `edit`. */}
           </div>
