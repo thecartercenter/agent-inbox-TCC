@@ -258,7 +258,7 @@ export function StateViewObject(props: StateViewProps) {
 }
 
 export function StateView() {
-  const { getSearchParam, updateQueryParams, searchParams } = useQueryParams();
+  const { updateQueryParams, searchParams } = useQueryParams();
   const [expanded, setExpanded] = useState(false);
   const { threadData } = useThreadsContext();
   const { getItem } = useLocalStorage();

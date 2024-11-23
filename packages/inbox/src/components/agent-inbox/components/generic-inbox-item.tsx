@@ -19,7 +19,7 @@ interface GenericInboxItemProps<
 export function GenericInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ threadData }: GenericInboxItemProps<ThreadValues>) {
-  const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
+  const { searchParams, updateQueryParams } = useQueryParams();
   const [active, setActive] = React.useState(false);
   const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
