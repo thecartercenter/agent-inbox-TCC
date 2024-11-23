@@ -16,10 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 import { INBOX_PARAM, LIMIT_PARAM, OFFSET_PARAM } from "../constants";
 
 function DisplayLimitSelect() {
-  const { getSearchParam, updateQueryParams } = useQueryParams();
+  const { searchParams, updateQueryParams } = useQueryParams();
   const { loading } = useThreadsContext();
   const fetchLimitOptions = ["10", "25", "50", "100"];
-  const fetchLimitParam = Number(getSearchParam(LIMIT_PARAM) || 10);
+  const fetchLimitParam = Number(searchParams.get(LIMIT_PARAM) || 10);
 
   return (
     <Select
@@ -47,12 +47,12 @@ function DisplayLimitSelect() {
 }
 
 export function Pagination() {
-  const { getSearchParam, updateQueryParams } = useQueryParams();
+  const { searchParams, getSearchParam, updateQueryParams } = useQueryParams();
   const { toast } = useToast();
   const { hasMoreThreads, loading } = useThreadsContext();
 
   const isPreviousDisabled =
-    Number(getSearchParam(OFFSET_PARAM) || 0) === 0 || loading;
+    Number(searchParams.get(OFFSET_PARAM) || 0) === 0 || loading;
   const isNextDisabled = !hasMoreThreads || loading;
 
   const handleClickNext = async () => {
@@ -69,8 +69,8 @@ export function Pagination() {
       return;
     }
 
-    const offsetParam = Number(getSearchParam(OFFSET_PARAM) || 0);
-    const fetchLimitParam = Number(getSearchParam(LIMIT_PARAM) || 10);
+    const offsetParam = Number(searchParams.get(OFFSET_PARAM) || 0);
+    const fetchLimitParam = Number(searchParams.get(LIMIT_PARAM) || 10);
     const newOffset = offsetParam + fetchLimitParam;
     updateQueryParams(OFFSET_PARAM, newOffset.toString());
   };

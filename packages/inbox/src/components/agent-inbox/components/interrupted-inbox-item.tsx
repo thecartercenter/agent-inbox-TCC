@@ -142,7 +142,7 @@ export function InterruptedInboxItem<
   const { toast } = useToast();
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
 
-  const threadIdQueryParam = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
   const isCurrentThreadStateView =
     threadIdQueryParam === threadData.thread.thread_id;

@@ -21,7 +21,7 @@ export function GenericInboxItem<
 >({ threadData }: GenericInboxItemProps<ThreadValues>) {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
   const [active, setActive] = React.useState(false);
-  const threadIdQueryParam = getSearchParam(VIEW_STATE_THREAD_QUERY_PARAM);
+  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
   const isCurrentThreadStateView =
     threadIdQueryParam === threadData.thread.thread_id;
