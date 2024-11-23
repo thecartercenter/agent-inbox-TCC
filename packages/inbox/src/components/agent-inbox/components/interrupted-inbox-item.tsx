@@ -181,7 +181,7 @@ export function InterruptedInboxItem<
     if (!threadData.interrupts) return;
     const defaultHumanResponse: HumanResponseWithEdits[] =
       threadData.interrupts.flatMap((v) => {
-        let humanRes: HumanResponseWithEdits[] = [];
+        const humanRes: HumanResponseWithEdits[] = [];
         if (v.config.allow_edit) {
           if (v.config.allow_accept) {
             humanRes.push({

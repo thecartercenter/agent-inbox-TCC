@@ -51,6 +51,10 @@ export function ThreadsProvider<
   const [threadData, setThreadData] = useState<ThreadData<ThreadValues>[]>([]);
   const [hasMoreThreads, setHasMoreThreads] = useState(true);
 
+  const limitParam = searchParams.get(LIMIT_PARAM);
+  const offsetParam = searchParams.get(OFFSET_PARAM);
+  const inboxParam = searchParams.get(INBOX_PARAM);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -60,7 +64,7 @@ export function ThreadsProvider<
       return;
     }
     fetchThreads(inboxSearchParam);
-  }, [searchParams]);
+  }, [limitParam, offsetParam, inboxParam]);
 
   const fetchThreads = useCallback(async (inbox: ThreadStatusWithAll) => {
     setLoading(true);
