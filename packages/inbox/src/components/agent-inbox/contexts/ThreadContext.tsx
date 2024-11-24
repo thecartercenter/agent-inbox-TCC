@@ -124,7 +124,11 @@ export function ThreadsProvider<
               }
 
               if (!lastInterrupt || !("value" in lastInterrupt)) {
-                return [];
+                return {
+                  status: "interrupted",
+                  thread: thread as Thread<ThreadValues>,
+                  interrupts: undefined,
+                };
               }
 
               return {

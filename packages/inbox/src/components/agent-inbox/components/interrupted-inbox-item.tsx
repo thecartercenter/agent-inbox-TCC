@@ -18,8 +18,7 @@ import { useQueryParams } from "../hooks/use-query-params";
 import { LoaderCircle } from "lucide-react";
 import { ThreadIdTooltip } from "./thread-id";
 import { Thread } from "@langchain/langgraph-sdk";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownText } from "@/components/ui/markdown-text";
 
 interface InboxItemFooterProps {
   handleToggleViewState: () => void;
@@ -394,9 +393,9 @@ export function InterruptedInboxItem<
         {descriptionPreview && !active && (
           <p className="text-sm text-gray-500 mr-auto flex gap-1">
             <strong>Agent Response: </strong>
-            <Markdown remarkPlugins={[remarkGfm]}>
+            <MarkdownText>
               {`${descriptionPreview}${descriptionTruncated ? "..." : ""}`}
-            </Markdown>
+            </MarkdownText>
           </p>
         )}
       </motion.span>

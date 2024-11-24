@@ -7,8 +7,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import React from "react";
 import { prettifyText } from "../utils";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownText } from "@/components/ui/markdown-text";
 
 interface InboxItemInputProps {
   interruptValue: HumanInterrupt;
@@ -51,7 +50,7 @@ export function InboxItemInput({
               >
                 <p className="text-sm text-gray-600 flex gap-1">
                   <strong>{prettifyText(k)}: </strong>
-                  <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
+                  <MarkdownText>{value}</MarkdownText>
                 </p>
               </div>
             );

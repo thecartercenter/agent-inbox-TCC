@@ -11,8 +11,8 @@ interface GenericInboxItemProps<
 > {
   threadData: {
     thread: Thread<ThreadValues>;
-    status: "idle" | "busy" | "error";
-    interrupts?: never;
+    status: "idle" | "busy" | "error" | "interrupted";
+    interrupts?: never | undefined;
   };
 }
 
@@ -45,6 +45,10 @@ export function GenericInboxItem<
     idle: {
       bg: "#E5E7EB",
       border: "#D1D5DB",
+    },
+    interrupted: {
+      bg: "#b4faed",
+      border: "#2ffad4",
     },
     busy: {
       bg: "#FDE68A",
