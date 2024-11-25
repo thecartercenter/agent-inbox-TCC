@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "../../ui/button";
 import { prettifyText } from "../utils";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
@@ -11,44 +11,79 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import { SubmitType } from "../types";
+import { ResetForm } from "./reset-form";
 
 interface SubmitSelectProps {
   loading: boolean;
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
-  setSubmitType: React.Dispatch<
-    React.SetStateAction<"edit" | "respond" | "accept">
+  setSelectedSubmitType: React.Dispatch<
+    React.SetStateAction<SubmitType | undefined>
   >;
-  submitType: "edit" | "respond" | "accept";
-  hasResponse: boolean;
-  hasEdit: boolean;
+  selectedSubmitType: SubmitType;
+  hasEdited: boolean;
+  hasAddedResponse: boolean;
+  acceptAllowed: boolean;
 }
 
 function SubmitSelect({
   loading,
   handleSubmit,
-  submitType,
-  setSubmitType,
-  hasResponse,
-  hasEdit,
+  selectedSubmitType,
+  setSelectedSubmitType,
+  hasEdited,
+  hasAddedResponse,
+  acceptAllowed,
 }: SubmitSelectProps) {
-  let submitMessage = "Submit";
-  if (submitType === "accept") {
-    submitMessage = "Accept";
-  } else if (submitType === "respond") {
-    if (hasResponse) {
-      submitMessage = "Send Response";
-    }
-  } else if (submitType === "edit") {
-    if (hasEdit) {
-      submitMessage = "Submit Edit";
-    }
-  }
+  const [submitMessage, setSubmitMessage] = React.useState<string>("Submit");
+  const [submitDisabled, setSubmitDisabled] = React.useState<boolean>(true);
 
-  if (!hasEdit && !hasResponse) {
+  useEffect(() => {
+    if (selectedSubmitType === "accept") {
+      setSubmitMessage("Accept");
+    } else if (selectedSubmitType === "response") {
+      setSubmitMessage("Send Response");
+    } else if (selectedSubmitType === "edit") {
+      setSubmitMessage("Submit Edit");
+    }
+  }, [selectedSubmitType]);
+
+  useEffect(() => {
+    if (selectedSubmitType === "accept") {
+      setSubmitDisabled(false);
+    } else if (selectedSubmitType === "response") {
+      if (hasAddedResponse) {
+        setSubmitDisabled(false);
+      } else {
+        setSubmitDisabled(true);
+      }
+    } else if (selectedSubmitType === "edit") {
+      if (hasEdited) {
+        setSubmitDisabled(false);
+      } else {
+        setSubmitDisabled(true);
+      }
+    }
+  }, [selectedSubmitType, hasEdited, hasAddedResponse]);
+
+  console.log("selectedSubmitType", selectedSubmitType);
+
+  // If the user has not edited or added a response, they can't toggle between the two so
+  // just return a single button. This button is also disabled in this state if the submit
+  // type is not "accept".
+  if (!hasEdited && !hasAddedResponse) {
+    if (selectedSubmitType === "accept") {
+      return (
+        <Button variant="default" disabled={loading} onClick={handleSubmit}>
+          {submitMessage}
+        </Button>
+      );
+    }
+
     return (
-      <Button variant="default" disabled={loading} onClick={handleSubmit}>
+      <Button variant="default" disabled={true} onClick={handleSubmit}>
         {submitMessage}
       </Button>
     );
@@ -58,7 +93,7 @@ function SubmitSelect({
     <div className="flex flex-row items-center">
       <Button
         variant="default"
-        disabled={loading}
+        disabled={loading || submitDisabled}
         onClick={handleSubmit}
         className="rounded-r-none"
       >
@@ -66,14 +101,18 @@ function SubmitSelect({
       </Button>
       <Select
         disabled={loading}
-        onValueChange={(v) => setSubmitType(v as "edit" | "respond" | "accept")}
+        value={selectedSubmitType}
+        onValueChange={(v) => setSelectedSubmitType(v as SubmitType)}
       >
         <SelectTrigger className="rounded-l-none bg-primary text-primary-foreground shadow hover:bg-primary/90 border-none focus:ring-0 focus-visible:ring-0" />
         <SelectContent>
           <SelectGroup>
-            {hasEdit && <SelectItem value="edit">Send Edit</SelectItem>}
-            {hasResponse && (
-              <SelectItem value="respond">Send Response</SelectItem>
+            {acceptAllowed && !hasEdited && (
+              <SelectItem value="accept">Accept</SelectItem>
+            )}
+            {hasEdited && <SelectItem value="edit">Send Edit</SelectItem>}
+            {hasAddedResponse && (
+              <SelectItem value="response">Send Response</SelectItem>
             )}
           </SelectGroup>
         </SelectContent>
@@ -83,6 +122,7 @@ function SubmitSelect({
 }
 
 interface InboxItemFooterProps {
+  handleResetForm: () => void;
   handleToggleViewState: () => void;
   setActive: React.Dispatch<React.SetStateAction<boolean>>;
   handleSubmit: (
@@ -94,10 +134,6 @@ interface InboxItemFooterProps {
   handleResolve: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
-  setSubmitType: React.Dispatch<
-    React.SetStateAction<"edit" | "respond" | "accept">
-  >;
-  submitType: "edit" | "respond" | "accept";
   streaming: boolean;
   streamFinished: boolean;
   currentNode: string;
@@ -105,8 +141,14 @@ interface InboxItemFooterProps {
   threadId: string;
   isIgnoreAllowed: boolean;
   supportsMultipleMethods: boolean;
-  hasResponse: boolean;
-  hasEdit: boolean;
+
+  setSelectedSubmitType: React.Dispatch<
+    React.SetStateAction<SubmitType | undefined>
+  >;
+  selectedSubmitType: SubmitType | undefined;
+  hasEdited: boolean;
+  hasAddedResponse: boolean;
+  acceptAllowed: boolean;
 }
 
 export function InboxItemFooter({
@@ -116,16 +158,17 @@ export function InboxItemFooter({
   loading,
   threadId,
   isIgnoreAllowed,
+  handleResetForm,
   handleResolve,
   handleSubmit,
   handleIgnore,
   setActive,
   handleToggleViewState,
-  submitType,
-  setSubmitType,
-  supportsMultipleMethods,
-  hasResponse,
-  hasEdit,
+  setSelectedSubmitType,
+  selectedSubmitType,
+  hasEdited,
+  hasAddedResponse,
+  acceptAllowed,
 }: InboxItemFooterProps) {
   const { getSearchParam, updateQueryParams } = useQueryParams();
 
@@ -162,6 +205,10 @@ export function InboxItemFooter({
         )}
         {!streaming && !streamFinished && (
           <>
+            <ResetForm
+              hasValues={hasEdited || hasAddedResponse}
+              handleResetForm={handleResetForm}
+            />
             <Button
               variant="outline"
               disabled={loading}
@@ -195,23 +242,16 @@ export function InboxItemFooter({
                 Ignore
               </Button>
             )}
-            {supportsMultipleMethods ? (
+            {selectedSubmitType && (
               <SubmitSelect
                 loading={loading}
                 handleSubmit={handleSubmit}
-                submitType={submitType}
-                setSubmitType={setSubmitType}
-                hasResponse={hasResponse}
-                hasEdit={hasEdit}
+                selectedSubmitType={selectedSubmitType}
+                setSelectedSubmitType={setSelectedSubmitType}
+                hasEdited={hasEdited}
+                hasAddedResponse={hasAddedResponse}
+                acceptAllowed={acceptAllowed}
               />
-            ) : (
-              <Button
-                variant="default"
-                disabled={loading}
-                onClick={handleSubmit}
-              >
-                Submit
-              </Button>
             )}
           </>
         )}

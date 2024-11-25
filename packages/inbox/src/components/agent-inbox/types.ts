@@ -67,3 +67,5 @@ export type ThreadData<
 );
 
 export type ThreadStatusWithAll = ThreadStatus | "all";
+
+export type SubmitType = "accept" | "response" | "edit";

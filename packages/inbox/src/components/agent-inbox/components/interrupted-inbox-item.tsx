@@ -3,12 +3,13 @@ import {
   HumanInterrupt,
   HumanResponse,
   HumanResponseWithEdits,
+  SubmitType,
   ThreadStatusWithAll,
 } from "../types";
 import React, { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { prettifyText } from "../utils";
+import { createDefaultHumanResponse, prettifyText } from "../utils";
 import { InboxItemStatuses } from "./statuses";
 import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { InboxItemInput } from "./inbox-item-input";
@@ -54,11 +55,14 @@ export function InterruptedInboxItem<
   const [streaming, setStreaming] = React.useState(false);
   const [currentNode, setCurrentNode] = React.useState("");
   const [streamFinished, setStreamFinished] = React.useState(false);
-  const [submitType, setSubmitType] = React.useState<
-    "edit" | "respond" | "accept" | "accept"
-  >("edit");
-  const [hasResponse, setHasResponse] = React.useState(false);
-  const [hasEdit, setHasEdit] = React.useState(false);
+
+  const [selectedSubmitType, setSelectedSubmitType] =
+    React.useState<SubmitType>();
+  // Whether or not the user has edited any fields which allow editing.
+  const [hasEdited, setHasEdited] = React.useState(false);
+  // Whether or not the user has added a response.
+  const [hasAddedResponse, setHasAddedResponse] = React.useState(false);
+  const [acceptAllowed, setAcceptAllowed] = React.useState(false);
 
   const actionTypeColorMap = {
     question: { bg: "#FCA5A5", border: "#EF4444" },
@@ -83,52 +87,11 @@ export function InterruptedInboxItem<
 
   useEffect(() => {
     if (!threadData.interrupts) return;
-    const defaultHumanResponse: HumanResponseWithEdits[] =
-      threadData.interrupts.flatMap((v) => {
-        const humanRes: HumanResponseWithEdits[] = [];
-        if (v.config.allow_edit) {
-          if (v.config.allow_accept) {
-            humanRes.push({
-              type: "edit",
-              args: v.action_request,
-              acceptAllowed: true,
-              editsMade: false,
-            });
-          } else {
-            humanRes.push({
-              type: "edit",
-              args: v.action_request,
-              acceptAllowed: false,
-            });
-          }
-        }
-        if (v.config.allow_respond) {
-          humanRes.push({
-            type: "response",
-            args: "",
-          });
-        }
-
-        if (v.config.allow_ignore) {
-          humanRes.push({
-            type: "ignore",
-            args: null,
-          });
-        }
-
-        return humanRes;
-      });
-
-    const hasAccept = defaultHumanResponse.find((r) => r.acceptAllowed);
-    const hasResponse = defaultHumanResponse.find((r) => r.type === "response");
-    if (hasAccept) {
-      setSubmitType("accept");
-    } else if (hasResponse) {
-      setSubmitType("respond");
-    } else {
-      setSubmitType("edit");
-    }
-    setHumanResponse(defaultHumanResponse);
+    const { responses, defaultSubmitType, hasAccept } =
+      createDefaultHumanResponse(threadData.interrupts);
+    setSelectedSubmitType(defaultSubmitType);
+    setHumanResponse(responses);
+    setAcceptAllowed(hasAccept);
   }, [threadData.interrupts]);
 
   useEffect(() => {
@@ -164,17 +127,9 @@ export function InterruptedInboxItem<
       return;
     }
 
-    setLoading(true);
-
     if (
       humanResponse.some((r) => ["response", "edit", "accept"].includes(r.type))
     ) {
-      toast({
-        title: "Success",
-        description: "Response submitted successfully.",
-        duration: 5000,
-      });
-      setStreaming(true);
       setStreamFinished(false);
 
       try {
@@ -205,17 +160,10 @@ export function InterruptedInboxItem<
           }
         );
 
-        const input = humanResponseInput.find((r) => {
-          if (submitType === "edit") {
-            return r.type === "edit" || r.type === "accept";
-          } else if (submitType === "respond") {
-            return r.type === "response";
-          }
-          return false;
-        });
+        const input = humanResponseInput.find(
+          (r) => r.type === selectedSubmitType
+        );
         if (!input) {
-          setStreaming(false);
-          setLoading(false);
           toast({
             title: "Error",
             description: "No response found.",
@@ -224,6 +172,9 @@ export function InterruptedInboxItem<
           });
           return;
         }
+
+        setLoading(true);
+        setStreaming(true);
         const response = sendHumanResponse(
           threadData.thread.thread_id,
           [input],
@@ -231,6 +182,12 @@ export function InterruptedInboxItem<
             stream: true,
           }
         );
+
+        toast({
+          title: "Success",
+          description: "Response submitted successfully.",
+          duration: 5000,
+        });
 
         for await (const chunk of response) {
           if (
@@ -258,6 +215,7 @@ export function InterruptedInboxItem<
       await fetchThreads(selectedInbox);
       setStreamFinished(false);
     } else {
+      setLoading(true);
       await sendHumanResponse(threadData.thread.thread_id, humanResponse);
 
       toast({
@@ -316,6 +274,16 @@ export function InterruptedInboxItem<
   const supportsMultipleMethods =
     humanResponse.filter((r) => r.type === "response" || r.type === "edit")
       .length > 1;
+
+  const handleResetForm = () => {
+    const { responses, defaultSubmitType, hasAccept } =
+      createDefaultHumanResponse(threadData.interrupts);
+    setAcceptAllowed(hasAccept);
+    setSelectedSubmitType(defaultSubmitType);
+    setHumanResponse(responses);
+    setHasAddedResponse(false);
+    setHasEdited(false);
+  };
 
   return (
     <div
@@ -386,13 +354,14 @@ export function InterruptedInboxItem<
                 humanResponse={humanResponse}
                 setHumanResponse={setHumanResponse}
                 streaming={streaming}
-                setSubmitType={setSubmitType}
                 supportsMultipleMethods={supportsMultipleMethods}
-                setHasResponse={setHasResponse}
-                setHasEdit={setHasEdit}
+                setSelectedSubmitType={setSelectedSubmitType}
+                setHasAddedResponse={setHasAddedResponse}
+                setHasEdited={setHasEdited}
               />
             </div>
             <InboxItemFooter
+              acceptAllowed={acceptAllowed}
               streaming={streaming}
               streamFinished={streamFinished}
               currentNode={currentNode}
@@ -404,11 +373,12 @@ export function InterruptedInboxItem<
               handleResolve={handleResolve}
               setActive={setActive}
               handleToggleViewState={handleToggleViewState}
-              submitType={submitType}
-              setSubmitType={setSubmitType}
               supportsMultipleMethods={supportsMultipleMethods}
-              hasResponse={hasResponse}
-              hasEdit={hasEdit}
+              setSelectedSubmitType={setSelectedSubmitType}
+              selectedSubmitType={selectedSubmitType}
+              hasEdited={hasEdited}
+              hasAddedResponse={hasAddedResponse}
+              handleResetForm={handleResetForm}
             />
           </motion.div>
         )}

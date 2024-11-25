@@ -1,6 +1,7 @@
 import { BaseMessage, isBaseMessage } from "@langchain/core/messages";
 import { format } from "date-fns";
 import { startCase } from "lodash";
+import { HumanInterrupt, HumanResponseWithEdits, SubmitType } from "./types";
 
 export function prettifyText(action: string) {
   return startCase(action.replace(/_/g, " "));
@@ -89,4 +90,62 @@ export function constructOpenInStudioURL(
   smithStudioURL.searchParams.append("baseUrl", trimmedDeploymentUrl);
 
   return smithStudioURL.toString();
+}
+
+export function createDefaultHumanResponse(interrupts: HumanInterrupt[]): {
+  responses: HumanResponseWithEdits[];
+  defaultSubmitType: SubmitType | undefined;
+  hasAccept: boolean;
+} {
+  const responses = interrupts.flatMap((v) => {
+    const humanRes: HumanResponseWithEdits[] = [];
+    if (v.config.allow_edit) {
+      if (v.config.allow_accept) {
+        humanRes.push({
+          type: "edit",
+          args: v.action_request,
+          acceptAllowed: true,
+          editsMade: false,
+        });
+      } else {
+        humanRes.push({
+          type: "edit",
+          args: v.action_request,
+          acceptAllowed: false,
+        });
+      }
+    }
+    if (v.config.allow_respond) {
+      humanRes.push({
+        type: "response",
+        args: "",
+      });
+    }
+
+    if (v.config.allow_ignore) {
+      humanRes.push({
+        type: "ignore",
+        args: null,
+      });
+    }
+
+    return humanRes;
+  });
+
+  // Set the submit type.
+  // Priority: accept > response  > edit
+  const hasResponse = responses.find((r) => r.type === "response");
+  const hasAccept = responses.find((r) => r.acceptAllowed);
+  const hasEdit = responses.find((r) => r.type === "edit");
+
+  let defaultSubmitType: SubmitType | undefined;
+  if (hasAccept) {
+    defaultSubmitType = "accept";
+  } else if (hasResponse) {
+    defaultSubmitType = "response";
+  } else if (hasEdit) {
+    defaultSubmitType = "edit";
+  }
+
+  return { responses, defaultSubmitType, hasAccept: !!hasAccept };
 }

@@ -3,6 +3,7 @@ import {
   ActionRequest,
   HumanInterrupt,
   HumanResponseWithEdits,
+  SubmitType,
 } from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import React from "react";
@@ -18,11 +19,11 @@ interface InboxItemInputProps {
   setHumanResponse: React.Dispatch<
     React.SetStateAction<HumanResponseWithEdits[]>
   >;
-  setSubmitType: React.Dispatch<
-    React.SetStateAction<"edit" | "respond" | "accept">
+  setSelectedSubmitType: React.Dispatch<
+    React.SetStateAction<SubmitType | undefined>
   >;
-  setHasResponse: React.Dispatch<React.SetStateAction<boolean>>;
-  setHasEdit: React.Dispatch<React.SetStateAction<boolean>>;
+  setHasAddedResponse: React.Dispatch<React.SetStateAction<boolean>>;
+  setHasEdited: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function InboxItemInput({
@@ -30,12 +31,13 @@ export function InboxItemInput({
   humanResponse,
   streaming,
   supportsMultipleMethods,
-  setSubmitType,
   setHumanResponse,
-  setHasResponse,
-  setHasEdit,
+  setSelectedSubmitType,
+  setHasEdited,
+  setHasAddedResponse,
 }: InboxItemInputProps) {
   const defaultRows = React.useRef<Record<string, number>>({});
+  console.log(humanResponse)
 
   return (
     <div
@@ -74,6 +76,7 @@ export function InboxItemInput({
             className="flex flex-col gap-1 items-start w-full"
             key={`human-res-${response.type}-${idx}`}
           >
+            {response.type === "edit" && <p className="font-medium text-gray-700 underline underline-offset-2">{response.acceptAllowed ? "Edit/Accept" : "Edit"}</p>}
             {typeof response.args === "object" && response.args && (
               <>
                 {Object.entries(response.args.args).map(([k, v], idx) => {
@@ -108,8 +111,8 @@ export function InboxItemInput({
                         className="h-full"
                         value={value}
                         onChange={(e) => {
-                          setSubmitType("edit");
-                          setHasEdit(true);
+                          setSelectedSubmitType("edit");
+                          setHasEdited(true);
                           setHumanResponse((prev) => {
                             if (
                               typeof response.args !== "object" ||
@@ -182,13 +185,14 @@ export function InboxItemInput({
             ) : null}
             {typeof response.args === "string" && (
               <div className="flex flex-col gap-1 items-start w-full pt-3 px-[1px]">
+                <p className="font-medium text-gray-700 underline underline-offset-2">Respond</p>
                 <p className="text-sm min-w-fit font-medium">Response:</p>
                 <Textarea
                   disabled={streaming}
                   value={response.args}
                   onChange={(e) => {
-                    setSubmitType("respond");
-                    setHasResponse(true);
+                    setSelectedSubmitType("response");
+                    setHasAddedResponse(true);
                     setHumanResponse((prev) => {
                       const newResponse: HumanResponseWithEdits = {
                         type: response.type,
