@@ -29,6 +29,9 @@ interface InboxItemFooterProps {
   handleIgnore: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
+  handleResolve: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => Promise<void>;
   streaming: boolean;
   streamFinished: boolean;
   currentNode: string;
@@ -44,6 +47,7 @@ function InboxItemFooter({
   loading,
   threadId,
   isIgnoreAllowed,
+  handleResolve,
   handleSubmit,
   handleIgnore,
   setActive,
@@ -99,6 +103,14 @@ function InboxItemFooter({
             >
               Close
             </Button>
+            <Button
+                variant="outline"
+                disabled={loading}
+                onClick={handleResolve}
+                className="border-red-800 text-red-800 hover:text-red-900"
+              >
+                Mark Resolved
+              </Button>
             {isIgnoreAllowed && (
               <Button
                 variant="outline"
@@ -201,6 +213,13 @@ export function InterruptedInboxItem<
           humanRes.push({
             type: "response",
             args: "",
+          });
+        }
+
+        if (v.config.allow_ignore) {
+          humanRes.push({
+            type: "ignore",
+            args: null,
           });
         }
 
@@ -334,11 +353,33 @@ export function InterruptedInboxItem<
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
+
+    const ignoreResponse = humanResponse.find((r) => r.type === "ignore");
+    if (!ignoreResponse) {
+      toast({
+        title: "Error",
+        description: "The selected thread does not support ignoring.",
+        duration: 5000,
+      });
+      return;
+    }
+
     setLoading(true);
-    await ignoreThread(threadData.thread.thread_id);
+    await sendHumanResponse(threadData.thread.thread_id, [ignoreResponse]);
     setLoading(true);
     setActive(false);
   };
+
+  const handleResolve = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    setLoading(true);
+    await ignoreThread(threadData.thread.thread_id);
+    setLoading(false);
+    setActive(false);
+  }
+
   const descriptionPreview =
     threadData.interrupts[0].description &&
     threadData.interrupts[0].description.slice(0, 75);
@@ -426,6 +467,7 @@ export function InterruptedInboxItem<
               isIgnoreAllowed={isIgnoreAllowed}
               handleSubmit={handleSubmit}
               handleIgnore={handleIgnore}
+              handleResolve={handleResolve}
               setActive={setActive}
               handleToggleViewState={handleToggleViewState}
             />

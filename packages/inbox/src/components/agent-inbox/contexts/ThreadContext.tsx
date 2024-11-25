@@ -7,6 +7,7 @@ import { HumanInterrupt } from "@/components/agent-inbox/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
 import { Run, Thread, ThreadState } from "@langchain/langgraph-sdk";
+import { END } from "@langchain/langgraph/web"
 import React, { useEffect } from "react";
 import {
   createContext,
@@ -207,6 +208,7 @@ export function ThreadsProvider<
     try {
       await client.threads.updateState(threadId, {
         values: null,
+        asNode: END
       });
 
       setThreadData((prev) => {
