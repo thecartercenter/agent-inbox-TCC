@@ -18,7 +18,11 @@ interface InboxItemInputProps {
   setHumanResponse: React.Dispatch<
     React.SetStateAction<HumanResponseWithEdits[]>
   >;
-  setSubmitType: React.Dispatch<React.SetStateAction<"edit" | "respond">>;
+  setSubmitType: React.Dispatch<
+    React.SetStateAction<"edit" | "respond" | "accept">
+  >;
+  setHasResponse: React.Dispatch<React.SetStateAction<boolean>>;
+  setHasEdit: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function InboxItemInput({
@@ -28,6 +32,8 @@ export function InboxItemInput({
   supportsMultipleMethods,
   setSubmitType,
   setHumanResponse,
+  setHasResponse,
+  setHasEdit,
 }: InboxItemInputProps) {
   const defaultRows = React.useRef<Record<string, number>>({});
 
@@ -103,6 +109,7 @@ export function InboxItemInput({
                         value={value}
                         onChange={(e) => {
                           setSubmitType("edit");
+                          setHasEdit(true);
                           setHumanResponse((prev) => {
                             if (
                               typeof response.args !== "object" ||
@@ -181,6 +188,7 @@ export function InboxItemInput({
                   value={response.args}
                   onChange={(e) => {
                     setSubmitType("respond");
+                    setHasResponse(true);
                     setHumanResponse((prev) => {
                       const newResponse: HumanResponseWithEdits = {
                         type: response.type,

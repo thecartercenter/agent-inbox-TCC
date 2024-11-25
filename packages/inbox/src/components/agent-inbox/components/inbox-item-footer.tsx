@@ -17,8 +17,12 @@ interface SubmitSelectProps {
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
-  setSubmitType: React.Dispatch<React.SetStateAction<"edit" | "respond">>;
-  submitType: "edit" | "respond";
+  setSubmitType: React.Dispatch<
+    React.SetStateAction<"edit" | "respond" | "accept">
+  >;
+  submitType: "edit" | "respond" | "accept";
+  hasResponse: boolean;
+  hasEdit: boolean;
 }
 
 function SubmitSelect({
@@ -26,8 +30,30 @@ function SubmitSelect({
   handleSubmit,
   submitType,
   setSubmitType,
+  hasResponse,
+  hasEdit,
 }: SubmitSelectProps) {
-  const submitMessage = submitType === "edit" ? "Submit Edit" : "Send Respond";
+  let submitMessage = "Submit";
+  if (submitType === "accept") {
+    submitMessage = "Accept";
+  } else if (submitType === "respond") {
+    if (hasResponse) {
+      submitMessage = "Send Response";
+    }
+  } else if (submitType === "edit") {
+    if (hasEdit) {
+      submitMessage = "Submit Edit";
+    }
+  }
+
+  if (!hasEdit && !hasResponse) {
+    return (
+      <Button variant="default" disabled={loading} onClick={handleSubmit}>
+        {submitMessage}
+      </Button>
+    );
+  }
+
   return (
     <div className="flex flex-row items-center">
       <Button
@@ -40,13 +66,15 @@ function SubmitSelect({
       </Button>
       <Select
         disabled={loading}
-        onValueChange={(v) => setSubmitType(v as "edit" | "respond")}
+        onValueChange={(v) => setSubmitType(v as "edit" | "respond" | "accept")}
       >
         <SelectTrigger className="rounded-l-none bg-primary text-primary-foreground shadow hover:bg-primary/90 border-none focus:ring-0 focus-visible:ring-0" />
         <SelectContent>
           <SelectGroup>
-            <SelectItem value="edit">Send Edit</SelectItem>
-            <SelectItem value="respond">Send Response</SelectItem>
+            {hasEdit && <SelectItem value="edit">Send Edit</SelectItem>}
+            {hasResponse && (
+              <SelectItem value="respond">Send Response</SelectItem>
+            )}
           </SelectGroup>
         </SelectContent>
       </Select>
@@ -66,8 +94,10 @@ interface InboxItemFooterProps {
   handleResolve: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
-  setSubmitType: React.Dispatch<React.SetStateAction<"edit" | "respond">>;
-  submitType: "edit" | "respond";
+  setSubmitType: React.Dispatch<
+    React.SetStateAction<"edit" | "respond" | "accept">
+  >;
+  submitType: "edit" | "respond" | "accept";
   streaming: boolean;
   streamFinished: boolean;
   currentNode: string;
@@ -75,6 +105,8 @@ interface InboxItemFooterProps {
   threadId: string;
   isIgnoreAllowed: boolean;
   supportsMultipleMethods: boolean;
+  hasResponse: boolean;
+  hasEdit: boolean;
 }
 
 export function InboxItemFooter({
@@ -92,6 +124,8 @@ export function InboxItemFooter({
   submitType,
   setSubmitType,
   supportsMultipleMethods,
+  hasResponse,
+  hasEdit,
 }: InboxItemFooterProps) {
   const { getSearchParam, updateQueryParams } = useQueryParams();
 
@@ -167,6 +201,8 @@ export function InboxItemFooter({
                 handleSubmit={handleSubmit}
                 submitType={submitType}
                 setSubmitType={setSubmitType}
+                hasResponse={hasResponse}
+                hasEdit={hasEdit}
               />
             ) : (
               <Button

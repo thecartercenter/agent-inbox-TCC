@@ -54,9 +54,11 @@ export function InterruptedInboxItem<
   const [streaming, setStreaming] = React.useState(false);
   const [currentNode, setCurrentNode] = React.useState("");
   const [streamFinished, setStreamFinished] = React.useState(false);
-  const [submitType, setSubmitType] = React.useState<"edit" | "respond">(
-    "edit"
-  );
+  const [submitType, setSubmitType] = React.useState<
+    "edit" | "respond" | "accept" | "accept"
+  >("edit");
+  const [hasResponse, setHasResponse] = React.useState(false);
+  const [hasEdit, setHasEdit] = React.useState(false);
 
   const actionTypeColorMap = {
     question: { bg: "#FCA5A5", border: "#EF4444" },
@@ -85,7 +87,6 @@ export function InterruptedInboxItem<
       threadData.interrupts.flatMap((v) => {
         const humanRes: HumanResponseWithEdits[] = [];
         if (v.config.allow_edit) {
-          setSubmitType("edit");
           if (v.config.allow_accept) {
             humanRes.push({
               type: "edit",
@@ -102,7 +103,6 @@ export function InterruptedInboxItem<
           }
         }
         if (v.config.allow_respond) {
-          setSubmitType("respond");
           humanRes.push({
             type: "response",
             args: "",
@@ -119,6 +119,15 @@ export function InterruptedInboxItem<
         return humanRes;
       });
 
+    const hasAccept = defaultHumanResponse.find((r) => r.acceptAllowed);
+    const hasResponse = defaultHumanResponse.find((r) => r.type === "response");
+    if (hasAccept) {
+      setSubmitType("accept");
+    } else if (hasResponse) {
+      setSubmitType("respond");
+    } else {
+      setSubmitType("edit");
+    }
     setHumanResponse(defaultHumanResponse);
   }, [threadData.interrupts]);
 
@@ -379,6 +388,8 @@ export function InterruptedInboxItem<
                 streaming={streaming}
                 setSubmitType={setSubmitType}
                 supportsMultipleMethods={supportsMultipleMethods}
+                setHasResponse={setHasResponse}
+                setHasEdit={setHasEdit}
               />
             </div>
             <InboxItemFooter
@@ -396,6 +407,8 @@ export function InterruptedInboxItem<
               submitType={submitType}
               setSubmitType={setSubmitType}
               supportsMultipleMethods={supportsMultipleMethods}
+              hasResponse={hasResponse}
+              hasEdit={hasEdit}
             />
           </motion.div>
         )}
