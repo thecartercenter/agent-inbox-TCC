@@ -6,7 +6,6 @@ import {
   ThreadStatusWithAll,
 } from "../types";
 import React, { useEffect } from "react";
-import { Button } from "../../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { prettifyText } from "../utils";
@@ -15,121 +14,10 @@ import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadConte
 import { InboxItemInput } from "./inbox-item-input";
 import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
-import { LoaderCircle } from "lucide-react";
 import { ThreadIdTooltip } from "./thread-id";
 import { Thread } from "@langchain/langgraph-sdk";
 import { MarkdownText } from "@/components/ui/markdown-text";
-
-interface InboxItemFooterProps {
-  handleToggleViewState: () => void;
-  setActive: React.Dispatch<React.SetStateAction<boolean>>;
-  handleSubmit: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => Promise<void>;
-  handleIgnore: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => Promise<void>;
-  handleResolve: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => Promise<void>;
-  streaming: boolean;
-  streamFinished: boolean;
-  currentNode: string;
-  loading: boolean;
-  threadId: string;
-  isIgnoreAllowed: boolean;
-}
-
-function InboxItemFooter({
-  streaming,
-  streamFinished,
-  currentNode,
-  loading,
-  threadId,
-  isIgnoreAllowed,
-  handleResolve,
-  handleSubmit,
-  handleIgnore,
-  setActive,
-  handleToggleViewState,
-}: InboxItemFooterProps) {
-  const { getSearchParam, updateQueryParams } = useQueryParams();
-
-  return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex gap-2 items-center justify-start">
-        <p
-          onClick={() => handleToggleViewState()}
-          className="text-gray-700 hover:text-black transition-colors ease-in-out font-medium underline underline-offset-2 cursor-pointer"
-        >
-          View State
-        </p>
-      </div>
-      <div className="flex gap-2 items-center justify-end">
-        {streaming && !currentNode && (
-          <p className="text-sm text-gray-600">Waiting for Graph to start...</p>
-        )}
-        {streaming && currentNode && (
-          <div className="flex gap-2">
-            <span className="text-sm text-gray-600 flex items-center justify-start gap-1">
-              <p>Running</p>
-              <LoaderCircle className="w-3 h-3 animate-spin" />
-            </span>
-            <p className="text-black text-sm font-mono">
-              <span className="font-sans text-gray-700">Node: </span>
-              {prettifyText(currentNode)}
-            </p>
-          </div>
-        )}
-        {streamFinished && (
-          <p className="text-base text-green-600 font-medium">
-            Successfully finished Graph invocation.
-          </p>
-        )}
-        {!streaming && !streamFinished && (
-          <>
-            <Button
-              variant="outline"
-              disabled={loading}
-              onClick={() => {
-                const currQueryParamThreadId = getSearchParam(
-                  VIEW_STATE_THREAD_QUERY_PARAM
-                );
-                if (currQueryParamThreadId === threadId) {
-                  updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
-                }
-                setActive(false);
-              }}
-            >
-              Close
-            </Button>
-            <Button
-                variant="outline"
-                disabled={loading}
-                onClick={handleResolve}
-                className="border-red-800 text-red-800 hover:text-red-900"
-              >
-                Mark Resolved
-              </Button>
-            {isIgnoreAllowed && (
-              <Button
-                variant="outline"
-                disabled={loading}
-                onClick={handleIgnore}
-                className="border-red-500 text-red-500 hover:text-red-600"
-              >
-                Ignore
-              </Button>
-            )}
-            <Button variant="default" disabled={loading} onClick={handleSubmit}>
-              Submit
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+import { InboxItemFooter } from "./inbox-item-footer";
 
 interface InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -166,6 +54,9 @@ export function InterruptedInboxItem<
   const [streaming, setStreaming] = React.useState(false);
   const [currentNode, setCurrentNode] = React.useState("");
   const [streamFinished, setStreamFinished] = React.useState(false);
+  const [submitType, setSubmitType] = React.useState<"edit" | "respond">(
+    "edit"
+  );
 
   const actionTypeColorMap = {
     question: { bg: "#FCA5A5", border: "#EF4444" },
@@ -194,6 +85,7 @@ export function InterruptedInboxItem<
       threadData.interrupts.flatMap((v) => {
         const humanRes: HumanResponseWithEdits[] = [];
         if (v.config.allow_edit) {
+          setSubmitType("edit");
           if (v.config.allow_accept) {
             humanRes.push({
               type: "edit",
@@ -210,6 +102,7 @@ export function InterruptedInboxItem<
           }
         }
         if (v.config.allow_respond) {
+          setSubmitType("respond");
           humanRes.push({
             type: "response",
             args: "",
@@ -302,9 +195,29 @@ export function InterruptedInboxItem<
             };
           }
         );
+
+        const input = humanResponseInput.find((r) => {
+          if (submitType === "edit") {
+            return r.type === "edit" || r.type === "accept";
+          } else if (submitType === "respond") {
+            return r.type === "response";
+          }
+          return false;
+        });
+        if (!input) {
+          setStreaming(false);
+          setLoading(false);
+          toast({
+            title: "Error",
+            description: "No response found.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          return;
+        }
         const response = sendHumanResponse(
           threadData.thread.thread_id,
-          humanResponseInput,
+          [input],
           {
             stream: true,
           }
@@ -366,6 +279,10 @@ export function InterruptedInboxItem<
 
     setLoading(true);
     await sendHumanResponse(threadData.thread.thread_id, [ignoreResponse]);
+    const selectedInbox = getSearchParam(INBOX_PARAM) as
+      | ThreadStatusWithAll
+      | "interrupted";
+    await fetchThreads(selectedInbox);
     setLoading(true);
     setActive(false);
   };
@@ -378,7 +295,7 @@ export function InterruptedInboxItem<
     await ignoreThread(threadData.thread.thread_id);
     setLoading(false);
     setActive(false);
-  }
+  };
 
   const descriptionPreview =
     threadData.interrupts[0].description &&
@@ -386,6 +303,10 @@ export function InterruptedInboxItem<
   const descriptionTruncated =
     threadData.interrupts[0].description &&
     threadData.interrupts[0].description.length > 75;
+
+  const supportsMultipleMethods =
+    humanResponse.filter((r) => r.type === "response" || r.type === "edit")
+      .length > 1;
 
   return (
     <div
@@ -456,6 +377,8 @@ export function InterruptedInboxItem<
                 humanResponse={humanResponse}
                 setHumanResponse={setHumanResponse}
                 streaming={streaming}
+                setSubmitType={setSubmitType}
+                supportsMultipleMethods={supportsMultipleMethods}
               />
             </div>
             <InboxItemFooter
@@ -470,6 +393,9 @@ export function InterruptedInboxItem<
               handleResolve={handleResolve}
               setActive={setActive}
               handleToggleViewState={handleToggleViewState}
+              submitType={submitType}
+              setSubmitType={setSubmitType}
+              supportsMultipleMethods={supportsMultipleMethods}
             />
           </motion.div>
         )}

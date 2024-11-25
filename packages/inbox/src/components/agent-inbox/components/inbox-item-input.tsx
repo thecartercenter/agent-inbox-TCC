@@ -8,20 +8,25 @@ import { Textarea } from "@/components/ui/textarea";
 import React from "react";
 import { prettifyText } from "../utils";
 import { MarkdownText } from "@/components/ui/markdown-text";
+import { Separator } from "@/components/ui/separator";
 
 interface InboxItemInputProps {
   interruptValue: HumanInterrupt;
   humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
+  supportsMultipleMethods: boolean;
   setHumanResponse: React.Dispatch<
     React.SetStateAction<HumanResponseWithEdits[]>
   >;
+  setSubmitType: React.Dispatch<React.SetStateAction<"edit" | "respond">>;
 }
 
 export function InboxItemInput({
   interruptValue,
   humanResponse,
   streaming,
+  supportsMultipleMethods,
+  setSubmitType,
   setHumanResponse,
 }: InboxItemInputProps) {
   const defaultRows = React.useRef<Record<string, number>>({});
@@ -86,7 +91,7 @@ export function InboxItemInput({
 
                   return (
                     <div
-                      className="flex flex-col gap-1 items-start w-full h-full"
+                      className="flex flex-col gap-1 items-start w-full h-full px-[1px]"
                       key={`allow-edit-args--${k}-${idx}`}
                     >
                       <p className="text-sm min-w-fit font-medium">
@@ -97,6 +102,7 @@ export function InboxItemInput({
                         className="h-full"
                         value={value}
                         onChange={(e) => {
+                          setSubmitType("edit");
                           setHumanResponse((prev) => {
                             if (
                               typeof response.args !== "object" ||
@@ -160,13 +166,21 @@ export function InboxItemInput({
                 })}
               </>
             )}
+            {supportsMultipleMethods && typeof response.args === "string" ? (
+              <div className="flex gap-3 items-center w-full mt-3">
+                <Separator className="w-1/2" />
+                <p className="text-sm text-gray-500">or</p>
+                <Separator className="w-1/2" />
+              </div>
+            ) : null}
             {typeof response.args === "string" && (
-              <div className="flex flex-col gap-1 items-start w-full border-t-[1px] border-gray-200 mt-3 pt-3">
+              <div className="flex flex-col gap-1 items-start w-full pt-3 px-[1px]">
                 <p className="text-sm min-w-fit font-medium">Response:</p>
                 <Textarea
                   disabled={streaming}
                   value={response.args}
                   onChange={(e) => {
+                    setSubmitType("respond");
                     setHumanResponse((prev) => {
                       const newResponse: HumanResponseWithEdits = {
                         type: response.type,
@@ -199,7 +213,6 @@ export function InboxItemInput({
                 />
               </div>
             )}
-            {/* TODO: Handle accept/ignore. This should be okay to leave for now since the email assistant is setup to set `accept`/`ignore` to true alongside `edit`. */}
           </div>
         ))}
       </div>
