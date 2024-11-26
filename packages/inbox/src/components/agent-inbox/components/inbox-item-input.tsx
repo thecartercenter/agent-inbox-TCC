@@ -3,29 +3,173 @@ import {
   ActionRequest,
   HumanInterrupt,
   HumanResponseWithEdits,
+  SubmitType,
 } from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import React from "react";
-import { prettifyText } from "../utils";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { haveArgsChanged, prettifyText } from "../utils";
+import { MarkdownText } from "@/components/ui/markdown-text";
+import { Separator } from "@/components/ui/separator";
 
 interface InboxItemInputProps {
   interruptValue: HumanInterrupt;
   humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
+  supportsMultipleMethods: boolean;
+  acceptAllowed: boolean;
+  hasEdited: boolean;
+  hasAddedResponse: boolean;
+  initialValues: Record<string, string>;
   setHumanResponse: React.Dispatch<
     React.SetStateAction<HumanResponseWithEdits[]>
   >;
+  setSelectedSubmitType: React.Dispatch<
+    React.SetStateAction<SubmitType | undefined>
+  >;
+  setHasAddedResponse: React.Dispatch<React.SetStateAction<boolean>>;
+  setHasEdited: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function InboxItemInput({
   interruptValue,
   humanResponse,
   streaming,
+  supportsMultipleMethods,
+  acceptAllowed,
+  hasEdited,
+  hasAddedResponse,
+  initialValues,
   setHumanResponse,
+  setSelectedSubmitType,
+  setHasEdited,
+  setHasAddedResponse,
 }: InboxItemInputProps) {
   const defaultRows = React.useRef<Record<string, number>>({});
+
+  const onEditChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    response: HumanResponseWithEdits,
+    key: string
+  ) => {
+    let valuesChanged = true;
+    if (typeof response.args === "object") {
+      const haveValuesChanged = haveArgsChanged(
+        {
+          ...(response.args?.args || {}),
+          [key]: e.target.value,
+        },
+        initialValues
+      );
+      valuesChanged = haveValuesChanged;
+    }
+
+    if (!valuesChanged) {
+      setHasEdited(false);
+      if (acceptAllowed) {
+        setSelectedSubmitType("accept");
+      } else if (hasAddedResponse) {
+        setSelectedSubmitType("response");
+      }
+    } else {
+      setSelectedSubmitType("edit");
+      setHasEdited(true);
+    }
+
+    setHumanResponse((prev) => {
+      if (typeof response.args !== "object" || !response.args) {
+        console.error(
+          "Mismatched response type",
+          !!response.args,
+          typeof response.args
+        );
+        return prev;
+      }
+
+      const newEdit: HumanResponseWithEdits = {
+        type: response.type,
+        args: {
+          action: response.args.action,
+          args: {
+            ...response.args.args,
+            [key]: e.target.value,
+          },
+        },
+      };
+      if (
+        prev.find(
+          (p) =>
+            p.type === response.type &&
+            typeof p.args === "object" &&
+            p.args?.action === (response.args as ActionRequest).action
+        )
+      ) {
+        return prev.map((p) => {
+          if (
+            p.type === response.type &&
+            typeof p.args === "object" &&
+            p.args?.action === (response.args as ActionRequest).action
+          ) {
+            if (p.acceptAllowed) {
+              return {
+                ...newEdit,
+                acceptAllowed: true,
+                editsMade: valuesChanged,
+              };
+            }
+
+            return newEdit;
+          }
+          return p;
+        });
+      } else {
+        throw new Error("No matching response found");
+      }
+    });
+  };
+
+  const onResponseChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    response: HumanResponseWithEdits
+  ) => {
+    if (!e.target.value) {
+      setHasAddedResponse(false);
+      if (hasEdited) {
+        // The user has deleted their response, so we should set the submit type to
+        // `edit` if they've edited, or `accept` if it's allowed and they have not edited.
+        setSelectedSubmitType("edit");
+      } else if (acceptAllowed) {
+        setSelectedSubmitType("accept");
+      }
+    } else {
+      setSelectedSubmitType("response");
+      setHasAddedResponse(true);
+    }
+
+    setHumanResponse((prev) => {
+      const newResponse: HumanResponseWithEdits = {
+        type: response.type,
+        args: e.target.value,
+      };
+
+      if (prev.find((p) => p.type === response.type)) {
+        return prev.map((p) => {
+          if (p.type === response.type) {
+            if (p.acceptAllowed) {
+              return {
+                ...newResponse,
+                acceptAllowed: true,
+                editsMade: !!e.target.value,
+              };
+            }
+            return newResponse;
+          }
+          return p;
+        });
+      } else {
+        throw new Error("No human response found for string response");
+      }
+    });
+  };
 
   return (
     <div
@@ -51,7 +195,7 @@ export function InboxItemInput({
               >
                 <p className="text-sm text-gray-600 flex gap-1">
                   <strong>{prettifyText(k)}: </strong>
-                  <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
+                  <MarkdownText>{value}</MarkdownText>
                 </p>
               </div>
             );
@@ -64,6 +208,11 @@ export function InboxItemInput({
             className="flex flex-col gap-1 items-start w-full"
             key={`human-res-${response.type}-${idx}`}
           >
+            {response.type === "edit" && (
+              <p className="font-medium text-gray-700 underline underline-offset-2">
+                {response.acceptAllowed ? "Edit/Accept" : "Edit"}
+              </p>
+            )}
             {typeof response.args === "object" && response.args && (
               <>
                 {Object.entries(response.args.args).map(([k, v], idx) => {
@@ -87,7 +236,7 @@ export function InboxItemInput({
 
                   return (
                     <div
-                      className="flex flex-col gap-1 items-start w-full h-full"
+                      className="flex flex-col gap-1 items-start w-full h-full px-[1px]"
                       key={`allow-edit-args--${k}-${idx}`}
                     >
                       <p className="text-sm min-w-fit font-medium">
@@ -97,63 +246,7 @@ export function InboxItemInput({
                         disabled={streaming}
                         className="h-full"
                         value={value}
-                        onChange={(e) => {
-                          setHumanResponse((prev) => {
-                            if (
-                              typeof response.args !== "object" ||
-                              !response.args
-                            ) {
-                              console.error(
-                                "Mismatched response type",
-                                !!response.args,
-                                typeof response.args
-                              );
-                              return prev;
-                            }
-
-                            const newEdit: HumanResponseWithEdits = {
-                              type: response.type,
-                              args: {
-                                action: response.args.action,
-                                args: {
-                                  ...response.args.args,
-                                  [k]: e.target.value,
-                                },
-                              },
-                            };
-                            if (
-                              prev.find(
-                                (p) =>
-                                  p.type === response.type &&
-                                  typeof p.args === "object" &&
-                                  p.args?.action ===
-                                    (response.args as ActionRequest).action
-                              )
-                            ) {
-                              return prev.map((p) => {
-                                if (
-                                  p.type === response.type &&
-                                  typeof p.args === "object" &&
-                                  p.args?.action ===
-                                    (response.args as ActionRequest).action
-                                ) {
-                                  if (p.acceptAllowed) {
-                                    return {
-                                      ...newEdit,
-                                      acceptAllowed: true,
-                                      editsMade: true,
-                                    };
-                                  }
-
-                                  return newEdit;
-                                }
-                                return p;
-                              });
-                            } else {
-                              throw new Error("No matching response found");
-                            }
-                          });
-                        }}
+                        onChange={(e) => onEditChange(e, response, k)}
                         rows={numRows}
                       />
                     </div>
@@ -161,46 +254,28 @@ export function InboxItemInput({
                 })}
               </>
             )}
+            {supportsMultipleMethods && typeof response.args === "string" ? (
+              <div className="flex gap-3 items-center w-full mt-3">
+                <Separator className="w-1/2" />
+                <p className="text-sm text-gray-500">or</p>
+                <Separator className="w-1/2" />
+              </div>
+            ) : null}
             {typeof response.args === "string" && (
-              <div className="flex flex-col gap-1 items-start w-full border-t-[1px] border-gray-200 mt-3 pt-3">
+              <div className="flex flex-col gap-1 items-start w-full pt-3 px-[1px]">
+                <p className="font-medium text-gray-700 underline underline-offset-2">
+                  Respond
+                </p>
                 <p className="text-sm min-w-fit font-medium">Response:</p>
                 <Textarea
                   disabled={streaming}
                   value={response.args}
-                  onChange={(e) => {
-                    setHumanResponse((prev) => {
-                      const newResponse: HumanResponseWithEdits = {
-                        type: response.type,
-                        args: e.target.value,
-                      };
-
-                      if (prev.find((p) => p.type === response.type)) {
-                        return prev.map((p) => {
-                          if (p.type === response.type) {
-                            if (p.acceptAllowed) {
-                              return {
-                                ...newResponse,
-                                acceptAllowed: true,
-                                editsMade: true,
-                              };
-                            }
-                            return newResponse;
-                          }
-                          return p;
-                        });
-                      } else {
-                        throw new Error(
-                          "No human response found for string response"
-                        );
-                      }
-                    });
-                  }}
+                  onChange={(e) => onResponseChange(e, response)}
                   rows={8}
                   placeholder="Your response here..."
                 />
               </div>
             )}
-            {/* TODO: Handle accept/ignore. This should be okay to leave for now since the email assistant is setup to set `accept`/`ignore` to true alongside `edit`. */}
           </div>
         ))}
       </div>

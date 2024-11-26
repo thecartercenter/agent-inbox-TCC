@@ -58,7 +58,7 @@ export type ThreadData<
 } & (
   | {
       status: "interrupted";
-      interrupts: HumanInterrupt[];
+      interrupts: HumanInterrupt[] | undefined;
     }
   | {
       status: "idle" | "busy" | "error";
@@ -67,3 +67,5 @@ export type ThreadData<
 );
 
 export type ThreadStatusWithAll = ThreadStatus | "all";
+
+export type SubmitType = "accept" | "response" | "edit";

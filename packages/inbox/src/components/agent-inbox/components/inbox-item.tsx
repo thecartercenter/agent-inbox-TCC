@@ -1,4 +1,4 @@
-import { ThreadData, ThreadStatusWithAll } from "../types";
+import { HumanInterrupt, ThreadData, ThreadStatusWithAll } from "../types";
 import React from "react";
 import { useQueryParams } from "../hooks/use-query-params";
 import { InterruptedInboxItem } from "./interrupted-inbox-item";
@@ -21,14 +21,50 @@ export function InboxItem<
 
   if (inbox === "all") {
     if (threadData.status === "interrupted") {
-      return <InterruptedInboxItem threadData={threadData} />;
+      if (threadData.interrupts?.length) {
+        return (
+          <InterruptedInboxItem
+            threadData={
+              threadData as ThreadData<ThreadValues> & {
+                interrupts: HumanInterrupt[];
+              }
+            }
+          />
+        );
+      } else {
+        return (
+          <GenericInboxItem
+            threadData={
+              threadData as ThreadData<ThreadValues> & { interrupts: undefined }
+            }
+          />
+        );
+      }
     } else {
       return <GenericInboxItem threadData={threadData} />;
     }
   }
 
   if (inbox === "interrupted" && threadData.status === "interrupted") {
-    return <InterruptedInboxItem threadData={threadData} />;
+    if (threadData.interrupts?.length) {
+      return (
+        <InterruptedInboxItem
+          threadData={
+            threadData as ThreadData<ThreadValues> & {
+              interrupts: HumanInterrupt[];
+            }
+          }
+        />
+      );
+    } else {
+      return (
+        <GenericInboxItem
+          threadData={
+            threadData as ThreadData<ThreadValues> & { interrupts: undefined }
+          }
+        />
+      );
+    }
   }
 
   if (inbox !== "interrupted" && threadData.status !== "interrupted") {

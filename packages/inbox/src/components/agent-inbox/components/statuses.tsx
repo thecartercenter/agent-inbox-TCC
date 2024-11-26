@@ -56,7 +56,7 @@ export function InboxItemStatuses({
 export function ThreadStatusBadge({
   status,
 }: {
-  status: "idle" | "busy" | "error";
+  status: "idle" | "busy" | "error" | "interrupted";
 }) {
   const colorMap = {
     idle: {
@@ -70,6 +70,10 @@ export function ThreadStatusBadge({
     error: {
       bg: "rgb(180 83 9)",
       shadow: "rgb(180 83 9, 0.6)",
+    },
+    interrupted: {
+      bg: "rgb(180, 250, 237)",
+      shadow: "rgb(180, 250, 237, 0.6)",
     },
   };
   const statusColor = colorMap[status];

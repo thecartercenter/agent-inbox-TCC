@@ -1,6 +1,7 @@
 import { BaseMessage, isBaseMessage } from "@langchain/core/messages";
 import { format } from "date-fns";
 import { startCase } from "lodash";
+import { HumanInterrupt, HumanResponseWithEdits, SubmitType } from "./types";
 
 export function prettifyText(action: string) {
   return startCase(action.replace(/_/g, " "));
@@ -89,4 +90,108 @@ export function constructOpenInStudioURL(
   smithStudioURL.searchParams.append("baseUrl", trimmedDeploymentUrl);
 
   return smithStudioURL.toString();
+}
+
+export function createDefaultHumanResponse(
+  interrupts: HumanInterrupt[],
+  initialHumanInterruptEditValue: React.MutableRefObject<Record<string, string>>
+): {
+  responses: HumanResponseWithEdits[];
+  defaultSubmitType: SubmitType | undefined;
+  hasAccept: boolean;
+} {
+  const responses = interrupts.flatMap((v) => {
+    const humanRes: HumanResponseWithEdits[] = [];
+    if (v.config.allow_edit) {
+      if (v.config.allow_accept) {
+        Object.entries(v.action_request.args).forEach(([k, v]) => {
+          if (
+            !initialHumanInterruptEditValue.current ||
+            !(k in initialHumanInterruptEditValue.current)
+          ) {
+            initialHumanInterruptEditValue.current = {
+              ...initialHumanInterruptEditValue.current,
+              [k]: ["string" || "number"].includes(typeof v)
+                ? v.toString()
+                : JSON.stringify(v, null),
+            };
+          } else if (
+            k in initialHumanInterruptEditValue.current &&
+            initialHumanInterruptEditValue.current[k] !== v
+          ) {
+            console.error(
+              "KEY AND VALUE FOUND IN initialHumanInterruptEditValue.current THAT DOES NOT MATCH THE ACTION REQUEST",
+              {
+                initialHumanInterruptEditValue:
+                  initialHumanInterruptEditValue.current,
+                actionRequest: v.action_request,
+              }
+            );
+          }
+        });
+        humanRes.push({
+          type: "edit",
+          args: v.action_request,
+          acceptAllowed: true,
+          editsMade: false,
+        });
+      } else {
+        humanRes.push({
+          type: "edit",
+          args: v.action_request,
+          acceptAllowed: false,
+        });
+      }
+    }
+    if (v.config.allow_respond) {
+      humanRes.push({
+        type: "response",
+        args: "",
+      });
+    }
+
+    if (v.config.allow_ignore) {
+      humanRes.push({
+        type: "ignore",
+        args: null,
+      });
+    }
+
+    return humanRes;
+  });
+
+  // Set the submit type.
+  // Priority: accept > response  > edit
+  const hasResponse = responses.find((r) => r.type === "response");
+  const hasAccept = responses.find((r) => r.acceptAllowed);
+  const hasEdit = responses.find((r) => r.type === "edit");
+
+  let defaultSubmitType: SubmitType | undefined;
+  if (hasAccept) {
+    defaultSubmitType = "accept";
+  } else if (hasResponse) {
+    defaultSubmitType = "response";
+  } else if (hasEdit) {
+    defaultSubmitType = "edit";
+  }
+
+  return { responses, defaultSubmitType, hasAccept: !!hasAccept };
+}
+
+export function haveArgsChanged(
+  args: unknown,
+  initialValues: Record<string, string>
+): boolean {
+  if (typeof args !== "object" || !args) {
+    return false;
+  }
+
+  const currentValues = args as Record<string, string>;
+
+  return Object.entries(currentValues).some(([key, value]) => {
+    const valueString = ["string", "number"].includes(typeof value)
+      ? value.toString()
+      : JSON.stringify(value, null);
+    return initialValues[key] !== valueString;
+  });
 }

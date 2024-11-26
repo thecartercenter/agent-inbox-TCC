@@ -3,122 +3,22 @@ import {
   HumanInterrupt,
   HumanResponse,
   HumanResponseWithEdits,
+  SubmitType,
   ThreadStatusWithAll,
 } from "../types";
 import React, { useEffect } from "react";
-import { Button } from "../../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { prettifyText } from "../utils";
+import { createDefaultHumanResponse, prettifyText } from "../utils";
 import { InboxItemStatuses } from "./statuses";
 import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { InboxItemInput } from "./inbox-item-input";
 import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
-import { LoaderCircle } from "lucide-react";
 import { ThreadIdTooltip } from "./thread-id";
 import { Thread } from "@langchain/langgraph-sdk";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-interface InboxItemFooterProps {
-  handleToggleViewState: () => void;
-  setActive: React.Dispatch<React.SetStateAction<boolean>>;
-  handleSubmit: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => Promise<void>;
-  handleIgnore: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => Promise<void>;
-  streaming: boolean;
-  streamFinished: boolean;
-  currentNode: string;
-  loading: boolean;
-  threadId: string;
-  isIgnoreAllowed: boolean;
-}
-
-function InboxItemFooter({
-  streaming,
-  streamFinished,
-  currentNode,
-  loading,
-  threadId,
-  isIgnoreAllowed,
-  handleSubmit,
-  handleIgnore,
-  setActive,
-  handleToggleViewState,
-}: InboxItemFooterProps) {
-  const { getSearchParam, updateQueryParams } = useQueryParams();
-
-  return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex gap-2 items-center justify-start">
-        <p
-          onClick={() => handleToggleViewState()}
-          className="text-gray-700 hover:text-black transition-colors ease-in-out font-medium underline underline-offset-2 cursor-pointer"
-        >
-          View State
-        </p>
-      </div>
-      <div className="flex gap-2 items-center justify-end">
-        {streaming && !currentNode && (
-          <p className="text-sm text-gray-600">Waiting for Graph to start...</p>
-        )}
-        {streaming && currentNode && (
-          <div className="flex gap-2">
-            <span className="text-sm text-gray-600 flex items-center justify-start gap-1">
-              <p>Running</p>
-              <LoaderCircle className="w-3 h-3 animate-spin" />
-            </span>
-            <p className="text-black text-sm font-mono">
-              <span className="font-sans text-gray-700">Node: </span>
-              {prettifyText(currentNode)}
-            </p>
-          </div>
-        )}
-        {streamFinished && (
-          <p className="text-base text-green-600 font-medium">
-            Successfully finished Graph invocation.
-          </p>
-        )}
-        {!streaming && !streamFinished && (
-          <>
-            <Button
-              variant="outline"
-              disabled={loading}
-              onClick={() => {
-                const currQueryParamThreadId = getSearchParam(
-                  VIEW_STATE_THREAD_QUERY_PARAM
-                );
-                if (currQueryParamThreadId === threadId) {
-                  updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
-                }
-                setActive(false);
-              }}
-            >
-              Close
-            </Button>
-            {isIgnoreAllowed && (
-              <Button
-                variant="outline"
-                disabled={loading}
-                onClick={handleIgnore}
-                className="border-red-500 text-red-500 hover:text-red-600"
-              >
-                Ignore
-              </Button>
-            )}
-            <Button variant="default" disabled={loading} onClick={handleSubmit}>
-              Submit
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+import { MarkdownText } from "@/components/ui/markdown-text";
+import { InboxItemFooter } from "./inbox-item-footer";
 
 interface InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -142,6 +42,8 @@ export function InterruptedInboxItem<
   const { toast } = useToast();
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
 
+  const itemRef = React.useRef<HTMLDivElement>(null);
+
   const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
   const isCurrentThreadStateView =
@@ -155,6 +57,17 @@ export function InterruptedInboxItem<
   const [streaming, setStreaming] = React.useState(false);
   const [currentNode, setCurrentNode] = React.useState("");
   const [streamFinished, setStreamFinished] = React.useState(false);
+  const initialHumanInterruptEditValue = React.useRef<Record<string, string>>(
+    {}
+  );
+
+  const [selectedSubmitType, setSelectedSubmitType] =
+    React.useState<SubmitType>();
+  // Whether or not the user has edited any fields which allow editing.
+  const [hasEdited, setHasEdited] = React.useState(false);
+  // Whether or not the user has added a response.
+  const [hasAddedResponse, setHasAddedResponse] = React.useState(false);
+  const [acceptAllowed, setAcceptAllowed] = React.useState(false);
 
   const actionTypeColorMap = {
     question: { bg: "#FCA5A5", border: "#EF4444" },
@@ -178,37 +91,21 @@ export function InterruptedInboxItem<
   };
 
   useEffect(() => {
+    if (isCurrentThreadStateView && itemRef.current) {
+      itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [isCurrentThreadStateView]);
+
+  useEffect(() => {
     if (!threadData.interrupts) return;
-    const defaultHumanResponse: HumanResponseWithEdits[] =
-      threadData.interrupts.flatMap((v) => {
-        const humanRes: HumanResponseWithEdits[] = [];
-        if (v.config.allow_edit) {
-          if (v.config.allow_accept) {
-            humanRes.push({
-              type: "edit",
-              args: v.action_request,
-              acceptAllowed: true,
-              editsMade: false,
-            });
-          } else {
-            humanRes.push({
-              type: "edit",
-              args: v.action_request,
-              acceptAllowed: false,
-            });
-          }
-        }
-        if (v.config.allow_respond) {
-          humanRes.push({
-            type: "response",
-            args: "",
-          });
-        }
-
-        return humanRes;
-      });
-
-    setHumanResponse(defaultHumanResponse);
+    const { responses, defaultSubmitType, hasAccept } =
+      createDefaultHumanResponse(
+        threadData.interrupts,
+        initialHumanInterruptEditValue
+      );
+    setSelectedSubmitType(defaultSubmitType);
+    setHumanResponse(responses);
+    setAcceptAllowed(hasAccept);
   }, [threadData.interrupts]);
 
   useEffect(() => {
@@ -243,19 +140,13 @@ export function InterruptedInboxItem<
       });
       return;
     }
-
-    setLoading(true);
+    let errorOccurred = false;
 
     if (
       humanResponse.some((r) => ["response", "edit", "accept"].includes(r.type))
     ) {
-      toast({
-        title: "Success",
-        description: "Response submitted successfully.",
-        duration: 5000,
-      });
-      setStreaming(true);
       setStreamFinished(false);
+      setCurrentNode("");
 
       try {
         const humanResponseInput: HumanResponse[] = humanResponse.flatMap(
@@ -284,13 +175,35 @@ export function InterruptedInboxItem<
             };
           }
         );
+
+        const input = humanResponseInput.find(
+          (r) => r.type === selectedSubmitType
+        );
+        if (!input) {
+          toast({
+            title: "Error",
+            description: "No response found.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          return;
+        }
+
+        setLoading(true);
+        setStreaming(true);
         const response = sendHumanResponse(
           threadData.thread.thread_id,
-          humanResponseInput,
+          [input],
           {
             stream: true,
           }
         );
+
+        toast({
+          title: "Success",
+          description: "Response submitted successfully.",
+          duration: 5000,
+        });
 
         for await (const chunk of response) {
           if (
@@ -298,10 +211,34 @@ export function InterruptedInboxItem<
             chunk.data?.metadata?.langgraph_node
           ) {
             setCurrentNode(chunk.data.metadata.langgraph_node);
+          } else if (
+            typeof chunk.event === "string" &&
+            chunk.event === "error"
+          ) {
+            toast({
+              title: "Error",
+              description: (
+                <div className="flex flex-col gap-1 items-start">
+                  <p>Something went wrong while attempting to run the graph.</p>
+                  <span>
+                    <strong>Error:</strong>
+                    <span className="font-mono">
+                      {JSON.stringify(chunk.data, null)}
+                    </span>
+                  </span>
+                </div>
+              ),
+              variant: "destructive",
+              duration: 15000,
+            });
+            setCurrentNode("__error__");
+            errorOccurred = true;
           }
         }
 
-        setStreamFinished(true);
+        if (!errorOccurred) {
+          setStreamFinished(true);
+        }
       } catch (e) {
         console.error("Error sending human response", e);
         toast({
@@ -312,12 +249,15 @@ export function InterruptedInboxItem<
         });
       }
 
-      setCurrentNode("");
-      setStreaming(false);
-      // Fetch new threads so that the inbox item is updated.
-      await fetchThreads(selectedInbox);
-      setStreamFinished(false);
+      if (!errorOccurred) {
+        setCurrentNode("");
+        setStreaming(false);
+        // Fetch new threads so that the inbox item is updated.
+        await fetchThreads(selectedInbox);
+        setStreamFinished(false);
+      }
     } else {
+      setLoading(true);
       await sendHumanResponse(threadData.thread.thread_id, humanResponse);
 
       toast({
@@ -328,18 +268,46 @@ export function InterruptedInboxItem<
     }
 
     setLoading(false);
-    setActive(false);
+    if (!errorOccurred) {
+      setActive(false);
+    }
   };
 
   const handleIgnore = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
+
+    const ignoreResponse = humanResponse.find((r) => r.type === "ignore");
+    if (!ignoreResponse) {
+      toast({
+        title: "Error",
+        description: "The selected thread does not support ignoring.",
+        duration: 5000,
+      });
+      return;
+    }
+
     setLoading(true);
-    await ignoreThread(threadData.thread.thread_id);
+    await sendHumanResponse(threadData.thread.thread_id, [ignoreResponse]);
+    const selectedInbox = getSearchParam(INBOX_PARAM) as
+      | ThreadStatusWithAll
+      | "interrupted";
+    await fetchThreads(selectedInbox);
     setLoading(true);
     setActive(false);
   };
+
+  const handleResolve = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    setLoading(true);
+    await ignoreThread(threadData.thread.thread_id);
+    setLoading(false);
+    setActive(false);
+  };
+
   const descriptionPreview =
     threadData.interrupts[0].description &&
     threadData.interrupts[0].description.slice(0, 75);
@@ -347,8 +315,27 @@ export function InterruptedInboxItem<
     threadData.interrupts[0].description &&
     threadData.interrupts[0].description.length > 75;
 
+  const supportsMultipleMethods =
+    humanResponse.filter((r) => r.type === "response" || r.type === "edit")
+      .length > 1;
+
+  const handleResetForm = () => {
+    initialHumanInterruptEditValue.current = {};
+    const { responses, defaultSubmitType, hasAccept } =
+      createDefaultHumanResponse(
+        threadData.interrupts,
+        initialHumanInterruptEditValue
+      );
+    setAcceptAllowed(hasAccept);
+    setSelectedSubmitType(defaultSubmitType);
+    setHumanResponse(responses);
+    setHasAddedResponse(false);
+    setHasEdited(false);
+  };
+
   return (
     <div
+      ref={itemRef}
       onClick={() => {
         if (!active) {
           setActive(true);
@@ -394,9 +381,9 @@ export function InterruptedInboxItem<
         {descriptionPreview && !active && (
           <p className="text-sm text-gray-500 mr-auto flex gap-1">
             <strong>Agent Response: </strong>
-            <Markdown remarkPlugins={[remarkGfm]}>
+            <MarkdownText>
               {`${descriptionPreview}${descriptionTruncated ? "..." : ""}`}
-            </Markdown>
+            </MarkdownText>
           </p>
         )}
       </motion.span>
@@ -412,13 +399,22 @@ export function InterruptedInboxItem<
             {/* TODO: HANDLE ARRAY OF INTERRUPT VALUES */}
             <div className="flex flex-col gap-4 items-start w-full">
               <InboxItemInput
+                acceptAllowed={acceptAllowed}
+                hasEdited={hasEdited}
+                hasAddedResponse={hasAddedResponse}
                 interruptValue={threadData.interrupts[0]}
                 humanResponse={humanResponse}
+                initialValues={initialHumanInterruptEditValue.current}
                 setHumanResponse={setHumanResponse}
                 streaming={streaming}
+                supportsMultipleMethods={supportsMultipleMethods}
+                setSelectedSubmitType={setSelectedSubmitType}
+                setHasAddedResponse={setHasAddedResponse}
+                setHasEdited={setHasEdited}
               />
             </div>
             <InboxItemFooter
+              acceptAllowed={acceptAllowed}
               streaming={streaming}
               streamFinished={streamFinished}
               currentNode={currentNode}
@@ -427,8 +423,15 @@ export function InterruptedInboxItem<
               isIgnoreAllowed={isIgnoreAllowed}
               handleSubmit={handleSubmit}
               handleIgnore={handleIgnore}
+              handleResolve={handleResolve}
               setActive={setActive}
               handleToggleViewState={handleToggleViewState}
+              supportsMultipleMethods={supportsMultipleMethods}
+              setSelectedSubmitType={setSelectedSubmitType}
+              selectedSubmitType={selectedSubmitType}
+              hasEdited={hasEdited}
+              hasAddedResponse={hasAddedResponse}
+              handleResetForm={handleResetForm}
             />
           </motion.div>
         )}

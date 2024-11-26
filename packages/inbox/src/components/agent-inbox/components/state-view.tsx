@@ -24,10 +24,9 @@ import NextImage from "next/image";
 import GraphIcon from "@/components/icons/GraphIcon.svg";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useToast } from "@/hooks/use-toast";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { ThreadIdCopyable } from "./thread-id";
 import { PillButton } from "@/components/ui/pill-button";
+import { MarkdownText } from "@/components/ui/markdown-text";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -72,9 +71,7 @@ function MessagesRenderer({ messages }: { messages: BaseMessage[] }) {
           >
             <p className="font-medium text-gray-700">{messageTypeLabel}:</p>
             {content && (
-              <Markdown className="text-gray-600" remarkPlugins={[remarkGfm]}>
-                {content}
-              </Markdown>
+              <MarkdownText className="text-gray-600">{content}</MarkdownText>
             )}
             {"tool_calls" in msg && msg.tool_calls ? (
               <div className="flex flex-col gap-1 items-start w-full">
@@ -101,23 +98,17 @@ function StateViewRecursive(props: StateViewRecursiveProps) {
 
   if (["string", "number"].includes(typeof props.value)) {
     return (
-      <Markdown
-        className="font-light text-gray-600"
-        remarkPlugins={[remarkGfm]}
-      >
+      <MarkdownText className="font-light text-gray-600">
         {props.value as string}
-      </Markdown>
+      </MarkdownText>
     );
   }
 
   if (typeof props.value === "boolean") {
     return (
-      <Markdown
-        className="font-light text-gray-600"
-        remarkPlugins={[remarkGfm]}
-      >
+      <MarkdownText className="font-light text-gray-600">
         {JSON.stringify(props.value)}
-      </Markdown>
+      </MarkdownText>
     );
   }
 
@@ -336,10 +327,10 @@ export function StateView() {
         <ThreadIdCopyable threadId={threadIdParam} />
       </div>
       {view === "description" && (
-        <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
-          <Markdown remarkPlugins={[remarkGfm]}>
+        <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <MarkdownText>
             {description || "No description provided"}
-          </Markdown>
+          </MarkdownText>
         </div>
       )}
       <div className="flex gap-2 items-center justify-center fixed right-4 top-8">
