@@ -43,6 +43,20 @@ type ThreadContentType<
 
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
 
+const getInterruptFromThread = (thread: Thread) => {
+  if (
+    "interrupts" in thread &&
+    typeof thread.interrupts === "object" &&
+    thread.interrupts &&
+    Object.keys(thread.interrupts).length > 0
+  ) {
+    return Object.values(thread.interrupts).flatMap((i) =>
+      i.flatMap((ii: any) => ii.value)
+    );
+  }
+  return undefined;
+};
+
 export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ children }: { children: ReactNode }) {
@@ -100,45 +114,64 @@ export function ThreadsProvider<
         ...statusInput,
       };
       const threads = await client.threads.search(threadSearchArgs);
-
       const data: ThreadData<ThreadValues>[] = [];
+
       if (["interrupted", "all"].includes(inbox)) {
         const interruptedThreads = threads.filter(
           (t) => t.status === "interrupted"
         );
         if (interruptedThreads.length > 0) {
-          const interruptedStates = await bulkGetThreadStates(
-            interruptedThreads.map((t) => t.thread_id)
-          );
+          interruptedThreads.forEach((t) => {
+            const interrupts = getInterruptFromThread(t);
+            if (interrupts) {
+              data.push({
+                thread: t as Thread<ThreadValues>,
+                interrupts,
+                status: "interrupted",
+              });
+            }
+          });
+          const threadsWithoutInterrupts = interruptedThreads.filter((t) => {
+            if (!Object.keys((t as any).interrupts).length) {
+              return true;
+            }
+            return false;
+          });
 
-          const interruptedData: ThreadData<ThreadValues>[] =
-            interruptedStates.flatMap((state) => {
-              const lastTask =
-                state.thread_state.tasks[state.thread_state.tasks.length - 1];
-              const lastInterrupt =
-                lastTask.interrupts[lastTask.interrupts.length - 1];
-              const thread = interruptedThreads.find(
-                (t) => t.thread_id === state.thread_id
-              );
-              if (!thread) {
-                throw new Error(`Thread not found: ${state.thread_id}`);
-              }
+          if (threadsWithoutInterrupts.length > 0) {
+            const interruptedStates = await bulkGetThreadStates(
+              threadsWithoutInterrupts.map((t) => t.thread_id)
+            );
 
-              if (!lastInterrupt || !("value" in lastInterrupt)) {
+            const interruptedData: ThreadData<ThreadValues>[] =
+              interruptedStates.flatMap((state) => {
+                const lastTask =
+                  state.thread_state.tasks[state.thread_state.tasks.length - 1];
+                const lastInterrupt =
+                  lastTask.interrupts[lastTask.interrupts.length - 1];
+                const thread = threadsWithoutInterrupts.find(
+                  (t) => t.thread_id === state.thread_id
+                );
+                if (!thread) {
+                  throw new Error(`Thread not found: ${state.thread_id}`);
+                }
+
+                if (!lastInterrupt || !("value" in lastInterrupt)) {
+                  return {
+                    status: "interrupted",
+                    thread: thread as Thread<ThreadValues>,
+                    interrupts: undefined,
+                  };
+                }
+
                 return {
                   status: "interrupted",
                   thread: thread as Thread<ThreadValues>,
-                  interrupts: undefined,
+                  interrupts: lastInterrupt.value as HumanInterrupt[],
                 };
-              }
-
-              return {
-                status: "interrupted",
-                thread: thread as Thread<ThreadValues>,
-                interrupts: lastInterrupt.value as HumanInterrupt[],
-              };
-            });
-          data.push(...interruptedData);
+              });
+            data.push(...interruptedData);
+          }
         }
       }
 

@@ -37,7 +37,6 @@ export function InboxItemInput({
   setHasAddedResponse,
 }: InboxItemInputProps) {
   const defaultRows = React.useRef<Record<string, number>>({});
-  console.log(humanResponse)
 
   return (
     <div
@@ -76,7 +75,11 @@ export function InboxItemInput({
             className="flex flex-col gap-1 items-start w-full"
             key={`human-res-${response.type}-${idx}`}
           >
-            {response.type === "edit" && <p className="font-medium text-gray-700 underline underline-offset-2">{response.acceptAllowed ? "Edit/Accept" : "Edit"}</p>}
+            {response.type === "edit" && (
+              <p className="font-medium text-gray-700 underline underline-offset-2">
+                {response.acceptAllowed ? "Edit/Accept" : "Edit"}
+              </p>
+            )}
             {typeof response.args === "object" && response.args && (
               <>
                 {Object.entries(response.args.args).map(([k, v], idx) => {
@@ -185,7 +188,9 @@ export function InboxItemInput({
             ) : null}
             {typeof response.args === "string" && (
               <div className="flex flex-col gap-1 items-start w-full pt-3 px-[1px]">
-                <p className="font-medium text-gray-700 underline underline-offset-2">Respond</p>
+                <p className="font-medium text-gray-700 underline underline-offset-2">
+                  Respond
+                </p>
                 <p className="text-sm min-w-fit font-medium">Response:</p>
                 <Textarea
                   disabled={streaming}

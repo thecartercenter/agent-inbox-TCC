@@ -68,8 +68,6 @@ function SubmitSelect({
     }
   }, [selectedSubmitType, hasEdited, hasAddedResponse]);
 
-  console.log("selectedSubmitType", selectedSubmitType);
-
   // If the user has not edited or added a response, they can't toggle between the two so
   // just return a single button. This button is also disabled in this state if the submit
   // type is not "accept".
