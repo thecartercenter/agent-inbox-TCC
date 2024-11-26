@@ -132,7 +132,7 @@ export function ThreadsProvider<
             }
           });
           const threadsWithoutInterrupts = interruptedThreads.filter((t) => {
-            if (!Object.keys((t as any).interrupts).length) {
+            if (!getInterruptFromThread(t)?.length) {
               return true;
             }
             return false;
