@@ -105,7 +105,6 @@ export function createDefaultHumanResponse(
     if (v.config.allow_edit) {
       if (v.config.allow_accept) {
         Object.entries(v.action_request.args).forEach(([k, v]) => {
-          console.log("setting key", k, "to value", v);
           if (
             !initialHumanInterruptEditValue.current ||
             !(k in initialHumanInterruptEditValue.current)
