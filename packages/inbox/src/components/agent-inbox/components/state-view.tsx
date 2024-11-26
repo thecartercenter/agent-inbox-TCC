@@ -327,7 +327,7 @@ export function StateView() {
         <ThreadIdCopyable threadId={threadIdParam} />
       </div>
       {view === "description" && (
-        <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%]">
+        <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <MarkdownText>
             {description || "No description provided"}
           </MarkdownText>
