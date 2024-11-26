@@ -7,7 +7,7 @@ import {
 } from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import React from "react";
-import { prettifyText } from "../utils";
+import { haveArgsChanged, prettifyText } from "../utils";
 import { MarkdownText } from "@/components/ui/markdown-text";
 import { Separator } from "@/components/ui/separator";
 
@@ -16,6 +16,10 @@ interface InboxItemInputProps {
   humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
   supportsMultipleMethods: boolean;
+  acceptAllowed: boolean;
+  hasEdited: boolean;
+  hasAddedResponse: boolean;
+  initialValues: Record<string, string>;
   setHumanResponse: React.Dispatch<
     React.SetStateAction<HumanResponseWithEdits[]>
   >;
@@ -31,12 +35,140 @@ export function InboxItemInput({
   humanResponse,
   streaming,
   supportsMultipleMethods,
+  acceptAllowed,
+  hasEdited,
+  hasAddedResponse,
+  initialValues,
   setHumanResponse,
   setSelectedSubmitType,
   setHasEdited,
   setHasAddedResponse,
 }: InboxItemInputProps) {
   const defaultRows = React.useRef<Record<string, number>>({});
+
+  const onEditChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    response: HumanResponseWithEdits,
+    key: string
+  ) => {
+    let valuesChanged = true;
+    if (typeof response.args === "object") {
+      const haveValuesChanged = haveArgsChanged(
+        {
+          ...(response.args?.args || {}),
+          [key]: e.target.value,
+        },
+        initialValues
+      );
+      valuesChanged = haveValuesChanged;
+    }
+
+    if (!valuesChanged) {
+      setHasEdited(false);
+      if (acceptAllowed) {
+        setSelectedSubmitType("accept");
+      } else if (hasAddedResponse) {
+        setSelectedSubmitType("response");
+      }
+    } else {
+      setSelectedSubmitType("edit");
+      setHasEdited(true);
+    }
+
+    setHumanResponse((prev) => {
+      if (typeof response.args !== "object" || !response.args) {
+        console.error(
+          "Mismatched response type",
+          !!response.args,
+          typeof response.args
+        );
+        return prev;
+      }
+
+      const newEdit: HumanResponseWithEdits = {
+        type: response.type,
+        args: {
+          action: response.args.action,
+          args: {
+            ...response.args.args,
+            [key]: e.target.value,
+          },
+        },
+      };
+      if (
+        prev.find(
+          (p) =>
+            p.type === response.type &&
+            typeof p.args === "object" &&
+            p.args?.action === (response.args as ActionRequest).action
+        )
+      ) {
+        return prev.map((p) => {
+          if (
+            p.type === response.type &&
+            typeof p.args === "object" &&
+            p.args?.action === (response.args as ActionRequest).action
+          ) {
+            if (p.acceptAllowed) {
+              return {
+                ...newEdit,
+                acceptAllowed: true,
+                editsMade: true,
+              };
+            }
+
+            return newEdit;
+          }
+          return p;
+        });
+      } else {
+        throw new Error("No matching response found");
+      }
+    });
+  };
+
+  const onResponseChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    response: HumanResponseWithEdits
+  ) => {
+    if (!e.target.value) {
+      setHasAddedResponse(false);
+      if (hasEdited) {
+        // The user has deleted their response, so we should set the submit type to
+        // `edit` if they've edited, or `accept` if it's allowed and they have not edited.
+        setSelectedSubmitType("edit");
+      } else if (acceptAllowed) {
+        setSelectedSubmitType("accept");
+      }
+    } else {
+      setSelectedSubmitType("response");
+      setHasAddedResponse(true);
+    }
+    setHumanResponse((prev) => {
+      const newResponse: HumanResponseWithEdits = {
+        type: response.type,
+        args: e.target.value,
+      };
+
+      if (prev.find((p) => p.type === response.type)) {
+        return prev.map((p) => {
+          if (p.type === response.type) {
+            if (p.acceptAllowed) {
+              return {
+                ...newResponse,
+                acceptAllowed: true,
+                editsMade: true,
+              };
+            }
+            return newResponse;
+          }
+          return p;
+        });
+      } else {
+        throw new Error("No human response found for string response");
+      }
+    });
+  };
 
   return (
     <div
@@ -113,65 +245,7 @@ export function InboxItemInput({
                         disabled={streaming}
                         className="h-full"
                         value={value}
-                        onChange={(e) => {
-                          setSelectedSubmitType("edit");
-                          setHasEdited(true);
-                          setHumanResponse((prev) => {
-                            if (
-                              typeof response.args !== "object" ||
-                              !response.args
-                            ) {
-                              console.error(
-                                "Mismatched response type",
-                                !!response.args,
-                                typeof response.args
-                              );
-                              return prev;
-                            }
-
-                            const newEdit: HumanResponseWithEdits = {
-                              type: response.type,
-                              args: {
-                                action: response.args.action,
-                                args: {
-                                  ...response.args.args,
-                                  [k]: e.target.value,
-                                },
-                              },
-                            };
-                            if (
-                              prev.find(
-                                (p) =>
-                                  p.type === response.type &&
-                                  typeof p.args === "object" &&
-                                  p.args?.action ===
-                                    (response.args as ActionRequest).action
-                              )
-                            ) {
-                              return prev.map((p) => {
-                                if (
-                                  p.type === response.type &&
-                                  typeof p.args === "object" &&
-                                  p.args?.action ===
-                                    (response.args as ActionRequest).action
-                                ) {
-                                  if (p.acceptAllowed) {
-                                    return {
-                                      ...newEdit,
-                                      acceptAllowed: true,
-                                      editsMade: true,
-                                    };
-                                  }
-
-                                  return newEdit;
-                                }
-                                return p;
-                              });
-                            } else {
-                              throw new Error("No matching response found");
-                            }
-                          });
-                        }}
+                        onChange={(e) => onEditChange(e, response, k)}
                         rows={numRows}
                       />
                     </div>
@@ -195,36 +269,7 @@ export function InboxItemInput({
                 <Textarea
                   disabled={streaming}
                   value={response.args}
-                  onChange={(e) => {
-                    setSelectedSubmitType("response");
-                    setHasAddedResponse(true);
-                    setHumanResponse((prev) => {
-                      const newResponse: HumanResponseWithEdits = {
-                        type: response.type,
-                        args: e.target.value,
-                      };
-
-                      if (prev.find((p) => p.type === response.type)) {
-                        return prev.map((p) => {
-                          if (p.type === response.type) {
-                            if (p.acceptAllowed) {
-                              return {
-                                ...newResponse,
-                                acceptAllowed: true,
-                                editsMade: true,
-                              };
-                            }
-                            return newResponse;
-                          }
-                          return p;
-                        });
-                      } else {
-                        throw new Error(
-                          "No human response found for string response"
-                        );
-                      }
-                    });
-                  }}
+                  onChange={(e) => onResponseChange(e, response)}
                   rows={8}
                   placeholder="Your response here..."
                 />

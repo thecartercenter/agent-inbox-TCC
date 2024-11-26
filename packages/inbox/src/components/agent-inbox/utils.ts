@@ -92,7 +92,10 @@ export function constructOpenInStudioURL(
   return smithStudioURL.toString();
 }
 
-export function createDefaultHumanResponse(interrupts: HumanInterrupt[]): {
+export function createDefaultHumanResponse(
+  interrupts: HumanInterrupt[],
+  initialHumanInterruptEditValue: React.MutableRefObject<Record<string, string>>
+): {
   responses: HumanResponseWithEdits[];
   defaultSubmitType: SubmitType | undefined;
   hasAccept: boolean;
@@ -101,6 +104,32 @@ export function createDefaultHumanResponse(interrupts: HumanInterrupt[]): {
     const humanRes: HumanResponseWithEdits[] = [];
     if (v.config.allow_edit) {
       if (v.config.allow_accept) {
+        Object.entries(v.action_request.args).forEach(([k, v]) => {
+          console.log("setting key", k, "to value", v);
+          if (
+            !initialHumanInterruptEditValue.current ||
+            !(k in initialHumanInterruptEditValue.current)
+          ) {
+            initialHumanInterruptEditValue.current = {
+              ...initialHumanInterruptEditValue.current,
+              [k]: ["string" || "number"].includes(typeof v)
+                ? v.toString()
+                : JSON.stringify(v, null),
+            };
+          } else if (
+            k in initialHumanInterruptEditValue.current &&
+            initialHumanInterruptEditValue.current[k] !== v
+          ) {
+            console.error(
+              "KEY AND VALUE FOUND IN initialHumanInterruptEditValue.current THAT DOES NOT MATCH THE ACTION REQUEST",
+              {
+                initialHumanInterruptEditValue:
+                  initialHumanInterruptEditValue.current,
+                actionRequest: v.action_request,
+              }
+            );
+          }
+        });
         humanRes.push({
           type: "edit",
           args: v.action_request,
@@ -148,4 +177,22 @@ export function createDefaultHumanResponse(interrupts: HumanInterrupt[]): {
   }
 
   return { responses, defaultSubmitType, hasAccept: !!hasAccept };
+}
+
+export function haveArgsChanged(
+  args: unknown,
+  initialValues: Record<string, string>
+): boolean {
+  if (typeof args !== "object" || !args) {
+    return false;
+  }
+
+  const currentValues = args as Record<string, string>;
+
+  return Object.entries(currentValues).some(([key, value]) => {
+    const valueString = ["string", "number"].includes(typeof value)
+      ? value.toString()
+      : JSON.stringify(value, null);
+    return initialValues[key] !== valueString;
+  });
 }

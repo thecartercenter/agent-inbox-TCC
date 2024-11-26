@@ -55,6 +55,9 @@ export function InterruptedInboxItem<
   const [streaming, setStreaming] = React.useState(false);
   const [currentNode, setCurrentNode] = React.useState("");
   const [streamFinished, setStreamFinished] = React.useState(false);
+  const initialHumanInterruptEditValue = React.useRef<Record<string, string>>(
+    {}
+  );
 
   const [selectedSubmitType, setSelectedSubmitType] =
     React.useState<SubmitType>();
@@ -88,7 +91,10 @@ export function InterruptedInboxItem<
   useEffect(() => {
     if (!threadData.interrupts) return;
     const { responses, defaultSubmitType, hasAccept } =
-      createDefaultHumanResponse(threadData.interrupts);
+      createDefaultHumanResponse(
+        threadData.interrupts,
+        initialHumanInterruptEditValue
+      );
     setSelectedSubmitType(defaultSubmitType);
     setHumanResponse(responses);
     setAcceptAllowed(hasAccept);
@@ -276,8 +282,12 @@ export function InterruptedInboxItem<
       .length > 1;
 
   const handleResetForm = () => {
+    initialHumanInterruptEditValue.current = {};
     const { responses, defaultSubmitType, hasAccept } =
-      createDefaultHumanResponse(threadData.interrupts);
+      createDefaultHumanResponse(
+        threadData.interrupts,
+        initialHumanInterruptEditValue
+      );
     setAcceptAllowed(hasAccept);
     setSelectedSubmitType(defaultSubmitType);
     setHumanResponse(responses);
@@ -350,8 +360,12 @@ export function InterruptedInboxItem<
             {/* TODO: HANDLE ARRAY OF INTERRUPT VALUES */}
             <div className="flex flex-col gap-4 items-start w-full">
               <InboxItemInput
+                acceptAllowed={acceptAllowed}
+                hasEdited={hasEdited}
+                hasAddedResponse={hasAddedResponse}
                 interruptValue={threadData.interrupts[0]}
                 humanResponse={humanResponse}
+                initialValues={initialHumanInterruptEditValue.current}
                 setHumanResponse={setHumanResponse}
                 streaming={streaming}
                 supportsMultipleMethods={supportsMultipleMethods}

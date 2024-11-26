@@ -75,7 +75,7 @@ function SubmitSelect({
     if (selectedSubmitType === "accept") {
       return (
         <Button variant="default" disabled={loading} onClick={handleSubmit}>
-          {submitMessage}
+          Accept
         </Button>
       );
     }
