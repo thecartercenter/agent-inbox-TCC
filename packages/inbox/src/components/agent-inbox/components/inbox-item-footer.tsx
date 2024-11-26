@@ -93,7 +93,7 @@ function SubmitSelect({
         variant="default"
         disabled={loading || submitDisabled}
         onClick={handleSubmit}
-        className="rounded-r-none"
+        className="rounded-r-none border-none focus:ring-0 focus-visible:ring-0"
       >
         {submitMessage}
       </Button>

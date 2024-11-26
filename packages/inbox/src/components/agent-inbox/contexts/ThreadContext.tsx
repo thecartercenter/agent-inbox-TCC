@@ -3,7 +3,6 @@ import {
   ThreadData,
   ThreadStatusWithAll,
 } from "@/components/agent-inbox/types";
-import { HumanInterrupt } from "@/components/agent-inbox/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
 import { Run, Thread, ThreadState } from "@langchain/langgraph-sdk";
@@ -18,6 +17,11 @@ import {
 } from "react";
 import { useQueryParams } from "../hooks/use-query-params";
 import { INBOX_PARAM, LIMIT_PARAM, OFFSET_PARAM } from "../constants";
+import {
+  getInterruptFromThread,
+  processInterruptedThread,
+  processThreadWithoutInterrupts,
+} from "./utils";
 
 type ThreadContentType<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -42,20 +46,6 @@ type ThreadContentType<
 };
 
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
-
-const getInterruptFromThread = (thread: Thread) => {
-  if (
-    "interrupts" in thread &&
-    typeof thread.interrupts === "object" &&
-    thread.interrupts &&
-    Object.keys(thread.interrupts).length > 0
-  ) {
-    return Object.values(thread.interrupts).flatMap((i) =>
-      i.flatMap((ii: any) => ii.value)
-    );
-  }
-  return undefined;
-};
 
 export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -120,58 +110,37 @@ export function ThreadsProvider<
         const interruptedThreads = threads.filter(
           (t) => t.status === "interrupted"
         );
-        if (interruptedThreads.length > 0) {
-          interruptedThreads.forEach((t) => {
-            const interrupts = getInterruptFromThread(t);
-            if (interrupts) {
-              data.push({
-                thread: t as Thread<ThreadValues>,
-                interrupts,
-                status: "interrupted",
-              });
-            }
-          });
-          const threadsWithoutInterrupts = interruptedThreads.filter((t) => {
-            if (!getInterruptFromThread(t)?.length) {
-              return true;
-            }
-            return false;
-          });
 
-          if (threadsWithoutInterrupts.length > 0) {
-            const interruptedStates = await bulkGetThreadStates(
-              threadsWithoutInterrupts.map((t) => t.thread_id)
+        // Process threads with interrupts in their thread object
+        const processedThreads = interruptedThreads
+          .map((t) => processInterruptedThread(t as Thread<ThreadValues>))
+          .filter((t): t is ThreadData<ThreadValues> => !!t);
+        data.push(...processedThreads);
+
+        // [LEGACY]: Process threads that need state lookup
+        const threadsWithoutInterrupts = interruptedThreads.filter(
+          (t) => !getInterruptFromThread(t)?.length
+        );
+
+        if (threadsWithoutInterrupts.length > 0) {
+          const states = await bulkGetThreadStates(
+            threadsWithoutInterrupts.map((t) => t.thread_id)
+          );
+
+          const interruptedData = states.map((state) => {
+            const thread = threadsWithoutInterrupts.find(
+              (t) => t.thread_id === state.thread_id
             );
+            if (!thread) {
+              throw new Error(`Thread not found: ${state.thread_id}`);
+            }
+            return processThreadWithoutInterrupts(
+              thread as Thread<ThreadValues>,
+              state
+            );
+          });
 
-            const interruptedData: ThreadData<ThreadValues>[] =
-              interruptedStates.flatMap((state) => {
-                const lastTask =
-                  state.thread_state.tasks[state.thread_state.tasks.length - 1];
-                const lastInterrupt =
-                  lastTask.interrupts[lastTask.interrupts.length - 1];
-                const thread = threadsWithoutInterrupts.find(
-                  (t) => t.thread_id === state.thread_id
-                );
-                if (!thread) {
-                  throw new Error(`Thread not found: ${state.thread_id}`);
-                }
-
-                if (!lastInterrupt || !("value" in lastInterrupt)) {
-                  return {
-                    status: "interrupted",
-                    thread: thread as Thread<ThreadValues>,
-                    interrupts: undefined,
-                  };
-                }
-
-                return {
-                  status: "interrupted",
-                  thread: thread as Thread<ThreadValues>,
-                  interrupts: lastInterrupt.value as HumanInterrupt[],
-                };
-              });
-            data.push(...interruptedData);
-          }
+          data.push(...interruptedData);
         }
       }
 
