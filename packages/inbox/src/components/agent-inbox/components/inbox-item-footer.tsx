@@ -3,7 +3,7 @@ import { Button } from "../../ui/button";
 import { prettifyText } from "../utils";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "../hooks/use-query-params";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, CircleX } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -169,6 +169,7 @@ export function InboxItemFooter({
   acceptAllowed,
 }: InboxItemFooterProps) {
   const { getSearchParam, updateQueryParams } = useQueryParams();
+  const isError = currentNode === "__error__";
 
   return (
     <div className="flex items-center justify-between w-full">
@@ -184,7 +185,7 @@ export function InboxItemFooter({
         {streaming && !currentNode && (
           <p className="text-sm text-gray-600">Waiting for Graph to start...</p>
         )}
-        {streaming && currentNode && (
+        {streaming && currentNode && !isError && (
           <div className="flex gap-2">
             <span className="text-sm text-gray-600 flex items-center justify-start gap-1">
               <p>Running</p>
@@ -196,12 +197,18 @@ export function InboxItemFooter({
             </p>
           </div>
         )}
+        {streaming && currentNode && isError && (
+          <div className="text-sm text-red-500 flex items-center justify-start gap-1">
+            <p>Error occurred</p>
+            <CircleX className="w-3 h-3 text-red-500" />
+          </div>
+        )}
         {streamFinished && (
           <p className="text-base text-green-600 font-medium">
             Successfully finished Graph invocation.
           </p>
         )}
-        {!streaming && !streamFinished && (
+        {!streaming && !streamFinished ? (
           <>
             <ResetForm
               hasValues={hasEdited || hasAddedResponse}
@@ -252,6 +259,21 @@ export function InboxItemFooter({
               />
             )}
           </>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => {
+              const currQueryParamThreadId = getSearchParam(
+                VIEW_STATE_THREAD_QUERY_PARAM
+              );
+              if (currQueryParamThreadId === threadId) {
+                updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+              }
+              setActive(false);
+            }}
+          >
+            Close
+          </Button>
         )}
       </div>
     </div>

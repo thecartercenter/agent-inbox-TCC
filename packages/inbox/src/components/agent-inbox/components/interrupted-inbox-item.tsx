@@ -42,6 +42,8 @@ export function InterruptedInboxItem<
   const { toast } = useToast();
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
 
+  const itemRef = React.useRef<HTMLDivElement>(null);
+
   const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!threadIdQueryParam;
   const isCurrentThreadStateView =
@@ -89,6 +91,12 @@ export function InterruptedInboxItem<
   };
 
   useEffect(() => {
+    if (isCurrentThreadStateView && itemRef.current) {
+      itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [isCurrentThreadStateView]);
+
+  useEffect(() => {
     if (!threadData.interrupts) return;
     const { responses, defaultSubmitType, hasAccept } =
       createDefaultHumanResponse(
@@ -132,11 +140,13 @@ export function InterruptedInboxItem<
       });
       return;
     }
+    let errorOccurred = false;
 
     if (
       humanResponse.some((r) => ["response", "edit", "accept"].includes(r.type))
     ) {
       setStreamFinished(false);
+      setCurrentNode("");
 
       try {
         const humanResponseInput: HumanResponse[] = humanResponse.flatMap(
@@ -201,10 +211,34 @@ export function InterruptedInboxItem<
             chunk.data?.metadata?.langgraph_node
           ) {
             setCurrentNode(chunk.data.metadata.langgraph_node);
+          } else if (
+            typeof chunk.event === "string" &&
+            chunk.event === "error"
+          ) {
+            toast({
+              title: "Error",
+              description: (
+                <div className="flex flex-col gap-1 items-start">
+                  <p>Something went wrong while attempting to run the graph.</p>
+                  <span>
+                    <strong>Error:</strong>
+                    <span className="font-mono">
+                      {JSON.stringify(chunk.data, null)}
+                    </span>
+                  </span>
+                </div>
+              ),
+              variant: "destructive",
+              duration: 15000,
+            });
+            setCurrentNode("__error__");
+            errorOccurred = true;
           }
         }
 
-        setStreamFinished(true);
+        if (!errorOccurred) {
+          setStreamFinished(true);
+        }
       } catch (e) {
         console.error("Error sending human response", e);
         toast({
@@ -215,11 +249,13 @@ export function InterruptedInboxItem<
         });
       }
 
-      setCurrentNode("");
-      setStreaming(false);
-      // Fetch new threads so that the inbox item is updated.
-      await fetchThreads(selectedInbox);
-      setStreamFinished(false);
+      if (!errorOccurred) {
+        setCurrentNode("");
+        setStreaming(false);
+        // Fetch new threads so that the inbox item is updated.
+        await fetchThreads(selectedInbox);
+        setStreamFinished(false);
+      }
     } else {
       setLoading(true);
       await sendHumanResponse(threadData.thread.thread_id, humanResponse);
@@ -232,7 +268,9 @@ export function InterruptedInboxItem<
     }
 
     setLoading(false);
-    setActive(false);
+    if (!errorOccurred) {
+      setActive(false);
+    }
   };
 
   const handleIgnore = async (
@@ -297,6 +335,7 @@ export function InterruptedInboxItem<
 
   return (
     <div
+      ref={itemRef}
       onClick={() => {
         if (!active) {
           setActive(true);

@@ -113,7 +113,7 @@ export function InboxItemInput({
               return {
                 ...newEdit,
                 acceptAllowed: true,
-                editsMade: true,
+                editsMade: valuesChanged,
               };
             }
 
@@ -144,6 +144,7 @@ export function InboxItemInput({
       setSelectedSubmitType("response");
       setHasAddedResponse(true);
     }
+
     setHumanResponse((prev) => {
       const newResponse: HumanResponseWithEdits = {
         type: response.type,
@@ -157,7 +158,7 @@ export function InboxItemInput({
               return {
                 ...newResponse,
                 acceptAllowed: true,
-                editsMade: true,
+                editsMade: !!e.target.value,
               };
             }
             return newResponse;
