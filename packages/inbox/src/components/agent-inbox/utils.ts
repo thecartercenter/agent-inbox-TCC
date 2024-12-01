@@ -162,8 +162,11 @@ export function createDefaultHumanResponse(
 
   // Set the submit type.
   // Priority: accept > response  > edit
+  const acceptAllowedConfig = interrupts.find((i) => i.config.allow_accept);
+  const ignoreAllowedConfig = interrupts.find((i) => i.config.allow_ignore);
+
   const hasResponse = responses.find((r) => r.type === "response");
-  const hasAccept = responses.find((r) => r.acceptAllowed);
+  const hasAccept = responses.find((r) => r.acceptAllowed) || acceptAllowedConfig;
   const hasEdit = responses.find((r) => r.type === "edit");
 
   let defaultSubmitType: SubmitType | undefined;
@@ -173,6 +176,19 @@ export function createDefaultHumanResponse(
     defaultSubmitType = "response";
   } else if (hasEdit) {
     defaultSubmitType = "edit";
+  }
+
+  if (acceptAllowedConfig && !responses.find((r) => r.type === "accept")) {
+    responses.push({
+      type: "accept",
+      args: null,
+    });
+  }
+  if (ignoreAllowedConfig && !responses.find((r) => r.type === "ignore")) {
+    responses.push({
+      type: "ignore",
+      args: null,
+    });
   }
 
   return { responses, defaultSubmitType, hasAccept: !!hasAccept };
