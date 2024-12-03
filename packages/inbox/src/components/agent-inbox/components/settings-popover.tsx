@@ -9,17 +9,36 @@ import {
 import { Settings } from "lucide-react";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import React from "react";
-import { STUDIO_URL_LOCAL_STORAGE_KEY } from "../constants";
+import {
+  GRAPH_ID_LOCAL_STORAGE_KEY,
+  STUDIO_URL_LOCAL_STORAGE_KEY,
+} from "../constants";
+import { useToast } from "@/hooks/use-toast";
 
 export function SettingsPopover() {
+  const { toast } = useToast();
   const [deploymentUrl, setDeploymentUrl] = React.useState("");
+  const [graphId, setGraphId] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const { setItem, getItem } = useLocalStorage();
 
   React.useEffect(() => {
-    if (typeof window === "undefined" || deploymentUrl) return;
-    const url = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
-    setDeploymentUrl(url || "");
+    if (typeof window === "undefined") return;
+    if (!deploymentUrl) {
+      const url = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
+      setDeploymentUrl(url || "");
+    }
+    if (!graphId) {
+      const idLocalStorage = getItem(GRAPH_ID_LOCAL_STORAGE_KEY);
+      if (idLocalStorage) {
+        setGraphId(idLocalStorage || "");
+      } else {
+        if (!open) {
+          // Open the settings popover if graphId is not set
+          setOpen(true);
+        }
+      }
+    }
   }, [open]);
 
   const handleSubmit = (
@@ -28,6 +47,16 @@ export function SettingsPopover() {
       | React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
+    if (!graphId) {
+      toast({
+        title: "Graph ID is required.",
+        description: "Please enter a Graph ID to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setItem(GRAPH_ID_LOCAL_STORAGE_KEY, graphId);
     setItem(STUDIO_URL_LOCAL_STORAGE_KEY, deploymentUrl);
     setOpen(false);
   };
@@ -51,17 +80,31 @@ export function SettingsPopover() {
             onSubmit={handleSubmit}
             className="flex flex-col items-start gap-4 w-full"
           >
-            <div className="flex flex-col gap-2 items-start w-full">
-              <Label htmlFor="deployment-url" className="px-1">
-                LangGraph Deployment URL
-              </Label>
-              <Input
-                id="deployment-url"
-                placeholder="https://my-app.langgraph.app"
-                className="w-full"
-                value={deploymentUrl}
-                onChange={(e) => setDeploymentUrl(e.target.value)}
-              />
+            <div className="flex flex-col gap-4 items-start w-full">
+              <div className="flex flex-col gap-2 items-start w-full">
+                <Label htmlFor="graph-id" className="px-1">
+                  Graph ID <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="graph-id"
+                  placeholder="agent"
+                  className="w-full"
+                  value={graphId}
+                  onChange={(e) => setGraphId(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-2 items-start w-full">
+                <Label htmlFor="deployment-url" className="px-1">
+                  LangGraph Deployment URL
+                </Label>
+                <Input
+                  id="deployment-url"
+                  placeholder="https://my-app.langgraph.app"
+                  className="w-full"
+                  value={deploymentUrl}
+                  onChange={(e) => setDeploymentUrl(e.target.value)}
+                />
+              </div>
             </div>
             <div className="flex w-full justify-end">
               <Button type="submit" size="sm" onClick={handleSubmit}>

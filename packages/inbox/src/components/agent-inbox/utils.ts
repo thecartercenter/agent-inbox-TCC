@@ -166,7 +166,8 @@ export function createDefaultHumanResponse(
   const ignoreAllowedConfig = interrupts.find((i) => i.config.allow_ignore);
 
   const hasResponse = responses.find((r) => r.type === "response");
-  const hasAccept = responses.find((r) => r.acceptAllowed) || acceptAllowedConfig;
+  const hasAccept =
+    responses.find((r) => r.acceptAllowed) || acceptAllowedConfig;
   const hasEdit = responses.find((r) => r.type === "edit");
 
   let defaultSubmitType: SubmitType | undefined;
