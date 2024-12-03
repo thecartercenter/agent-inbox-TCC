@@ -735,7 +735,17 @@
   dependencies:
     uuid "^10.0.0"
 
-"@langchain/langgraph-sdk@^0.0.29", "@langchain/langgraph-sdk@~0.0.21":
+"@langchain/langgraph-sdk@^0.0.30":
+  version "0.0.30"
+  resolved "https://registry.yarnpkg.com/@langchain/langgraph-sdk/-/langgraph-sdk-0.0.30.tgz#41cb59683fd829d536d473d32ba862c6e5f0e2c4"
+  integrity sha512-cL7zSiukb2zViFb/vElT8RaX9Jh1O8O8pX/u+xurQyh8i+2oVjhE0NYZaz0C/Y/zVK4IcEAoov6zTh10Kir1kQ==
+  dependencies:
+    "@types/json-schema" "^7.0.15"
+    p-queue "^6.6.2"
+    p-retry "4"
+    uuid "^9.0.0"
+
+"@langchain/langgraph-sdk@~0.0.21":
   version "0.0.29"
   resolved "https://registry.yarnpkg.com/@langchain/langgraph-sdk/-/langgraph-sdk-0.0.29.tgz#268c891bacdcaacc50530c7ceb18f833f435cbf0"
   integrity sha512-qI+583YJhyj8CKTXI6VAIwYxp6qnjt5kyCV3igvl8mQhySfKRBZowoONRAoMjI42MsbbvF4GyazsUJvnWMsQ2g==
