@@ -29,8 +29,8 @@ export function ThreadViewPage<
   }
 
   return (
-    <div className="flex h-full">
-      <div className="flex w-1/2">
+    <div className="flex h-full overflow-hidden">
+      <div className="flex w-1/2 overflow-y-auto">
         <ThreadActionsView<ThreadValues>
           threadData={
             threadData as {
@@ -42,7 +42,7 @@ export function ThreadViewPage<
           setThreadData={setThreadData}
         />
       </div>
-      <div className="flex w-1/2 min-h-screen">
+      <div className="flex w-1/2 min-h-screen overflow-y-auto">
         <StateView threadData={threadData} />
       </div>
     </div>

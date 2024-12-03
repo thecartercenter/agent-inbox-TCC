@@ -13,6 +13,19 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { CircleX, LoaderCircle, Undo2 } from "lucide-react";
 
+function ResetButton({ handleReset }: { handleReset: () => void }) {
+  return (
+    <Button
+      onClick={handleReset}
+      variant="ghost"
+      className="flex items-center justify-center gap-2 text-gray-500 hover:text-red-500"
+    >
+      <Undo2 className="w-4 h-4" />
+      <span>Reset</span>
+    </Button>
+  )
+}
+
 interface InboxItemInputProps {
   interruptValue: HumanInterrupt;
   humanResponse: HumanResponseWithEdits[];
@@ -40,7 +53,7 @@ interface InboxItemInputProps {
   ) => Promise<void>;
 }
 
-const ResponseComponent = ({
+function ResponseComponent({
   humanResponse,
   streaming,
   showArgsInResponse,
@@ -59,7 +72,7 @@ const ResponseComponent = ({
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
-}) => {
+}) {
   const res = humanResponse.find((r) => r.type === "response");
   if (!res || typeof res.args !== "string") {
     return null;
@@ -69,13 +82,11 @@ const ResponseComponent = ({
     <div className="flex flex-col gap-4 p-6 items-start w-full rounded-xl border-[1px] border-gray-300">
       <div className="flex items-center justify-between w-full">
         <p className="font-semibold text-black text-base">Respond</p>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-center gap-2 text-gray-500"
-        >
-          <Undo2 className="w-4 h-4" />
-          <span>Reset</span>
-        </Button>
+        <ResetButton
+          handleReset={() => {
+            alert("Not implemented!")
+          }}
+        />
       </div>
 
       {showArgsInResponse && (
@@ -117,15 +128,100 @@ const ResponseComponent = ({
       </div>
 
       <div className="flex items-center justify-end w-full gap-2">
-        <Button disabled={streaming} onClick={handleSubmit}>
+        <Button variant="brand" disabled={streaming} onClick={handleSubmit}>
           Send Response
         </Button>
       </div>
     </div>
   );
 };
-
 const Response = React.memo(ResponseComponent);
+
+function EditAndOrAcceptComponent({
+  humanResponse,
+  streaming,
+  onEditChange,
+  handleSubmit,
+}: {
+  humanResponse: HumanResponseWithEdits[];
+  streaming: boolean;
+  onEditChange: (e: React.ChangeEvent<HTMLTextAreaElement>, response: HumanResponseWithEdits, key: string) => void;
+  handleSubmit: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => Promise<void>;
+}) {
+  const defaultRows = React.useRef<Record<string, number>>({});
+  const editResponse = humanResponse.find((r) => r.type === "edit");
+  if (
+    !editResponse ||
+    typeof editResponse.args !== "object" ||
+    !editResponse.args
+  ) {
+    return null;
+  }
+  const header = editResponse.acceptAllowed ? "Edit/Accept" : "Edit";
+  let buttonText = "Submit";
+  if (editResponse.acceptAllowed && !editResponse.editsMade) {
+    buttonText = "Accept";
+  }
+
+  return (
+    <div className="flex flex-col gap-4 items-start w-full p-6 rounded-lg border-[1px] border-gray-300">
+      <div className="flex items-center justify-between w-full">
+        <p className="font-semibold text-black text-base">{header}</p>
+        <ResetButton
+          handleReset={() => {
+            alert("Not implemented!")
+          }}
+        />
+      </div>
+
+      {Object.entries(editResponse.args.args).map(([k, v], idx) => {
+        const value = ["string", "number"].includes(typeof v)
+          ? v
+          : JSON.stringify(v, null);
+        // Calculate the default number of rows by the total length of the initial value divided by 30
+        // or 8, whichever is greater. Stored in a ref to prevent re-rendering.
+        if (
+          defaultRows.current[k as keyof typeof defaultRows.current] ===
+          undefined
+        ) {
+          defaultRows.current[k as keyof typeof defaultRows.current] =
+            !v.length ? 3 : Math.max(v.length / 30, 7);
+        }
+        const numRows =
+          defaultRows.current[k as keyof typeof defaultRows.current] || 8;
+
+        return (
+          <div
+            className="flex flex-col gap-1 items-start w-full h-full px-[1px]"
+            key={`allow-edit-args--${k}-${idx}`}
+          >
+            <div className="flex flex-col gap-[6px] items-start w-full">
+              <p className="text-sm min-w-fit font-medium">
+                {prettifyText(k)}
+              </p>
+              <Textarea
+                disabled={streaming}
+                className="h-full"
+                value={value}
+                onChange={(e) => onEditChange(e, editResponse, k)}
+                rows={numRows}
+              />
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="flex items-center justify-end w-full gap-2">
+        <Button variant="brand" disabled={streaming} onClick={handleSubmit}>
+          {buttonText}
+        </Button>
+      </div>
+    </div>
+  );
+};
+const EditAndOrAccept = React.memo(EditAndOrAcceptComponent);
 
 export function InboxItemInput({
   interruptValue,
@@ -144,13 +240,12 @@ export function InboxItemInput({
   setHasAddedResponse,
   handleSubmit,
 }: InboxItemInputProps) {
-  const defaultRows = React.useRef<Record<string, number>>({});
   const isEditAllowed = interruptValue.config.allow_edit;
   const isResponseAllowed = interruptValue.config.allow_respond;
   const hasArgs = Object.entries(interruptValue.action_request.args).length > 0;
   const showArgsInResponse =
     hasArgs && !isEditAllowed && !acceptAllowed && isResponseAllowed;
-  const showArgsOutsideActionCards = hasArgs && !showArgsInResponse;
+  const showArgsOutsideActionCards = hasArgs && !showArgsInResponse && !isEditAllowed && !acceptAllowed;
   const isError = currentNode === "__error__";
 
   const onEditChange = (
@@ -234,71 +329,6 @@ export function InboxItemInput({
     });
   };
 
-  const EditAndOrAcceptComponent = () => {
-    const editResponse = humanResponse.find((r) => r.type === "edit");
-    if (
-      !editResponse ||
-      typeof editResponse.args !== "object" ||
-      !editResponse.args
-    ) {
-      return null;
-    }
-    const header = editResponse.acceptAllowed ? "Edit/Accept" : "Edit";
-
-    return (
-      <div className="flex flex-col gap-2 items-start w-full p-6 rounded-lg border-[1px] border-gray-300">
-        <div className="flex items-center justify-between w-full">
-          <p className="font-semibold text-black text-base">{header}</p>
-          <Button
-            variant="ghost"
-            className="flex items-center justify-center gap-2 text-gray-500"
-          >
-            <Undo2 className="w-4 h-4" />
-            <span>Reset</span>
-          </Button>
-        </div>
-
-        {Object.entries(editResponse.args.args).map(([k, v], idx) => {
-          const value = ["string", "number"].includes(typeof v)
-            ? v
-            : JSON.stringify(v, null);
-          // Calculate the default number of rows by the total length of the initial value divided by 30
-          // or 8, whichever is greater. Stored in a ref to prevent re-rendering.
-          if (
-            defaultRows.current[k as keyof typeof defaultRows.current] ===
-            undefined
-          ) {
-            defaultRows.current[k as keyof typeof defaultRows.current] =
-              !v.length ? 3 : Math.max(v.length / 30, 7);
-          }
-          const numRows =
-            defaultRows.current[k as keyof typeof defaultRows.current] || 8;
-
-          return (
-            <div
-              className="flex flex-col gap-1 items-start w-full h-full px-[1px]"
-              key={`allow-edit-args--${k}-${idx}`}
-            >
-              <div className="flex flex-col gap-[6px] items-start w-full">
-                <p className="text-sm min-w-fit font-medium">
-                  {prettifyText(k)}
-                </p>
-                <Textarea
-                  disabled={streaming}
-                  className="h-full"
-                  value={value}
-                  onChange={(e) => onEditChange(e, editResponse, k)}
-                  rows={numRows}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-  const EditAndOrAccept = React.memo(EditAndOrAcceptComponent);
-
   const onResponseChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
     response: HumanResponseWithEdits
@@ -346,10 +376,11 @@ export function InboxItemInput({
   return (
     <div
       className={cn(
-        "w-full flex flex-col items-start justify-start gap-2",
-        "shadow-sm"
+        "w-full flex flex-col items-start justify-start gap-2 shadow-sm",
+        ""
       )}
     >
+      
       {showArgsOutsideActionCards && (
         <div className="flex flex-col gap-6 items-start w-full">
           {Object.entries(interruptValue.action_request.args).map(([k, v]) => {
@@ -376,8 +407,14 @@ export function InboxItemInput({
           })}
         </div>
       )}
+
       <div className="flex flex-col gap-2 items-start w-full">
-        <EditAndOrAccept />
+        <EditAndOrAccept
+          humanResponse={humanResponse}
+          streaming={streaming}
+          onEditChange={onEditChange}
+          handleSubmit={handleSubmit}
+        />
         {supportsMultipleMethods ? (
           <div className="flex gap-3 items-center w-full mt-3">
             <Separator className="w-1/2" />

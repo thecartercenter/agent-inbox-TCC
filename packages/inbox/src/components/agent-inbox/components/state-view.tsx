@@ -13,10 +13,7 @@ import { BaseMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
 import React from "react";
 import { Button } from "../../ui/button";
-import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { ToolCallTable } from "./tool-call-table";
-import { useQueryParams } from "../hooks/use-query-params";
-import { useParams } from "next/navigation";
 import {
   STUDIO_URL_LOCAL_STORAGE_KEY,
   VIEW_STATE_THREAD_QUERY_PARAM,
@@ -25,7 +22,6 @@ import NextImage from "next/image";
 import GraphIcon from "@/components/icons/GraphIcon.svg";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useToast } from "@/hooks/use-toast";
-import { ThreadIdCopyable } from "./thread-id";
 import { PillButton } from "@/components/ui/pill-button";
 import { MarkdownText } from "@/components/ui/markdown-text";
 import { ThreadData } from "../types";
@@ -288,7 +284,7 @@ export function StateView({ threadData }: StateViewComponentProps) {
   };
 
   return (
-    <div className="w-full min-h-full overflow-y-auto border-l-[1px] pl-6 bg-[#F9FAFB] shadow-inner-left">
+    <div className="w-full overflow-y-auto pl-6 bg-[#F9FAFB] shadow-inner-left">
       <div className="flex flex-wrap gap-3 items-center w-full pt-8">
         <PillButton
           onClick={() => setView("description")}
