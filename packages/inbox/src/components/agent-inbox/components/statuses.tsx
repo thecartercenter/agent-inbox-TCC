@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { HumanInterruptConfig } from "../types";
 import { prettifyText } from "../utils";
 
@@ -6,49 +7,24 @@ export function InboxItemStatuses({
 }: {
   config: HumanInterruptConfig;
 }) {
-  const allowedOps = Object.entries(config).flatMap(([k, v]) => {
-    if (v) {
-      return prettifyText(k).replace("Allow ", "");
-    }
-    return [];
-  });
-
-  const colorMap = {
-    Ignore: {
-      bg: "rgb(75 85 99)",
-      shadow: "rgb(75 85 99, 0.6)",
-    },
-    Edit: {
-      bg: "rgb(234 179 8)",
-      shadow: "rgba(234 179 8, 0.6)",
-    },
-    Respond: {
-      bg: "rgb(180 83 9)",
-      shadow: "rgb(180 83 9, 0.6)",
-    },
-    Accept: {
-      bg: "rgb(34 197 94)",
-      shadow: "rgb(34 197 94, 0.6)",
-    },
-  };
+  const isOnlyIgnoreAllowed =
+    config.allow_ignore &&
+    !config.allow_respond &&
+    !config.allow_edit &&
+    !config.allow_accept;
 
   return (
-    <div className="flex flex-wrap gap-2 items-center justify-end w-full">
-      {allowedOps.map((op, idx) => (
-        <div
-          key={`allowed-op-${idx}`}
-          className="flex items-center gap-1 rounded-lg border-[1px] border-gray-200 px-2 py-1 min-w-fit"
-        >
-          <div
-            className="w-2 h-2 rounded-full animate-[glow_2s_ease-in-out_infinite]"
-            style={{
-              background: colorMap[op as keyof typeof colorMap].bg,
-              boxShadow: colorMap[op as keyof typeof colorMap].shadow,
-            }}
-          />
-          <p className="text-gray-500 text-xs">{op}</p>
-        </div>
-      ))}
+    <div
+      className={cn(
+        "flex items-center justify-center px-2 py-[2px] rounded-full border-[2px] w-fit font-medium text-nowrap",
+        isOnlyIgnoreAllowed
+          ? "border-gray-600 text-gray-600"
+          : "border-green-700 text-green-700"
+      )}
+    >
+      <p className="text-sm">
+        {isOnlyIgnoreAllowed ? "Ignore" : "Requires Action"}
+      </p>
     </div>
   );
 }

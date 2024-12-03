@@ -135,12 +135,24 @@ export function Inbox<
         </PillButton>
       </div>
       <div className="my-5">
-        <div className="flex flex-col gap-3 items-start w-full">
-          {threadDataToRender.map((threadData) => {
+        <div className="grid grid-cols-12 w-full px-4 py-2">
+          <div className="col-span-9">
+            <p className="text-gray-500 text-sm tracking-wide">TITLE</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-gray-500 text-sm tracking-wide">STATUS</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-gray-500 text-sm tracking-wide">DATE</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-start w-full border-[1px] border-gray-200 rounded-xl shadow-sm">
+          {threadDataToRender.map((threadData, idx) => {
             return (
               <InboxItem<ThreadValues>
                 key={`inbox-item-${threadData.thread.thread_id}`}
                 threadData={threadData}
+                isLast={idx === threadDataToRender.length - 1}
               />
             );
           })}

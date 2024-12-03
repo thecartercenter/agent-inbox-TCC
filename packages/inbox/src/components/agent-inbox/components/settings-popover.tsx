@@ -17,17 +17,21 @@ import { useToast } from "@/hooks/use-toast";
 
 export function SettingsPopover() {
   const { toast } = useToast();
+  const { setItem, getItem } = useLocalStorage();
+
   const [deploymentUrl, setDeploymentUrl] = React.useState("");
   const [graphId, setGraphId] = React.useState("");
+
   const [open, setOpen] = React.useState(false);
-  const { setItem, getItem } = useLocalStorage();
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
+
     if (!deploymentUrl) {
       const url = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
       setDeploymentUrl(url || "");
     }
+
     if (!graphId) {
       const idLocalStorage = getItem(GRAPH_ID_LOCAL_STORAGE_KEY);
       if (idLocalStorage) {

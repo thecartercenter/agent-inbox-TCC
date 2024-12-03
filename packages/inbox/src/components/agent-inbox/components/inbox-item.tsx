@@ -9,11 +9,12 @@ interface InboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
   threadData: ThreadData<ThreadValues>;
+  isLast: boolean;
 }
 
 export function InboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
->({ threadData }: InboxItemProps<ThreadValues>) {
+>({ threadData, isLast }: InboxItemProps<ThreadValues>) {
   const { searchParams } = useQueryParams();
 
   const inbox = (searchParams.get(INBOX_PARAM) ||
@@ -29,6 +30,7 @@ export function InboxItem<
                 interrupts: HumanInterrupt[];
               }
             }
+            isLast={isLast}
           />
         );
       } else {
@@ -54,6 +56,7 @@ export function InboxItem<
               interrupts: HumanInterrupt[];
             }
           }
+          isLast={isLast}
         />
       );
     } else {
