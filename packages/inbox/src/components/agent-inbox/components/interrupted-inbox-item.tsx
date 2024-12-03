@@ -198,6 +198,11 @@ export function InterruptedInboxItem<
             stream: true,
           }
         );
+        if (!response) {
+          // This will only be undefined if the graph ID is not found
+          // in this case, the method will trigger a toast for us.
+          return;
+        }
 
         toast({
           title: "Success",

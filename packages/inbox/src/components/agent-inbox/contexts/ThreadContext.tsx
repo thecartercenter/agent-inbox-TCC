@@ -16,12 +16,18 @@ import {
   useState,
 } from "react";
 import { useQueryParams } from "../hooks/use-query-params";
-import { INBOX_PARAM, LIMIT_PARAM, OFFSET_PARAM } from "../constants";
+import {
+  INBOX_PARAM,
+  LIMIT_PARAM,
+  OFFSET_PARAM,
+  GRAPH_ID_LOCAL_STORAGE_KEY,
+} from "../constants";
 import {
   getInterruptFromThread,
   processInterruptedThread,
   processThreadWithoutInterrupts,
 } from "./utils";
+import { useLocalStorage } from "../hooks/use-local-storage";
 
 type ThreadContentType<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -38,11 +44,13 @@ type ThreadContentType<
       stream?: TStream;
     }
   ) => TStream extends true
-    ? AsyncGenerator<{
-        event: Record<string, any>;
-        data: any;
-      }>
-    : Promise<Run>;
+    ?
+        | AsyncGenerator<{
+            event: Record<string, any>;
+            data: any;
+          }>
+        | undefined
+    : Promise<Run> | undefined;
 };
 
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
@@ -51,6 +59,7 @@ export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ children }: { children: ReactNode }) {
   const { getSearchParam, searchParams } = useQueryParams();
+  const { getItem } = useLocalStorage();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [threadData, setThreadData] = useState<ThreadData<ThreadValues>[]>([]);
@@ -239,22 +248,35 @@ export function ThreadsProvider<
       stream?: TStream;
     }
   ): TStream extends true
-    ? AsyncGenerator<{
-        event: Record<string, any>;
-        data: any;
-      }>
-    : Promise<Run> => {
+    ?
+        | AsyncGenerator<{
+            event: Record<string, any>;
+            data: any;
+          }>
+        | undefined
+    : Promise<Run> | undefined => {
+    const graphId = getItem(GRAPH_ID_LOCAL_STORAGE_KEY);
+    if (!graphId) {
+      toast({
+        title: "No graph ID found.",
+        description:
+          "Graph IDs are required to send responses. Please add a graph ID in the settings.",
+        variant: "destructive",
+      });
+      return undefined;
+    }
+
     const client = createClient();
     try {
       if (options?.stream) {
-        return client.runs.stream(threadId, "support", {
+        return client.runs.stream(threadId, graphId, {
           command: {
             resume: response,
           },
           streamMode: "events",
         }) as any; // Type assertion needed due to conditional return type
       }
-      return client.runs.create(threadId, "support", {
+      return client.runs.create(threadId, graphId, {
         command: {
           resume: response,
         },

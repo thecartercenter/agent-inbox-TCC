@@ -728,30 +728,30 @@
     "@google/generative-ai" "^0.7.0"
     zod-to-json-schema "^3.22.4"
 
-"@langchain/langgraph-checkpoint@~0.0.10":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@langchain/langgraph-checkpoint/-/langgraph-checkpoint-0.0.11.tgz#65c40bc175faca98ed0901df9e76682585710e8d"
-  integrity sha512-nroHHkAi/UPn9LqqZcgOydfB8qZw5TXuXDFc43MIydnW4lb8m9hVHnQ3lgb2WGSgtbZJnsIx0TzL19oemJBRKg==
+"@langchain/langgraph-checkpoint@~0.0.12":
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/@langchain/langgraph-checkpoint/-/langgraph-checkpoint-0.0.12.tgz#672f2dd5ea3a33054d9792ff5c151faebd75d852"
+  integrity sha512-XySxUqpt7X3k02UyncpKupZMOHqLbkjOpkGWFdwBTueT1+kVeS2+DTwZK80QT/BaWH6jEUkMk14oU9/D63R0tg==
   dependencies:
     uuid "^10.0.0"
 
-"@langchain/langgraph-sdk@^0.0.27":
-  version "0.0.27"
-  resolved "https://registry.yarnpkg.com/@langchain/langgraph-sdk/-/langgraph-sdk-0.0.27.tgz#6a6200b8ef080b4e87a47af51b230c4bcf9d5af4"
-  integrity sha512-JCkxJlF+HUmb+CBnak3l/YXJP4d+fFIZMQRTxV269b50ab5dLiP/BzVIgyQf1f5TA25v24hoZHczn/2iTDWQWg==
+"@langchain/langgraph-sdk@^0.0.29", "@langchain/langgraph-sdk@~0.0.21":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@langchain/langgraph-sdk/-/langgraph-sdk-0.0.29.tgz#268c891bacdcaacc50530c7ceb18f833f435cbf0"
+  integrity sha512-qI+583YJhyj8CKTXI6VAIwYxp6qnjt5kyCV3igvl8mQhySfKRBZowoONRAoMjI42MsbbvF4GyazsUJvnWMsQ2g==
   dependencies:
     "@types/json-schema" "^7.0.15"
     p-queue "^6.6.2"
     p-retry "4"
     uuid "^9.0.0"
 
-"@langchain/langgraph@^0.2.18":
-  version "0.2.18"
-  resolved "https://registry.yarnpkg.com/@langchain/langgraph/-/langgraph-0.2.18.tgz#254e9fa2462cfa4c468a87e2d34e09d629eb3d2f"
-  integrity sha512-72ZLIpyVMsuI2FdAnttgLx++rZZ1yKvu1A35d1A9XbcQGSfmfouXGQ7GMhVOFgmldVB3AlKKGOoahGpTwyXsbg==
+"@langchain/langgraph@^0.2.23":
+  version "0.2.23"
+  resolved "https://registry.yarnpkg.com/@langchain/langgraph/-/langgraph-0.2.23.tgz#b892ae642c2ac49a44599ce18ab1897b14554f9f"
+  integrity sha512-aUD3G2cUSmrOb6xtJkd0AUctmHJXuyNPIzMR86JMEN591AtkHTVe2OhTxo15S8PPAQxJ7HrCJyMFd0EQECRASw==
   dependencies:
-    "@langchain/langgraph-checkpoint" "~0.0.10"
-    double-ended-queue "^2.1.0-0"
+    "@langchain/langgraph-checkpoint" "~0.0.12"
+    "@langchain/langgraph-sdk" "~0.0.21"
     uuid "^10.0.0"
     zod "^3.23.8"
 
@@ -3070,11 +3070,6 @@ dotenv@^16.4.5:
   version "16.4.5"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.5.tgz#cdd3b3b604cb327e286b4762e13502f717cb099f"
   integrity sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==
-
-double-ended-queue@^2.1.0-0:
-  version "2.1.0-0"
-  resolved "https://registry.yarnpkg.com/double-ended-queue/-/double-ended-queue-2.1.0-0.tgz#103d3527fd31528f40188130c841efdd78264e5c"
-  integrity sha512-+BNfZ+deCo8hMNpDqDnvT+c0XpJ5cUa6mqYq89bho2Ifze4URTqRkcwR399hWoTrTkbZ/XJYDgP6rc7pRgffEQ==
 
 eastasianwidth@^0.2.0:
   version "0.2.0"
