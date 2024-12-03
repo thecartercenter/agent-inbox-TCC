@@ -53,42 +53,43 @@ export function ThreadIdCopyable({
     <div className="flex gap-1 items-center">
       <p
         className={cn(
-          "font-mono", // Keep font-mono as base style
-          !threadIdClassName && "bg-gray-100 text-xs px-2 py-1 rounded-md", // Apply default styles only if no custom class
+          "font-mono flex items-center gap-1", // Keep font-mono as base style
+          !threadIdClassName &&
+            "bg-gray-50/90 text-xs px-1 py-[2px] rounded-md border-[1px] border-gray-200", // Apply default styles only if no custom class
           threadIdClassName // Apply custom classes last to allow overrides
         )}
       >
         {threadId}
+        <TooltipIconButton
+          onClick={(e) => handleCopy(e)}
+          variant="ghost"
+          tooltip="Copy thread ID"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {copied ? (
+              <motion.div
+                key="check"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.15 }}
+              >
+                <CopyCheck className="w-3 h-3 text-green-500" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="copy"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Copy className="w-3 h-3 text-gray-500" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TooltipIconButton>
       </p>
-      <TooltipIconButton
-        onClick={(e) => handleCopy(e)}
-        variant="ghost"
-        tooltip="Copy thread ID"
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {copied ? (
-            <motion.div
-              key="check"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
-            >
-              <CopyCheck className="w-4 h-4 text-green-500" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="copy"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Copy className="w-4 h-4 text-gray-500" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </TooltipIconButton>
     </div>
   );
 }

@@ -100,65 +100,63 @@ export function createDefaultHumanResponse(
   defaultSubmitType: SubmitType | undefined;
   hasAccept: boolean;
 } {
-  const responses = interrupts.flatMap((v) => {
-    const humanRes: HumanResponseWithEdits[] = [];
-    if (v.config.allow_edit) {
-      if (v.config.allow_accept) {
-        Object.entries(v.action_request.args).forEach(([k, v]) => {
-          if (
-            !initialHumanInterruptEditValue.current ||
-            !(k in initialHumanInterruptEditValue.current)
-          ) {
-            initialHumanInterruptEditValue.current = {
-              ...initialHumanInterruptEditValue.current,
-              [k]: ["string" || "number"].includes(typeof v)
-                ? v.toString()
-                : JSON.stringify(v, null),
-            };
-          } else if (
-            k in initialHumanInterruptEditValue.current &&
-            initialHumanInterruptEditValue.current[k] !== v
-          ) {
-            console.error(
-              "KEY AND VALUE FOUND IN initialHumanInterruptEditValue.current THAT DOES NOT MATCH THE ACTION REQUEST",
-              {
-                initialHumanInterruptEditValue:
-                  initialHumanInterruptEditValue.current,
-                actionRequest: v.action_request,
-              }
-            );
-          }
-        });
-        humanRes.push({
-          type: "edit",
-          args: v.action_request,
-          acceptAllowed: true,
-          editsMade: false,
-        });
-      } else {
-        humanRes.push({
-          type: "edit",
-          args: v.action_request,
-          acceptAllowed: false,
-        });
-      }
-    }
-    if (v.config.allow_respond) {
-      humanRes.push({
-        type: "response",
-        args: "",
+  const interrupt = interrupts[0];
+
+  const responses: HumanResponseWithEdits[] = [];
+  if (interrupt.config.allow_edit) {
+    if (interrupt.config.allow_accept) {
+      Object.entries(interrupt.action_request.args).forEach(([k, v]) => {
+        if (
+          !initialHumanInterruptEditValue.current ||
+          !(k in initialHumanInterruptEditValue.current)
+        ) {
+          initialHumanInterruptEditValue.current = {
+            ...initialHumanInterruptEditValue.current,
+            [k]: ["string", "number"].includes(typeof v)
+              ? interrupt.toString()
+              : JSON.stringify(v, null),
+          };
+        } else if (
+          k in initialHumanInterruptEditValue.current &&
+          initialHumanInterruptEditValue.current[k] !== v
+        ) {
+          console.error(
+            "KEY AND VALUE FOUND IN initialHumanInterruptEditValue.current THAT DOES NOT MATCH THE ACTION REQUEST",
+            {
+              initialHumanInterruptEditValue:
+                initialHumanInterruptEditValue.current,
+              actionRequest: interrupt.action_request,
+            }
+          );
+        }
+      });
+      responses.push({
+        type: "edit",
+        args: interrupt.action_request,
+        acceptAllowed: true,
+        editsMade: false,
+      });
+    } else {
+      responses.push({
+        type: "edit",
+        args: interrupt.action_request,
+        acceptAllowed: false,
       });
     }
+  }
+  if (interrupt.config.allow_respond) {
+    responses.push({
+      type: "response",
+      args: "",
+    });
+  }
 
-    if (v.config.allow_ignore) {
-      humanRes.push({
-        type: "ignore",
-        args: null,
-      });
-    }
-
-    return humanRes;
-  });
+  if (interrupt.config.allow_ignore) {
+    responses.push({
+      type: "ignore",
+      args: null,
+    });
+  }
 
   // Set the submit type.
   // Priority: accept > response  > edit

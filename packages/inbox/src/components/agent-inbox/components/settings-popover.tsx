@@ -14,6 +14,7 @@ import {
   STUDIO_URL_LOCAL_STORAGE_KEY,
 } from "../constants";
 import { useToast } from "@/hooks/use-toast";
+import { PillButton } from "@/components/ui/pill-button";
 
 export function SettingsPopover() {
   const { toast } = useToast();
@@ -68,9 +69,14 @@ export function SettingsPopover() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline">
-          <Settings className="w-4 h-4" />
-        </Button>
+        <PillButton
+          variant="outline"
+          className="flex gap-2 items-center justify-center text-gray-800"
+          size="lg"
+        >
+          <Settings />
+          <span>Settings</span>
+        </PillButton>
       </PopoverTrigger>
       <PopoverContent className="w-80">
         <div className="grid gap-4">

@@ -11,7 +11,6 @@ import {
   VIEW_STATE_THREAD_QUERY_PARAM,
 } from "./constants";
 import { TighterText } from "../ui/header";
-import { SettingsPopover } from "./components/settings-popover";
 import { PillButton } from "../ui/pill-button";
 import { ThreadData, ThreadStatusWithAll } from "./types";
 import { cn } from "@/lib/utils";
@@ -22,7 +21,8 @@ export function Inbox<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >() {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
-  const { loading, threadData } = useThreadsContext<ThreadValues>();
+  const { loading, threadData, fetchThreads } =
+    useThreadsContext<ThreadValues>();
   const [selectedInbox, setSelectedInbox] =
     React.useState<ThreadStatusWithAll>("interrupted");
 
@@ -92,7 +92,7 @@ export function Inbox<
   const noThreadsFound = !threadDataToRender.length;
 
   return (
-    <div className="w-full h-full pb-10 pt-2 px-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+    <div className="w-full h-full pb-10 pt-2 px-12 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded-[58px] bg-white">
       <div
         className={cn(
           "flex items-center justify-between pt-6",
@@ -100,7 +100,6 @@ export function Inbox<
         )}
       >
         <TighterText className="text-3xl font-medium">Inbox</TighterText>
-        <SettingsPopover />
       </div>
       <div className="flex gap-2 items-center justify-start mt-5">
         <PillButton
@@ -172,7 +171,6 @@ export function Inbox<
               </div>
             </div>
           )}
-          <StateView />
         </div>
         <div className="flex justify-start w-full my-5">
           <Pagination />

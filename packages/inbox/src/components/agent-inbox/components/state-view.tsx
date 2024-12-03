@@ -16,6 +16,7 @@ import { Button } from "../../ui/button";
 import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { ToolCallTable } from "./tool-call-table";
 import { useQueryParams } from "../hooks/use-query-params";
+import { useParams } from "next/navigation";
 import {
   STUDIO_URL_LOCAL_STORAGE_KEY,
   VIEW_STATE_THREAD_QUERY_PARAM,
@@ -27,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThreadIdCopyable } from "./thread-id";
 import { PillButton } from "@/components/ui/pill-button";
 import { MarkdownText } from "@/components/ui/markdown-text";
+import { ThreadData } from "../types";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -248,33 +250,24 @@ export function StateViewObject(props: StateViewProps) {
   );
 }
 
-export function StateView() {
-  const { updateQueryParams, searchParams } = useQueryParams();
-  const [expanded, setExpanded] = useState(false);
-  const { threadData } = useThreadsContext();
+interface StateViewComponentProps {
+  threadData: ThreadData<Record<string, any>>;
+}
+
+export function StateView({ threadData }: StateViewComponentProps) {
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
+
   const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
+
+  const [expanded, setExpanded] = useState(false);
   const [view, setView] = useState<"description" | "state">("description");
 
-  const threadIdParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
-  const threadValues = threadData.find(
-    ({ thread }) => thread.thread_id === threadIdParam
-  )?.thread?.values;
-  const description = threadData.find(
-    (t) => t.thread.thread_id === threadIdParam
-  )?.interrupts?.[0].description;
+  const threadValues = threadData.thread.values;
+  const description = threadData.interrupts?.[0].description;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if (!threadValues || !threadIdParam) {
-      updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
-    }
-  }, [threadValues, threadIdParam]);
-
-  if (!threadValues || !threadIdParam) {
-    return null;
+  if (!threadValues) {
+    return <div>No state found</div>;
   }
 
   const handleOpenInStudio = () => {
@@ -287,44 +280,44 @@ export function StateView() {
       return;
     }
 
-    const studioUrl = constructOpenInStudioURL(deploymentUrl, threadIdParam);
+    const studioUrl = constructOpenInStudioURL(
+      deploymentUrl,
+      threadData.thread.thread_id
+    );
     window.open(studioUrl, "_blank");
   };
 
   return (
-    <div className="fixed top-0 right-0 w-[40%] h-screen overflow-y-auto border-l-[1px] pl-6 bg-gray-50/10 shadow-inner-left">
-      <div className="flex flex-col pt-8 gap-3 items-start">
-        <div className="flex flex-wrap gap-3 items-center w-full">
-          <PillButton
-            onClick={() => setView("description")}
-            variant={view === "description" ? "default" : "outline"}
+    <div className="w-full min-h-full overflow-y-auto border-l-[1px] pl-6 bg-[#F9FAFB] shadow-inner-left">
+      <div className="flex flex-wrap gap-3 items-center w-full pt-8">
+        <PillButton
+          onClick={() => setView("description")}
+          variant={view === "description" ? "default" : "outline"}
+        >
+          Description
+        </PillButton>
+        <PillButton
+          onClick={() => setView("state")}
+          variant={view === "state" ? "default" : "outline"}
+        >
+          State
+        </PillButton>
+        {deploymentUrl && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex items-center gap-1"
+            onClick={handleOpenInStudio}
           >
-            Description
-          </PillButton>
-          <PillButton
-            onClick={() => setView("state")}
-            variant={view === "state" ? "default" : "outline"}
-          >
-            State
-          </PillButton>
-          {deploymentUrl && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={handleOpenInStudio}
-            >
-              <NextImage
-                src={GraphIcon}
-                height={16}
-                width={16}
-                alt="LangGraph Icon"
-              />
-              <span>Open in Studio</span>
-            </Button>
-          )}
-        </div>
-        <ThreadIdCopyable threadId={threadIdParam} />
+            <NextImage
+              src={GraphIcon}
+              height={16}
+              width={16}
+              alt="LangGraph Icon"
+            />
+            <span>Open in Studio</span>
+          </Button>
+        )}
       </div>
       {view === "description" && (
         <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
@@ -350,7 +343,7 @@ export function StateView() {
         )}
 
         <Button
-          onClick={() => updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM)}
+          onClick={() => {}}
           variant="ghost"
           className="text-gray-600"
           size="sm"

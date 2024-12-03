@@ -1,13 +1,21 @@
+"use client";
+
 import {
+  HumanInterrupt,
   HumanResponse,
   ThreadData,
   ThreadStatusWithAll,
 } from "@/components/agent-inbox/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
-import { Run, Thread, ThreadState } from "@langchain/langgraph-sdk";
+import {
+  Run,
+  Thread,
+  ThreadState,
+  ThreadStatus,
+} from "@langchain/langgraph-sdk";
 import { END } from "@langchain/langgraph/web";
-import React, { useEffect } from "react";
+import React from "react";
 import {
   createContext,
   ReactNode,
@@ -51,6 +59,11 @@ type ThreadContentType<
           }>
         | undefined
     : Promise<Run> | undefined;
+  fetchSingleThread: (threadId: string) => Promise<{
+    thread: Thread<ThreadValues>;
+    status: ThreadStatus;
+    interrupts: HumanInterrupt[] | undefined;
+  }>;
 };
 
 const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
@@ -64,12 +77,13 @@ export function ThreadsProvider<
   const [loading, setLoading] = useState(false);
   const [threadData, setThreadData] = useState<ThreadData<ThreadValues>[]>([]);
   const [hasMoreThreads, setHasMoreThreads] = useState(true);
+  console.log("threadData", threadData);
 
   const limitParam = searchParams.get(LIMIT_PARAM);
   const offsetParam = searchParams.get(OFFSET_PARAM);
   const inboxParam = searchParams.get(INBOX_PARAM);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -79,6 +93,28 @@ export function ThreadsProvider<
     }
     fetchThreads(inboxSearchParam);
   }, [limitParam, offsetParam, inboxParam]);
+
+  const fetchSingleThread = useCallback(async (threadId: string) => {
+    const client = createClient();
+    const thread = await client.threads.get(threadId);
+    let threadInterrupts: HumanInterrupt[] | undefined;
+    if (thread.status === "interrupted") {
+      threadInterrupts = getInterruptFromThread(thread);
+      if (!threadInterrupts || !threadInterrupts.length) {
+        const state = await client.threads.getState(threadId);
+        const { interrupts } = processThreadWithoutInterrupts(thread, {
+          thread_state: state,
+          thread_id: threadId,
+        });
+        threadInterrupts = interrupts;
+      }
+    }
+    return {
+      thread,
+      status: thread.status,
+      interrupts: threadInterrupts,
+    };
+  }, []);
 
   const fetchThreads = useCallback(async (inbox: ThreadStatusWithAll) => {
     setLoading(true);
@@ -294,6 +330,7 @@ export function ThreadsProvider<
     ignoreThread,
     sendHumanResponse,
     fetchThreads,
+    fetchSingleThread,
   };
 
   return (
