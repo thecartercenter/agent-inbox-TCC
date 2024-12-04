@@ -6,6 +6,7 @@ import { prettifyText } from "../utils";
 import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
+import { useRouter } from "next/navigation";
 
 interface ThreadActionsViewProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -46,6 +47,7 @@ export function ThreadActionsView<
     threadData,
     setThreadData,
   });
+  const router = useRouter();
 
   const actionTypeColorMap = {
     question: { bg: "#FCA5A5", border: "#EF4444" },
@@ -73,6 +75,7 @@ export function ThreadActionsView<
           variant="ghost"
           className="flex gap-2 items-center justify-center text-gray-500 w-fit"
           size="sm"
+          onClick={() => router.back()}
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back</span>

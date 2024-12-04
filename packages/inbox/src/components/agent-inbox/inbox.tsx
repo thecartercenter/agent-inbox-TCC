@@ -92,7 +92,7 @@ export function Inbox<
   const noThreadsFound = !threadDataToRender.length;
 
   return (
-    <div className="w-full h-full pb-10 pt-2 px-12 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded-[58px] bg-white">
+    <div className="w-full pb-10 pt-2 px-12 rounded-[58px] bg-white h-full overflow-y-auto">
       <div
         className={cn(
           "flex items-center justify-between pt-6",
@@ -145,7 +145,7 @@ export function Inbox<
             <p className="text-gray-500 text-sm tracking-wide">DATE</p>
           </div>
         </div>
-        <div className="flex flex-col items-start w-full border-[1px] border-gray-200 rounded-xl shadow-sm">
+        <div className="flex flex-col items-start w-full h-full border-[1px] border-gray-200 rounded-xl shadow-sm overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {threadDataToRender.map((threadData, idx) => {
             return (
               <InboxItem<ThreadValues>

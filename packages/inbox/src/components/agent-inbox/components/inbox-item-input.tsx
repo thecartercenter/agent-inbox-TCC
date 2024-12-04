@@ -12,6 +12,7 @@ import { MarkdownText } from "@/components/ui/markdown-text";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { CircleX, LoaderCircle, Undo2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 function ResetButton({ handleReset }: { handleReset: () => void }) {
   return (
@@ -23,7 +24,7 @@ function ResetButton({ handleReset }: { handleReset: () => void }) {
       <Undo2 className="w-4 h-4" />
       <span>Reset</span>
     </Button>
-  )
+  );
 }
 
 interface InboxItemInputProps {
@@ -65,10 +66,7 @@ function ResponseComponent({
   streaming: boolean;
   showArgsInResponse: boolean;
   interruptValue: any;
-  onResponseChange: (
-    e: React.ChangeEvent<HTMLTextAreaElement>,
-    response: HumanResponseWithEdits
-  ) => void;
+  onResponseChange: (change: string, response: HumanResponseWithEdits) => void;
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
@@ -84,7 +82,7 @@ function ResponseComponent({
         <p className="font-semibold text-black text-base">Respond</p>
         <ResetButton
           handleReset={() => {
-            alert("Not implemented!")
+            onResponseChange("", res);
           }}
         />
       </div>
@@ -121,7 +119,7 @@ function ResponseComponent({
         <Textarea
           disabled={streaming}
           value={res.args}
-          onChange={(e) => onResponseChange(e, res)}
+          onChange={(e) => onResponseChange(e.target.value, res)}
           rows={4}
           placeholder="Your response here..."
         />
@@ -134,18 +132,24 @@ function ResponseComponent({
       </div>
     </div>
   );
-};
+}
 const Response = React.memo(ResponseComponent);
 
 function EditAndOrAcceptComponent({
   humanResponse,
   streaming,
+  initialValues,
   onEditChange,
   handleSubmit,
 }: {
   humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
-  onEditChange: (e: React.ChangeEvent<HTMLTextAreaElement>, response: HumanResponseWithEdits, key: string) => void;
+  initialValues: Record<string, string>;
+  onEditChange: (
+    text: string | string[],
+    response: HumanResponseWithEdits,
+    key: string | string[]
+  ) => void;
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
@@ -165,15 +169,38 @@ function EditAndOrAcceptComponent({
     buttonText = "Accept";
   }
 
+  const handleReset = () => {
+    if (
+      !editResponse ||
+      typeof editResponse.args !== "object" ||
+      !editResponse.args ||
+      !editResponse.args.args
+    ) {
+      return;
+    }
+    // use initialValues to reset the text areas
+    const keysToReset: string[] = [];
+    const valuesToReset: string[] = [];
+    Object.entries(initialValues).forEach(([k, v]) => {
+      if (k in (editResponse.args as Record<string, any>).args) {
+        const value = ["string", "number"].includes(typeof v)
+          ? v
+          : JSON.stringify(v, null);
+        keysToReset.push(k);
+        valuesToReset.push(value);
+      }
+    });
+
+    if (keysToReset.length > 0 && valuesToReset.length > 0) {
+      onEditChange(valuesToReset, editResponse, keysToReset);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 items-start w-full p-6 rounded-lg border-[1px] border-gray-300">
       <div className="flex items-center justify-between w-full">
         <p className="font-semibold text-black text-base">{header}</p>
-        <ResetButton
-          handleReset={() => {
-            alert("Not implemented!")
-          }}
-        />
+        <ResetButton handleReset={handleReset} />
       </div>
 
       {Object.entries(editResponse.args.args).map(([k, v], idx) => {
@@ -186,8 +213,9 @@ function EditAndOrAcceptComponent({
           defaultRows.current[k as keyof typeof defaultRows.current] ===
           undefined
         ) {
-          defaultRows.current[k as keyof typeof defaultRows.current] =
-            !v.length ? 3 : Math.max(v.length / 30, 7);
+          defaultRows.current[k as keyof typeof defaultRows.current] = !v.length
+            ? 3
+            : Math.max(v.length / 30, 7);
         }
         const numRows =
           defaultRows.current[k as keyof typeof defaultRows.current] || 8;
@@ -198,14 +226,12 @@ function EditAndOrAcceptComponent({
             key={`allow-edit-args--${k}-${idx}`}
           >
             <div className="flex flex-col gap-[6px] items-start w-full">
-              <p className="text-sm min-w-fit font-medium">
-                {prettifyText(k)}
-              </p>
+              <p className="text-sm min-w-fit font-medium">{prettifyText(k)}</p>
               <Textarea
                 disabled={streaming}
                 className="h-full"
                 value={value}
-                onChange={(e) => onEditChange(e, editResponse, k)}
+                onChange={(e) => onEditChange(e.target.value, editResponse, k)}
                 rows={numRows}
               />
             </div>
@@ -220,7 +246,7 @@ function EditAndOrAcceptComponent({
       </div>
     </div>
   );
-};
+}
 const EditAndOrAccept = React.memo(EditAndOrAcceptComponent);
 
 export function InboxItemInput({
@@ -240,28 +266,50 @@ export function InboxItemInput({
   setHasAddedResponse,
   handleSubmit,
 }: InboxItemInputProps) {
+  const { toast } = useToast();
   const isEditAllowed = interruptValue.config.allow_edit;
   const isResponseAllowed = interruptValue.config.allow_respond;
   const hasArgs = Object.entries(interruptValue.action_request.args).length > 0;
   const showArgsInResponse =
     hasArgs && !isEditAllowed && !acceptAllowed && isResponseAllowed;
-  const showArgsOutsideActionCards = hasArgs && !showArgsInResponse && !isEditAllowed && !acceptAllowed;
+  const showArgsOutsideActionCards =
+    hasArgs && !showArgsInResponse && !isEditAllowed && !acceptAllowed;
   const isError = currentNode === "__error__";
 
   const onEditChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>,
+    change: string | string[],
     response: HumanResponseWithEdits,
-    key: string
+    key: string | string[]
   ) => {
+    if (
+      (Array.isArray(change) && !Array.isArray(key)) ||
+      (!Array.isArray(change) && Array.isArray(key))
+    ) {
+      toast({
+        title: "Error",
+        description: "Something went wrong",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let valuesChanged = true;
     if (typeof response.args === "object") {
-      const haveValuesChanged = haveArgsChanged(
-        {
-          ...(response.args?.args || {}),
-          [key]: e.target.value,
-        },
-        initialValues
-      );
+      const updatedArgs = { ...(response.args?.args || {}) };
+
+      if (Array.isArray(change) && Array.isArray(key)) {
+        // Handle array inputs by mapping corresponding values
+        change.forEach((value, index) => {
+          if (index < key.length) {
+            updatedArgs[key[index]] = value;
+          }
+        });
+      } else {
+        // Handle single value case
+        updatedArgs[key as string] = change as string;
+      }
+
+      const haveValuesChanged = haveArgsChanged(updatedArgs, initialValues);
       valuesChanged = haveValuesChanged;
     }
 
@@ -291,10 +339,16 @@ export function InboxItemInput({
         type: response.type,
         args: {
           action: response.args.action,
-          args: {
-            ...response.args.args,
-            [key]: e.target.value,
-          },
+          args:
+            Array.isArray(change) && Array.isArray(key)
+              ? {
+                  ...response.args.args,
+                  ...Object.fromEntries(key.map((k, i) => [k, change[i]])),
+                }
+              : {
+                  ...response.args.args,
+                  [key as string]: change as string,
+                },
         },
       };
       if (
@@ -330,10 +384,10 @@ export function InboxItemInput({
   };
 
   const onResponseChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>,
+    change: string,
     response: HumanResponseWithEdits
   ) => {
-    if (!e.target.value) {
+    if (!change) {
       setHasAddedResponse(false);
       if (hasEdited) {
         // The user has deleted their response, so we should set the submit type to
@@ -350,7 +404,7 @@ export function InboxItemInput({
     setHumanResponse((prev) => {
       const newResponse: HumanResponseWithEdits = {
         type: response.type,
-        args: e.target.value,
+        args: change,
       };
 
       if (prev.find((p) => p.type === response.type)) {
@@ -360,7 +414,7 @@ export function InboxItemInput({
               return {
                 ...newResponse,
                 acceptAllowed: true,
-                editsMade: !!e.target.value,
+                editsMade: !!change,
               };
             }
             return newResponse;
@@ -380,7 +434,6 @@ export function InboxItemInput({
         ""
       )}
     >
-      
       {showArgsOutsideActionCards && (
         <div className="flex flex-col gap-6 items-start w-full">
           {Object.entries(interruptValue.action_request.args).map(([k, v]) => {
@@ -412,6 +465,7 @@ export function InboxItemInput({
         <EditAndOrAccept
           humanResponse={humanResponse}
           streaming={streaming}
+          initialValues={initialValues}
           onEditChange={onEditChange}
           handleSubmit={handleSubmit}
         />

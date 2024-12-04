@@ -51,7 +51,8 @@ export function InterruptedInboxItem<
       href={`/thread/${threadData.thread.thread_id}`}
       className={cn(
         "grid grid-cols-12 w-full px-4 py-6 items-center",
-        !isLast && "border-b-[1px] border-gray-200"
+        !isLast &&
+          "border-b-[1px] border-gray-200 hover:bg-gray-50/90 transition-colors ease-in-out"
       )}
     >
       <div className="col-span-9 flex items-center justify-start gap-2">

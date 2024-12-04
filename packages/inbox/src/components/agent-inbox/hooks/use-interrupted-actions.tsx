@@ -239,11 +239,14 @@ export default function useInterruptedActions<
       if (!errorOccurred) {
         setCurrentNode("");
         setStreaming(false);
-        setThreadData(
-          (await fetchSingleThread(
-            threadData.thread.thread_id
-          )) as ThreadData<ThreadValues>
-        );
+        const updatedThreadData = (await fetchSingleThread(
+          threadData.thread.thread_id
+        )) as ThreadData<ThreadValues>;
+        if (updatedThreadData.status === "interrupted") {
+          setThreadData(updatedThreadData);
+        } else {
+          router.back();
+        }
         setStreamFinished(false);
       }
     } else {
@@ -278,6 +281,10 @@ export default function useInterruptedActions<
     setLoading(true);
     await sendHumanResponse(threadData.thread.thread_id, [ignoreResponse]);
     setLoading(false);
+    toast({
+      title: "Successfully ignored thread",
+      duration: 5000,
+    });
     router.back();
   };
 

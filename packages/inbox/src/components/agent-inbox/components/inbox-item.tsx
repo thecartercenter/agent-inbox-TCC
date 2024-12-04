@@ -39,11 +39,12 @@ export function InboxItem<
             threadData={
               threadData as ThreadData<ThreadValues> & { interrupts: undefined }
             }
+            isLast={isLast}
           />
         );
       }
     } else {
-      return <GenericInboxItem threadData={threadData} />;
+      return <GenericInboxItem threadData={threadData} isLast={isLast} />;
     }
   }
 
@@ -65,13 +66,14 @@ export function InboxItem<
           threadData={
             threadData as ThreadData<ThreadValues> & { interrupts: undefined }
           }
+          isLast={isLast}
         />
       );
     }
   }
 
   if (inbox !== "interrupted" && threadData.status !== "interrupted") {
-    return <GenericInboxItem threadData={threadData} />;
+    return <GenericInboxItem threadData={threadData} isLast={isLast} />;
   }
 
   return null;

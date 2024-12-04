@@ -2,9 +2,8 @@ import { cn } from "@/lib/utils";
 import { Thread } from "@langchain/langgraph-sdk";
 import React from "react";
 import { ThreadIdCopyable } from "./thread-id";
-import { ThreadStatusBadge } from "./statuses";
-import { useQueryParams } from "../hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { InboxItemStatuses } from "./statuses";
+import { format } from "date-fns";
 
 interface GenericInboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -14,33 +13,12 @@ interface GenericInboxItemProps<
     status: "idle" | "busy" | "error" | "interrupted";
     interrupts?: never | undefined;
   };
+  isLast: boolean;
 }
 
 export function GenericInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
->({ threadData }: GenericInboxItemProps<ThreadValues>) {
-  const { searchParams, updateQueryParams } = useQueryParams();
-  const [active, setActive] = React.useState(false);
-  const threadIdQueryParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
-  const isStateViewOpen = !!threadIdQueryParam;
-  const isCurrentThreadStateView =
-    threadIdQueryParam === threadData.thread.thread_id;
-
-  React.useEffect(() => {
-    if (threadIdQueryParam === threadData.thread.thread_id && !active) {
-      setActive(true);
-    } else if (threadIdQueryParam !== threadData.thread.thread_id && active) {
-      setActive(false);
-    }
-  }, [searchParams, threadData]);
-
-  const handleToggleViewState = () => {
-    updateQueryParams(
-      VIEW_STATE_THREAD_QUERY_PARAM,
-      threadData.thread.thread_id
-    );
-  };
-
+>({ threadData, isLast }: GenericInboxItemProps<ThreadValues>) {
   const actionColorMap = {
     idle: {
       bg: "#E5E7EB",
@@ -62,42 +40,38 @@ export function GenericInboxItem<
   const actionColor = actionColorMap[threadData.status];
   const actionLetter = threadData.status[0].toUpperCase();
 
+  const updatedAtDateString = format(
+    new Date(threadData.thread.updated_at),
+    "MM/dd"
+  );
+
   return (
     <div
-      onClick={() => {
-        if (!active) {
-          setActive(true);
-          handleToggleViewState();
-        }
-      }}
       className={cn(
-        "flex flex-col gap-6 items-start justify-start",
-        "rounded-xl border-[1px] ",
-        "p-6 min-h-[50px]",
-        active ? "border-gray-200 shadow-md" : "border-gray-200/75",
-        !active && "cursor-pointer",
-        isStateViewOpen ? "max-w-[60%] w-full" : "w-full"
+        "grid grid-cols-12 w-full px-4 py-6 items-center",
+        !isLast && "border-b-[1px] border-gray-200"
       )}
     >
-      <div className="flex items-center justify-between w-full">
-        <div className="w-full flex items-center justify-start gap-2">
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm"
-            style={{
-              backgroundColor: actionColor.bg,
-              borderWidth: "1px",
-              borderColor: actionColor.border,
-            }}
-          >
-            {actionLetter}
-          </div>
-          <p>Thread ID:</p>
-          <ThreadIdCopyable threadId={threadData.thread.thread_id} />
+      <div className="col-span-9 flex items-center justify-start gap-2">
+        <div
+          className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs"
+          style={{
+            backgroundColor: actionColor.bg,
+            borderWidth: "1px",
+            borderColor: actionColor.border,
+          }}
+        >
+          {actionLetter}
         </div>
-        {!isCurrentThreadStateView && (
-          <ThreadStatusBadge status={threadData.status} />
-        )}
+        <p className="font-semibold text-black">Thread ID:</p>
+        <ThreadIdCopyable threadId={threadData.thread.thread_id} />
       </div>
+
+      <div className="col-span-2">
+        <InboxItemStatuses status={threadData.status} />
+      </div>
+
+      <p className="col-span-1 text-gray-500">{updatedAtDateString}</p>
     </div>
   );
 }
