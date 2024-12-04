@@ -77,7 +77,6 @@ export function ThreadsProvider<
   const [loading, setLoading] = useState(false);
   const [threadData, setThreadData] = useState<ThreadData<ThreadValues>[]>([]);
   const [hasMoreThreads, setHasMoreThreads] = useState(true);
-  console.log("threadData", threadData);
 
   const limitParam = searchParams.get(LIMIT_PARAM);
   const offsetParam = searchParams.get(OFFSET_PARAM);
