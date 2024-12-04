@@ -1,7 +1,7 @@
 import NextLink from "next/link";
 import { PillButton } from "@/components/ui/pill-button";
 import { cn } from "@/lib/utils";
-import { Cog, FileText, Settings } from "lucide-react";
+import { FileText } from "lucide-react";
 import { SettingsPopover } from "./settings-popover";
 
 const agentInboxSvg = (

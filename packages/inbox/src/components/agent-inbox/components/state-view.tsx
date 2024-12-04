@@ -14,10 +14,7 @@ import { ToolCall } from "@langchain/core/messages/tool";
 import React from "react";
 import { Button } from "../../ui/button";
 import { ToolCallTable } from "./tool-call-table";
-import {
-  STUDIO_URL_LOCAL_STORAGE_KEY,
-  VIEW_STATE_THREAD_QUERY_PARAM,
-} from "../constants";
+import { STUDIO_URL_LOCAL_STORAGE_KEY } from "../constants";
 import NextImage from "next/image";
 import GraphIcon from "@/components/icons/GraphIcon.svg";
 import { useLocalStorage } from "../hooks/use-local-storage";

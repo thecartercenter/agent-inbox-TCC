@@ -1,7 +1,6 @@
 import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
 import { useEffect } from "react";
 import { InboxItem } from "./components/inbox-item";
-import { StateView } from "./components/state-view";
 import React from "react";
 import { useQueryParams } from "./hooks/use-query-params";
 import {
@@ -21,8 +20,7 @@ export function Inbox<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >() {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
-  const { loading, threadData, fetchThreads } =
-    useThreadsContext<ThreadValues>();
+  const { loading, threadData } = useThreadsContext<ThreadValues>();
   const [selectedInbox, setSelectedInbox] =
     React.useState<ThreadStatusWithAll>("interrupted");
 

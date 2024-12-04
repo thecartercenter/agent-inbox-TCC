@@ -36,7 +36,6 @@ export function ThreadActionsView<
     handleSubmit,
     handleIgnore,
     handleResolve,
-    handleResetForm,
     setSelectedSubmitType,
     setHasAddedResponse,
     setHasEdited,

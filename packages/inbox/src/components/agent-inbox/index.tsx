@@ -1,6 +1,5 @@
 import React from "react";
 import { Inbox } from "./inbox";
-import { ThreadsProvider } from "./contexts/ThreadContext";
 import { Sidebar } from "./components/sidebar";
 import { ChevronRight } from "lucide-react";
 
@@ -19,9 +18,7 @@ export function AgentInbox<
           <p className="text-gray-800 text-sm font-medium">Email Assistant</p>
         </div>
         <div className="h-full max-h-[95%] w-full">
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <Inbox<ThreadValues> />
-          </React.Suspense>
+          <Inbox<ThreadValues> />
         </div>
       </div>
     </div>

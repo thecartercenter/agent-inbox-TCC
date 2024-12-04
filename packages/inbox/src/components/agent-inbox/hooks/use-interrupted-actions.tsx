@@ -6,11 +6,10 @@ import {
   SubmitType,
   ThreadData,
 } from "../types";
-import { useQueryParams } from "./use-query-params";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { useThreadsContext } from "../contexts/ThreadContext";
-import { useRouter, usePathname, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createDefaultHumanResponse } from "../utils";
 
 interface UseInterruptedActionsInput<
@@ -37,7 +36,6 @@ interface UseInterruptedActionsValue {
   handleResolve: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
-  handleResetForm: () => void;
 
   // State values
   streaming: boolean;
@@ -298,20 +296,6 @@ export default function useInterruptedActions<
     router.back();
   };
 
-  const handleResetForm = () => {
-    initialHumanInterruptEditValue.current = {};
-    const { responses, defaultSubmitType, hasAccept } =
-      createDefaultHumanResponse(
-        threadData.interrupts,
-        initialHumanInterruptEditValue
-      );
-    setAcceptAllowed(hasAccept);
-    setSelectedSubmitType(defaultSubmitType);
-    setHumanResponse(responses);
-    setHasAddedResponse(false);
-    setHasEdited(false);
-  };
-
   const supportsMultipleMethods =
     humanResponse.filter(
       (r) => r.type === "edit" || r.type === "accept" || r.type === "response"
@@ -321,7 +305,6 @@ export default function useInterruptedActions<
     handleSubmit,
     handleIgnore,
     handleResolve,
-    handleResetForm,
     humanResponse,
     streaming,
     streamFinished,
