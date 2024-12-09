@@ -3,6 +3,9 @@ import { PillButton } from "@/components/ui/pill-button";
 import { cn } from "@/lib/utils";
 import { FileText } from "lucide-react";
 import { SettingsPopover } from "./settings-popover";
+import { useThreadsContext } from "../contexts/ThreadContext";
+import { useQueryParams } from "../hooks/use-query-params";
+import { AGENT_INBOX_PARAM } from "../constants";
 
 const agentInboxSvg = (
   <svg
@@ -50,19 +53,24 @@ function InboxItemCount({
 
 function SidebarInboxItem({
   name,
+  graphId,
   selected,
   inboxCount,
 }: {
-  name: string;
+  name?: string;
+  graphId: string;
   selected: boolean;
   inboxCount: number;
 }) {
+  const { updateQueryParams } = useQueryParams();
+
   return (
     <span
       className={cn(
         "flex items-center justify-between w-full whitespace-nowrap gap-4 p-2 rounded-md",
         "hover:cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out"
       )}
+      onClick={() => updateQueryParams(AGENT_INBOX_PARAM, graphId)}
     >
       <p
         className={cn(
@@ -70,7 +78,7 @@ function SidebarInboxItem({
           selected && "font-semibold"
         )}
       >
-        {name}
+        {name || graphId}
       </p>
       <InboxItemCount count={inboxCount} selected={selected} />
     </span>
@@ -78,26 +86,25 @@ function SidebarInboxItem({
 }
 
 export function Sidebar() {
+  const { agentInboxes } = useThreadsContext();
   return (
-    <div className="flex flex-col items-center justify-between h-full gap-2 px-10 py-11">
-      <div className="flex flex-col items-start justify-center gap-8">
+    <div className="flex flex-col items-start justify-between h-full gap-2 px-10 py-11">
+      <div className="flex flex-col items-start justify-start gap-8">
         <NextLink href="/">{agentInboxSvg}</NextLink>
         <div className="flex flex-col items-start justify-center w-full">
           <p className="text-[16px] leading-6 text-gray-700 p-2">All Agents</p>
-          <SidebarInboxItem
-            name="Travel Assistant"
-            selected={false}
-            inboxCount={1}
-          />
-          <SidebarInboxItem
-            name="Email Assistant"
-            selected={true}
-            inboxCount={8}
-          />
-          <SidebarInboxItem name="CS Bot" selected={false} inboxCount={99} />
+          {agentInboxes.map((inbox, idx) => (
+            <SidebarInboxItem
+              key={`inbox-${inbox.graphId}-${idx}`}
+              name={inbox.name}
+              graphId={inbox.graphId}
+              selected={inbox.selected}
+              inboxCount={0}
+            />
+          ))}
         </div>
       </div>
-      <div className="flex flex-col items-start justify-center gap-4 mt-auto">
+      <div className="flex flex-col items-start justify-start gap-4 mt-auto">
         <SettingsPopover />
         <NextLink
           href="https://github.com/langchain-ai/agent-uxs/blob/main/packages/inbox/README.md"

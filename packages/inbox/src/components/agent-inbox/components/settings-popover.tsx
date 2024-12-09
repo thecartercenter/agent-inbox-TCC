@@ -15,6 +15,7 @@ import {
 } from "../constants";
 import { useToast } from "@/hooks/use-toast";
 import { PillButton } from "@/components/ui/pill-button";
+import { AddAgentInboxDialog } from "./add-agent-inbox-dialog";
 
 export function SettingsPopover() {
   const { toast } = useToast();
@@ -22,7 +23,6 @@ export function SettingsPopover() {
 
   const [deploymentUrl, setDeploymentUrl] = React.useState("");
   const [graphId, setGraphId] = React.useState("");
-
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -67,6 +67,7 @@ export function SettingsPopover() {
   };
 
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <PillButton
@@ -115,6 +116,7 @@ export function SettingsPopover() {
                   onChange={(e) => setDeploymentUrl(e.target.value)}
                 />
               </div>
+              <AddAgentInboxDialog />
             </div>
             <div className="flex w-full justify-end">
               <Button type="submit" size="sm" onClick={handleSubmit}>
@@ -125,5 +127,6 @@ export function SettingsPopover() {
         </div>
       </PopoverContent>
     </Popover>
+    </>
   );
 }

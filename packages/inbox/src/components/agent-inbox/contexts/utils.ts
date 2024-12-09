@@ -1,13 +1,35 @@
 import { Thread, ThreadState } from "@langchain/langgraph-sdk";
 import { HumanInterrupt, ThreadData } from "../types";
 
+// TODO: Delete this once interrupt issue fixed.
+export const tmpCleanInterrupts = (interrupts: Record<string, any[]>) => {
+  return Object.fromEntries(
+    Object.entries(interrupts).map(([k, v]) => {
+      if (Array.isArray(v[0] && v[0]?.[1])) {
+        return [k, v?.[0][1]];
+      }
+      return [k, v];
+    })
+  )
+}
+
 export function getInterruptFromThread(
   thread: Thread
 ): HumanInterrupt[] | undefined {
   if (thread.interrupts && Object.values(thread.interrupts).length > 0) {
-    return Object.values(thread.interrupts).flatMap((interrupt) =>
-      interrupt.flatMap((i) => i.value as HumanInterrupt)
-    );
+    return Object.values(thread.interrupts).flatMap((interrupt) => {
+      if (Array.isArray(interrupt[0])) {
+        if (!interrupt[0]?.[1]) {
+          throw new Error("Interrupt is an array but has no value");
+        }
+        return interrupt[0][1].value as HumanInterrupt;
+      } else {
+        return interrupt.flatMap((i) => i.value as HumanInterrupt);
+      }
+    });
+    // return Object.values(thread.interrupts).flatMap((interrupt) =>
+    //   interrupt.flatMap((i) => i.value as HumanInterrupt)
+    // );
   }
   return undefined;
 }
@@ -15,6 +37,7 @@ export function getInterruptFromThread(
 export function processInterruptedThread<
   ThreadValues extends Record<string, any>,
 >(thread: Thread<ThreadValues>): ThreadData<ThreadValues> | undefined {
+  console.log(thread)
   const interrupts = getInterruptFromThread(thread);
   if (interrupts) {
     return {

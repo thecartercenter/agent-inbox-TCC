@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AgentInbox,
   HumanInterrupt,
   HumanResponse,
   ThreadData,
@@ -16,19 +17,14 @@ import {
 } from "@langchain/langgraph-sdk";
 import { END } from "@langchain/langgraph/web";
 import React from "react";
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useState,
-} from "react";
 import { useQueryParams } from "../hooks/use-query-params";
 import {
   INBOX_PARAM,
   LIMIT_PARAM,
   OFFSET_PARAM,
   GRAPH_ID_LOCAL_STORAGE_KEY,
+  AGENT_INBOX_PARAM,
+  AGENT_INBOXES_LOCAL_STORAGE_KEY,
 } from "../constants";
 import {
   getInterruptFromThread,
@@ -43,6 +39,8 @@ type ThreadContentType<
   loading: boolean;
   threadData: ThreadData<ThreadValues>[];
   hasMoreThreads: boolean;
+  agentInboxes: AgentInbox[];
+  addAgentInbox: (agentInbox: AgentInbox) => void;
   ignoreThread: (threadId: string) => Promise<void>;
   fetchThreads: (inbox: ThreadStatusWithAll) => Promise<void>;
   sendHumanResponse: <TStream extends boolean = false>(
@@ -66,17 +64,18 @@ type ThreadContentType<
   }>;
 };
 
-const ThreadsContext = createContext<ThreadContentType | undefined>(undefined);
+const ThreadsContext = React.createContext<ThreadContentType | undefined>(undefined);
 
 export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
->({ children }: { children: ReactNode }) {
-  const { getSearchParam, searchParams } = useQueryParams();
-  const { getItem } = useLocalStorage();
+>({ children }: { children: React.ReactNode }) {
+  const { getSearchParam, searchParams, updateQueryParams } = useQueryParams();
+  const { getItem, setItem } = useLocalStorage();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [threadData, setThreadData] = useState<ThreadData<ThreadValues>[]>([]);
-  const [hasMoreThreads, setHasMoreThreads] = useState(true);
+  const [loading, setLoading] = React.useState(false);
+  const [threadData, setThreadData] = React.useState<ThreadData<ThreadValues>[]>([]);
+  const [hasMoreThreads, setHasMoreThreads] = React.useState(true);
+  const [agentInboxes, setAgentInboxes] = React.useState<AgentInbox[]>([]);
 
   const limitParam = searchParams.get(LIMIT_PARAM);
   const offsetParam = searchParams.get(OFFSET_PARAM);
@@ -93,7 +92,104 @@ export function ThreadsProvider<
     fetchThreads(inboxSearchParam);
   }, [limitParam, offsetParam, inboxParam]);
 
-  const fetchSingleThread = useCallback(async (threadId: string) => {
+  const agentInboxParam = searchParams.get(AGENT_INBOX_PARAM);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    console.log("RUNNNNINGGGG")
+    getAgentInboxes();
+  }, [agentInboxParam]);
+
+  const getAgentInboxes = React.useCallback(async () => {
+    const agentInboxSearchParam = getSearchParam(AGENT_INBOX_PARAM);
+    const agentInboxes = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+    if (!agentInboxes || !agentInboxes.length) {
+      toast({
+        title: "Error",
+        description: "Agent inbox not found. Please add an inbox in settings.",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return;
+    }
+    let parsedAgentInboxes: AgentInbox[] = [];
+    try {
+      parsedAgentInboxes = JSON.parse(agentInboxes);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Agent inbox not found. Please add an inbox in settings.",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return;
+    }
+
+    if (!agentInboxSearchParam) {
+      const selectedInbox = parsedAgentInboxes.find((i) => i.selected);
+      if (!selectedInbox) {
+        parsedAgentInboxes[0].selected = true;
+        updateQueryParams(AGENT_INBOX_PARAM, parsedAgentInboxes[0].graphId);
+        setAgentInboxes(parsedAgentInboxes);
+        setItem(
+          AGENT_INBOXES_LOCAL_STORAGE_KEY,
+          JSON.stringify(parsedAgentInboxes)
+        );
+      } else {
+        updateQueryParams(AGENT_INBOX_PARAM, selectedInbox.graphId);
+        setAgentInboxes(parsedAgentInboxes);
+        setItem(
+          AGENT_INBOXES_LOCAL_STORAGE_KEY,
+          JSON.stringify(parsedAgentInboxes)
+        );
+      }
+      return;
+    }
+
+    const selectedInbox = parsedAgentInboxes.find(
+      (i) => i.graphId === agentInboxSearchParam
+    );
+    if (!selectedInbox) {
+      toast({
+        title: "Error",
+        description: "Agent inbox not found. Please add an inbox in settings.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+    
+    parsedAgentInboxes = parsedAgentInboxes.map((i) => {
+      if (i.graphId === agentInboxSearchParam) {
+        i.selected = true;
+      }
+      return i;
+    })
+    setAgentInboxes(parsedAgentInboxes);
+    setItem(
+      AGENT_INBOXES_LOCAL_STORAGE_KEY,
+      JSON.stringify(parsedAgentInboxes)
+    );
+  }, []);
+
+  const addAgentInbox = React.useCallback((agentInbox: AgentInbox) => {
+    const agentInboxes = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+    if (!agentInboxes || !agentInboxes.length) {
+      setAgentInboxes([agentInbox]);
+      setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([agentInbox]));
+      updateQueryParams(AGENT_INBOX_PARAM, agentInbox.graphId);
+      return;
+    }
+    const parsedAgentInboxes = JSON.parse(agentInboxes);
+    parsedAgentInboxes.push(agentInbox);
+    setAgentInboxes(parsedAgentInboxes);
+    setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify(parsedAgentInboxes));
+    updateQueryParams(AGENT_INBOX_PARAM, agentInbox.graphId);
+  }, []);
+
+  const fetchSingleThread = React.useCallback(async (threadId: string) => {
     const client = createClient();
     const thread = await client.threads.get(threadId);
     let threadInterrupts: HumanInterrupt[] | undefined;
@@ -115,7 +211,7 @@ export function ThreadsProvider<
     };
   }, []);
 
-  const fetchThreads = useCallback(async (inbox: ThreadStatusWithAll) => {
+  const fetchThreads = React.useCallback(async (inbox: ThreadStatusWithAll) => {
     setLoading(true);
     const client = createClient();
 
@@ -214,7 +310,7 @@ export function ThreadsProvider<
     setLoading(false);
   }, []);
 
-  const bulkGetThreadStates = useCallback(
+  const bulkGetThreadStates = React.useCallback(
     async (
       threadIds: string[]
     ): Promise<
@@ -326,6 +422,8 @@ export function ThreadsProvider<
     loading,
     threadData,
     hasMoreThreads,
+    agentInboxes,
+    addAgentInbox,
     ignoreThread,
     sendHumanResponse,
     fetchThreads,
@@ -342,7 +440,7 @@ export function ThreadsProvider<
 export function useThreadsContext<
   T extends Record<string, any> = Record<string, any>,
 >() {
-  const context = useContext(ThreadsContext) as ThreadContentType<T>;
+  const context = React.useContext(ThreadsContext) as ThreadContentType<T>;
   if (context === undefined) {
     throw new Error("useThreadsContext must be used within a ThreadsProvider");
   }

@@ -69,3 +69,22 @@ export type ThreadData<
 export type ThreadStatusWithAll = ThreadStatus | "all";
 
 export type SubmitType = "accept" | "response" | "edit";
+
+export interface AgentInbox {
+  /**
+   * The ID of the graph.
+   */
+  graphId: string;
+  /**
+   * The URL of the deployment. Either a localhost URL, or a deployment URL.
+   */
+  deploymentUrl: string;
+  /**
+   * Optional name for the inbox, used in the UI to label the inbox.
+   */
+  name?: string;
+  /**
+   * Whether or not the inbox is selected.
+   */
+  selected: boolean;
+}
