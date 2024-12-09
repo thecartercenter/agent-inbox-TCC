@@ -60,7 +60,7 @@ export function BreadCrumb({ className }: { className?: string }) {
     return null;
   }
 
-  const constructInboxLink = (inbox: ThreadStatusWithAll) => {
+  const constructInboxLink = () => {
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.delete(VIEW_STATE_THREAD_QUERY_PARAM);
     return `${currentUrl.pathname}${currentUrl.search}`;
@@ -82,9 +82,7 @@ export function BreadCrumb({ className }: { className?: string }) {
       {selectedInboxLabel && (
         <>
           <ChevronRight className="h-[14px] w-[14px]" />
-          <NextLink
-            href={constructInboxLink(selectedInboxLabel as ThreadStatusWithAll)}
-          >
+          <NextLink href={constructInboxLink()}>
             <Button size="sm" className="text-gray-500" variant="link">
               {selectedInboxLabel}
             </Button>

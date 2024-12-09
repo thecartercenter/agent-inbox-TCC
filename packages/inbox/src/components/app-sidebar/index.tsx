@@ -10,13 +10,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Calendar, FileText, Home, Inbox } from "lucide-react";
+import { FileText } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
 import React from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
+import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
+import { prettifyText } from "../agent-inbox/utils";
+import { AGENT_INBOX_PARAM } from "../agent-inbox/constants";
 
 const gradients = [
   "linear-gradient(to right, #FF416C, #FF4B2B)", // Red-Orange
@@ -36,25 +39,23 @@ const gradients = [
   "linear-gradient(to right, #3B2667, #BC78EC)", // Deep Purple
 ];
 
-const items = [
-  {
-    title: "csBot",
-    url: "#",
-    icon: Home,
-  },
-  {
-    title: "Email Assistant",
-    url: "#",
-    icon: Inbox,
-  },
-  {
-    title: "Travel Assistant",
-    url: "#",
-    icon: Calendar,
-  },
-];
+/**
+ * Used to generate a has for the graph ID to use as a gradient
+ * so that the gradient does not change on every render.
+ */
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
 
 export function AppSidebar() {
+  const { agentInboxes } = useThreadsContext();
+
   return (
     <Sidebar className="border-r-[0px] bg-[#F9FAFB]">
       <SidebarContent className="flex flex-col h-screen pb-9 pt-6">
@@ -66,28 +67,31 @@ export function AppSidebar() {
           <SidebarGroupContent className="h-full">
             <SidebarMenu className="flex flex-col gap-2 justify-between h-full">
               <div className="flex flex-col gap-2 pl-7">
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={item.url}>
-                        <div
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-white"
-                          style={{
-                            background:
-                              gradients[
-                                Math.floor(Math.random() * gradients.length)
-                              ],
-                          }}
-                        >
-                          {item.title.slice(0, 1).toUpperCase()}
-                        </div>
-                        <span className="font-medium text-black">
-                          {item.title}
-                        </span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {agentInboxes.map((item, idx) => {
+                  const label = item.name || prettifyText(item.graphId);
+                  return (
+                    <SidebarMenuItem key={`graph-id${item.graphId}-${idx}`}>
+                      <SidebarMenuButton asChild>
+                        <a href={`/?${AGENT_INBOX_PARAM}=${item.graphId}`}>
+                          <div
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-white"
+                            style={{
+                              background:
+                                gradients[
+                                  hashString(item.graphId) % gradients.length
+                                ],
+                            }}
+                          >
+                            {label.slice(0, 1).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-black">
+                            {label}
+                          </span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </div>
 
               <div className="flex flex-col gap-3 pl-7">

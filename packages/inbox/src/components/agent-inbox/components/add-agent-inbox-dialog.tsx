@@ -13,7 +13,11 @@ import React from "react";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useToast } from "@/hooks/use-toast";
 
-export function AddAgentInboxDialog() {
+export function AddAgentInboxDialog({
+  closeSettingsPopover,
+}: {
+  closeSettingsPopover: () => void;
+}) {
   const { toast } = useToast();
   const { addAgentInbox } = useThreadsContext();
   const [open, setOpen] = React.useState(false);
@@ -35,6 +39,7 @@ export function AddAgentInboxDialog() {
       description: "Agent inbox added successfully",
       duration: 3000,
     });
+    closeSettingsPopover();
     setOpen(false);
   };
 

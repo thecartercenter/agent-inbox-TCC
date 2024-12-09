@@ -7,14 +7,11 @@ import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
-import { useLocalStorage } from "../hooks/use-local-storage";
-import {
-  STUDIO_URL_LOCAL_STORAGE_KEY,
-  VIEW_STATE_THREAD_QUERY_PARAM,
-} from "../constants";
+import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "../hooks/use-query-params";
+import { useThreadsContext } from "../contexts/ThreadContext";
 
 interface ThreadActionsViewProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -102,11 +99,11 @@ export function ThreadActionsView<
     threadData,
     setThreadData,
   });
+  const { agentInboxes } = useThreadsContext<ThreadValues>();
   const { toast } = useToast();
-  const { getItem } = useLocalStorage();
   const { updateQueryParams } = useQueryParams();
 
-  const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
+  const deploymentUrl = agentInboxes.find((i) => i.selected)?.deploymentUrl;
 
   const handleOpenInStudio = () => {
     if (!deploymentUrl) {

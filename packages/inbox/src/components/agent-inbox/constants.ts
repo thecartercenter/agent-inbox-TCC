@@ -1,6 +1,4 @@
 export const VIEW_STATE_THREAD_QUERY_PARAM = "view_state_thread_id";
-export const STUDIO_URL_LOCAL_STORAGE_KEY = "inbox:studio_url";
-export const GRAPH_ID_LOCAL_STORAGE_KEY = "inbox:graph_id";
 export const AGENT_INBOXES_LOCAL_STORAGE_KEY = "inbox:agent_inboxes";
 export const LANGGRAPH_API_URL =
   process.env.LANGGRAPH_API_URL ?? "http://localhost:54367";

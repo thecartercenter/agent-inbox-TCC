@@ -22,7 +22,6 @@ import {
   INBOX_PARAM,
   LIMIT_PARAM,
   OFFSET_PARAM,
-  GRAPH_ID_LOCAL_STORAGE_KEY,
   AGENT_INBOX_PARAM,
   AGENT_INBOXES_LOCAL_STORAGE_KEY,
 } from "../constants";
@@ -393,7 +392,7 @@ export function ThreadsProvider<
           }>
         | undefined
     : Promise<Run> | undefined => {
-    const graphId = getItem(GRAPH_ID_LOCAL_STORAGE_KEY);
+    const graphId = agentInboxes.find((i) => i.selected)?.graphId;
     if (!graphId) {
       toast({
         title: "No graph ID found.",

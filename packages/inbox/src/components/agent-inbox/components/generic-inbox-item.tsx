@@ -4,12 +4,11 @@ import React from "react";
 import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemStatuses } from "./statuses";
 import { format } from "date-fns";
-import { useLocalStorage } from "../hooks/use-local-storage";
-import { STUDIO_URL_LOCAL_STORAGE_KEY } from "../constants";
 import { useToast } from "@/hooks/use-toast";
 import { constructOpenInStudioURL } from "../utils";
 import { Button } from "@/components/ui/button";
 import NextLink from "next/link";
+import { useThreadsContext } from "../contexts/ThreadContext";
 
 interface GenericInboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -25,10 +24,10 @@ interface GenericInboxItemProps<
 export function GenericInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ threadData, isLast }: GenericInboxItemProps<ThreadValues>) {
-  const { getItem } = useLocalStorage();
+  const { agentInboxes } = useThreadsContext<ThreadValues>();
   const { toast } = useToast();
 
-  const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
+  const deploymentUrl = agentInboxes.find((i) => i.selected)?.deploymentUrl;
 
   const handleOpenInStudio = () => {
     if (!deploymentUrl) {
