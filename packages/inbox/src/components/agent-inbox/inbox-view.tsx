@@ -1,5 +1,4 @@
 import { useThreadsContext } from "@/components/agent-inbox/contexts/ThreadContext";
-import { useEffect } from "react";
 import { InboxItem } from "./components/inbox-item";
 import React from "react";
 import { useQueryParams } from "./hooks/use-query-params";
@@ -14,18 +13,17 @@ export function AgentInboxView<
 >() {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
   const { loading, threadData } = useThreadsContext<ThreadValues>();
-  const [selectedInbox, setSelectedInbox] =
-    React.useState<ThreadStatusWithAll>("interrupted");
+  const selectedInbox = (getSearchParam(INBOX_PARAM) ||
+    "interrupted") as ThreadStatusWithAll;
 
   const changeInbox = async (inbox: ThreadStatusWithAll) => {
     updateQueryParams(
       [INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM],
       [inbox, "0", "10"]
     );
-    setSelectedInbox(inbox);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (typeof window === "undefined") return;
     const offsetQueryParam = getSearchParam(OFFSET_PARAM);
     const limitQueryParam = getSearchParam(LIMIT_PARAM);
@@ -37,10 +35,14 @@ export function AgentInboxView<
     }
   }, [searchParams]);
 
-  const threadDataToRender = threadData.filter((t) => {
-    if (selectedInbox === "all") return true;
-    return t.status === selectedInbox;
-  });
+  const threadDataToRender = React.useMemo(
+    () =>
+      threadData.filter((t) => {
+        if (selectedInbox === "all") return true;
+        return t.status === selectedInbox;
+      }),
+    [selectedInbox, threadData]
+  );
   const noThreadsFound = !threadDataToRender.length;
 
   return (
@@ -48,11 +50,11 @@ export function AgentInboxView<
       <div className="pl-5 pt-4">
         <InboxButtons changeInbox={changeInbox} />
       </div>
-      <div className="flex flex-col items-start w-full h-full border-y-[1px] border-gray-50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 mt-3">
+      <div className="flex flex-col items-start w-full max-h-fit h-full border-y-[1px] border-gray-50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 mt-3">
         {threadDataToRender.map((threadData, idx) => {
           return (
             <InboxItem<ThreadValues>
-              key={`inbox-item-${threadData.thread.thread_id}`}
+              key={`inbox-item-${threadData.thread.thread_id}-${idx}`}
               threadData={threadData}
               isLast={idx === threadDataToRender.length - 1}
             />
