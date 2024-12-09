@@ -52,14 +52,14 @@ export function ThreadView<
     }
   };
 
-  if (!threadData) {
-    return <div>Thread not found for ID: {threadId}</div>;
-  }
-  if (threadData.status !== "interrupted") {
-    return <div>Thread is not of status interrupted</div>;
-  }
-  if (!threadData.interrupts || threadData.interrupts.length === 0) {
-    return <div>Thread has no interrupts</div>;
+  if (
+    !threadData ||
+    threadData.status !== "interrupted" ||
+    !threadData.interrupts ||
+    threadData.interrupts.length === 0
+  ) {
+    updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+    return null;
   }
 
   return (

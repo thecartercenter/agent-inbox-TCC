@@ -9,8 +9,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { useThreadsContext } from "../contexts/ThreadContext";
-import { useRouter } from "next/navigation";
 import { createDefaultHumanResponse } from "../utils";
+import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { useQueryParams } from "./use-query-params";
 
 interface UseInterruptedActionsInput<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -74,9 +75,9 @@ export default function useInterruptedActions<
   setThreadData,
 }: UseInterruptedActionsInput<ThreadValues>): UseInterruptedActionsValue {
   const { toast } = useToast();
+  const { updateQueryParams } = useQueryParams();
   const { fetchSingleThread, sendHumanResponse, ignoreThread } =
     useThreadsContext<ThreadValues>();
-  const router = useRouter();
 
   const [humanResponse, setHumanResponse] = React.useState<
     HumanResponseWithEdits[]
@@ -259,7 +260,7 @@ export default function useInterruptedActions<
         if (updatedThreadData && updatedThreadData?.status === "interrupted") {
           setThreadData(updatedThreadData as ThreadData<ThreadValues>);
         } else {
-          router.back();
+          updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
         }
         setStreamFinished(false);
       }
@@ -299,7 +300,7 @@ export default function useInterruptedActions<
       title: "Successfully ignored thread",
       duration: 5000,
     });
-    router.back();
+    updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
   };
 
   const handleResolve = async (
@@ -309,7 +310,7 @@ export default function useInterruptedActions<
     setLoading(true);
     await ignoreThread(threadData.thread.thread_id);
     setLoading(false);
-    router.back();
+    updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
   };
 
   const supportsMultipleMethods =
