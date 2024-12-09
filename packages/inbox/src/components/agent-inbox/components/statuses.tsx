@@ -26,14 +26,21 @@ export function InboxItemStatuses({
     return (
       <div
         className={cn(
-          "flex items-center justify-center px-2 py-[2px] rounded-full border-[2px] w-fit font-medium text-nowrap",
+          "flex items-center justify-center px-2 py-[2px] rounded-full border-[1.5px] w-fit font-medium text-nowrap",
+          "hover:bg-gray-50/90 transition-colors ease-in-out",
           isOnlyIgnoreAllowed
             ? "border-gray-600 text-gray-600"
             : "border-green-700 text-green-700"
         )}
       >
-        <p className="text-sm">
-          {isOnlyIgnoreAllowed ? "Ignore" : "Requires Action"}
+        <p className="text-sm flex items-center justify-center gap-2">
+          <div
+            className={cn(
+              "w-[6px] h-[6px] rounded-full",
+              isOnlyIgnoreAllowed ? "bg-gray-600" : "bg-green-700"
+            )}
+          />
+          <span>{isOnlyIgnoreAllowed ? "Ignore" : "Requires Action"}</span>
         </p>
       </div>
     );
