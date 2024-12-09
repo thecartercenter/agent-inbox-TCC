@@ -9,7 +9,12 @@ import {
 } from "@/components/agent-inbox/types";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
-import { Run, Thread, ThreadState } from "@langchain/langgraph-sdk";
+import {
+  Run,
+  Thread,
+  ThreadState,
+  ThreadStatus,
+} from "@langchain/langgraph-sdk";
 import { END } from "@langchain/langgraph/web";
 import React from "react";
 import { useQueryParams } from "../hooks/use-query-params";
@@ -52,6 +57,11 @@ type ThreadContentType<
           }>
         | undefined
     : Promise<Run> | undefined;
+  fetchSingleThread: (threadId: string) => Promise<{
+    thread: Thread<ThreadValues>;
+    status: ThreadStatus;
+    interrupts: HumanInterrupt[] | undefined;
+  }>;
 };
 
 const ThreadsContext = React.createContext<ThreadContentType | undefined>(
@@ -285,6 +295,28 @@ export function ThreadsProvider<
     setLoading(false);
   }, []);
 
+  const fetchSingleThread = React.useCallback(async (threadId: string) => {
+    const client = createClient();
+    const thread = await client.threads.get(threadId);
+    let threadInterrupts: HumanInterrupt[] | undefined;
+    if (thread.status === "interrupted") {
+      threadInterrupts = getInterruptFromThread(thread);
+      if (!threadInterrupts || !threadInterrupts.length) {
+        const state = await client.threads.getState(threadId);
+        const { interrupts } = processThreadWithoutInterrupts(thread, {
+          thread_state: state,
+          thread_id: threadId,
+        });
+        threadInterrupts = interrupts;
+      }
+    }
+    return {
+      thread,
+      status: thread.status,
+      interrupts: threadInterrupts,
+    };
+  }, []);
+
   const bulkGetThreadStates = React.useCallback(
     async (
       threadIds: string[]
@@ -387,7 +419,7 @@ export function ThreadsProvider<
           resume: response,
         },
       }) as any; // Type assertion needed due to conditional return type
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error sending human response", e);
       throw e;
     }
@@ -402,6 +434,7 @@ export function ThreadsProvider<
     ignoreThread,
     sendHumanResponse,
     fetchThreads,
+    fetchSingleThread,
   };
 
   return (

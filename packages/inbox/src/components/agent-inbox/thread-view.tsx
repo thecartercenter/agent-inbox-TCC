@@ -27,7 +27,6 @@ export function ThreadView<
       setThreadData(selectedThread);
       return;
     } else {
-      console.log("removing", !!selectedThread, threadId, threads);
       // Route the user back to the inbox view.
       updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
     }

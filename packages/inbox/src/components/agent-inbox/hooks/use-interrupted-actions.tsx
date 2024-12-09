@@ -224,14 +224,25 @@ export default function useInterruptedActions<
         if (!errorOccurred) {
           setStreamFinished(true);
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error sending human response", e);
-        toast({
-          title: "Error",
-          description: "Failed to submit response.",
-          variant: "destructive",
-          duration: 5000,
-        });
+
+        if ("message" in e && e.message.includes("Invalid assistant ID")) {
+          toast({
+            title: "Error: Invalid assistant ID",
+            description:
+              "The provided assistant ID was not found in this graph. Please update the assistant ID in the settings and try again.",
+            variant: "destructive",
+            duration: 5000,
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to submit response.",
+            variant: "destructive",
+            duration: 5000,
+          });
+        }
       }
 
       if (!errorOccurred) {
