@@ -421,7 +421,7 @@ export function ThreadsProvider<
 
       return results;
     },
-    []
+    [agentInboxes]
   );
 
   const ignoreThread = async (threadId: string) => {
