@@ -243,16 +243,21 @@ export default function useInterruptedActions<
             duration: 5000,
           });
         }
+
+        errorOccurred = true;
+        setCurrentNode("");
+        setStreaming(false);
+        setStreamFinished(false);
       }
 
       if (!errorOccurred) {
         setCurrentNode("");
         setStreaming(false);
-        const updatedThreadData = (await fetchSingleThread(
+        const updatedThreadData = await fetchSingleThread(
           threadData.thread.thread_id
-        )) as ThreadData<ThreadValues>;
-        if (updatedThreadData.status === "interrupted") {
-          setThreadData(updatedThreadData);
+        );
+        if (updatedThreadData && updatedThreadData?.status === "interrupted") {
+          setThreadData(updatedThreadData as ThreadData<ThreadValues>);
         } else {
           router.back();
         }

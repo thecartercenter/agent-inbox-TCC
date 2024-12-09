@@ -44,9 +44,8 @@ export function InterruptedInboxItem<
         )
       }
       className={cn(
-        "grid grid-cols-12 w-full p-6 items-center cursor-pointer",
-        !isLast &&
-          "border-b-[1px] border-gray-200 hover:bg-gray-50/90 transition-colors ease-in-out"
+        "grid grid-cols-12 w-full p-6 items-center cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out",
+        !isLast && "border-b-[1px] border-gray-200"
       )}
     >
       <div className="col-span-9 flex items-center justify-start gap-4">

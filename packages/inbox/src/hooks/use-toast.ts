@@ -138,6 +138,7 @@ function dispatch(action: Action) {
 }
 
 type Toast = Omit<ToasterToast, "id">;
+export type ToastInput = Toast;
 
 function toast({ ...props }: Toast) {
   const id = genId();

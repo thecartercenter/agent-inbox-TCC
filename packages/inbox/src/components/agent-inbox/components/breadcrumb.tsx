@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import { useQueryParams } from "../hooks/use-query-params";
-import {
-  AGENT_INBOX_PARAM,
-  INBOX_PARAM,
-  VIEW_STATE_THREAD_QUERY_PARAM,
-} from "../constants";
+import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { HumanInterrupt, ThreadStatusWithAll } from "../types";
 import { prettifyText } from "../utils";
 import { useThreadsContext } from "../contexts/ThreadContext";
@@ -17,16 +13,18 @@ import React from "react";
 
 export function BreadCrumb({ className }: { className?: string }) {
   const { searchParams } = useQueryParams();
-  const { threadData } = useThreadsContext();
+  const { threadData, agentInboxes } = useThreadsContext();
   const [agentInboxLabel, setAgentInboxLabel] = React.useState<string>();
   const [selectedInboxLabel, setSelectedInboxLabel] = React.useState<string>();
   const [selectedThreadActionLabel, setSelectedThreadActionLabel] =
     React.useState<string>();
 
   React.useEffect(() => {
-    const agentInboxParam = searchParams.get(AGENT_INBOX_PARAM);
-    if (agentInboxParam) {
-      setAgentInboxLabel(prettifyText(agentInboxParam));
+    const selectedAgentInbox = agentInboxes.find((a) => a.selected);
+    if (selectedAgentInbox) {
+      const selectedAgentInboxLabel =
+        selectedAgentInbox.name || prettifyText(selectedAgentInbox.graphId);
+      setAgentInboxLabel(selectedAgentInboxLabel);
     } else {
       setAgentInboxLabel(undefined);
     }
@@ -54,7 +52,7 @@ export function BreadCrumb({ className }: { className?: string }) {
     } else {
       setSelectedThreadActionLabel(undefined);
     }
-  }, [searchParams]);
+  }, [searchParams, agentInboxes, threadData]);
 
   if (!agentInboxLabel) {
     return null;

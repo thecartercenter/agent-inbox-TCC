@@ -54,7 +54,7 @@ export function AgentInboxView<
         {threadDataToRender.map((threadData, idx) => {
           return (
             <InboxItem<ThreadValues>
-              key={`inbox-item-${threadData.thread.thread_id}-${idx}`}
+              key={`inbox-item-${threadData.thread.thread_id}`}
               threadData={threadData}
               isLast={idx === threadDataToRender.length - 1}
             />

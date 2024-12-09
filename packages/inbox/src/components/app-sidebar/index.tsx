@@ -19,7 +19,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
 import { prettifyText } from "../agent-inbox/utils";
-import { AGENT_INBOX_PARAM } from "../agent-inbox/constants";
+import { cn } from "@/lib/utils";
 
 const gradients = [
   "linear-gradient(to right, #FF416C, #FF4B2B)", // Red-Orange
@@ -54,13 +54,15 @@ function hashString(str: string): number {
 }
 
 export function AppSidebar() {
-  const { agentInboxes } = useThreadsContext();
+  const { agentInboxes, changeAgentInbox } = useThreadsContext();
 
   return (
     <Sidebar className="border-r-[0px] bg-[#F9FAFB]">
       <SidebarContent className="flex flex-col h-screen pb-9 pt-6">
         <div className="flex items-center justify-between px-11">
-          <div className="flex-shrink-0 w-full">{agentInboxSvg}</div>
+          <NextLink href="/" className="flex-shrink-0 w-full">
+            {agentInboxSvg}
+          </NextLink>
           <AppSidebarTrigger isOutside={false} className="mt-1" />
         </div>
         <SidebarGroup className="flex-1 overflow-y-auto pt-6">
@@ -70,24 +72,32 @@ export function AppSidebar() {
                 {agentInboxes.map((item, idx) => {
                   const label = item.name || prettifyText(item.graphId);
                   return (
-                    <SidebarMenuItem key={`graph-id${item.graphId}-${idx}`}>
-                      <SidebarMenuButton asChild>
-                        <a href={`/?${AGENT_INBOX_PARAM}=${item.graphId}`}>
-                          <div
-                            className="w-6 h-6 rounded-md flex items-center justify-center text-white"
-                            style={{
-                              background:
-                                gradients[
-                                  hashString(item.graphId) % gradients.length
-                                ],
-                            }}
-                          >
-                            {label.slice(0, 1).toUpperCase()}
-                          </div>
-                          <span className="font-medium text-black">
-                            {label}
-                          </span>
-                        </a>
+                    <SidebarMenuItem
+                      key={`graph-id-${item.graphId}-${idx}`}
+                      className={item.selected ? "bg-gray-100 rounded-md" : ""}
+                    >
+                      <SidebarMenuButton
+                        onClick={() => changeAgentInbox(item.graphId)}
+                      >
+                        <div
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-white"
+                          style={{
+                            background:
+                              gradients[
+                                hashString(item.graphId) % gradients.length
+                              ],
+                          }}
+                        >
+                          {label.slice(0, 1).toUpperCase()}
+                        </div>
+                        <span
+                          className={cn(
+                            "font-medium",
+                            item.selected ? "text-black" : "text-gray-600"
+                          )}
+                        >
+                          {label}
+                        </span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

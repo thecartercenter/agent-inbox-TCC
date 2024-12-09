@@ -1,4 +1,3 @@
-import { LANGGRAPH_API_URL } from "@/components/agent-inbox/constants";
 import { NextRequest, NextResponse } from "next/server";
 
 function getCorsHeaders() {
@@ -20,6 +19,16 @@ async function handleRequest(req: NextRequest, method: string) {
       ? `?${searchParams.toString()}`
       : "";
 
+    const deploymentUrl = req.headers.get("DEPLOYMENT-URL");
+    if (!deploymentUrl) {
+      throw new Error("DEPLOYMENT-URL header is required");
+    }
+
+    // Remove trailing slash if present
+    const baseUrl = deploymentUrl.endsWith("/")
+      ? deploymentUrl.slice(0, -1)
+      : deploymentUrl;
+
     const options: RequestInit = {
       method,
       headers: {
@@ -31,10 +40,7 @@ async function handleRequest(req: NextRequest, method: string) {
       options.body = await req.text();
     }
 
-    const res = await fetch(
-      `${LANGGRAPH_API_URL}/${path}${queryString}`,
-      options
-    );
+    const res = await fetch(`${baseUrl}/${path}${queryString}`, options);
 
     if (res.status >= 400) {
       console.error("ERROR IN PROXY", res.status, res.statusText);
