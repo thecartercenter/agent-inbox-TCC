@@ -64,7 +64,9 @@ type ThreadContentType<
   }>;
 };
 
-const ThreadsContext = React.createContext<ThreadContentType | undefined>(undefined);
+const ThreadsContext = React.createContext<ThreadContentType | undefined>(
+  undefined
+);
 
 export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -73,7 +75,9 @@ export function ThreadsProvider<
   const { getItem, setItem } = useLocalStorage();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
-  const [threadData, setThreadData] = React.useState<ThreadData<ThreadValues>[]>([]);
+  const [threadData, setThreadData] = React.useState<
+    ThreadData<ThreadValues>[]
+  >([]);
   const [hasMoreThreads, setHasMoreThreads] = React.useState(true);
   const [agentInboxes, setAgentInboxes] = React.useState<AgentInbox[]>([]);
 
@@ -98,7 +102,7 @@ export function ThreadsProvider<
     if (typeof window === "undefined") {
       return;
     }
-    console.log("RUNNNNINGGGG")
+    console.log("RUNNNNINGGGG");
     getAgentInboxes();
   }, [agentInboxParam]);
 
@@ -111,19 +115,20 @@ export function ThreadsProvider<
         description: "Agent inbox not found. Please add an inbox in settings.",
         variant: "destructive",
         duration: 3000,
-      })
+      });
       return;
     }
     let parsedAgentInboxes: AgentInbox[] = [];
     try {
       parsedAgentInboxes = JSON.parse(agentInboxes);
     } catch (error) {
+      console.error("Error parsing agent inboxes", error);
       toast({
         title: "Error",
         description: "Agent inbox not found. Please add an inbox in settings.",
         variant: "destructive",
         duration: 3000,
-      })
+      });
       return;
     }
 
@@ -160,13 +165,13 @@ export function ThreadsProvider<
       });
       return;
     }
-    
+
     parsedAgentInboxes = parsedAgentInboxes.map((i) => {
       if (i.graphId === agentInboxSearchParam) {
         i.selected = true;
       }
       return i;
-    })
+    });
     setAgentInboxes(parsedAgentInboxes);
     setItem(
       AGENT_INBOXES_LOCAL_STORAGE_KEY,
@@ -185,7 +190,10 @@ export function ThreadsProvider<
     const parsedAgentInboxes = JSON.parse(agentInboxes);
     parsedAgentInboxes.push(agentInbox);
     setAgentInboxes(parsedAgentInboxes);
-    setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify(parsedAgentInboxes));
+    setItem(
+      AGENT_INBOXES_LOCAL_STORAGE_KEY,
+      JSON.stringify(parsedAgentInboxes)
+    );
     updateQueryParams(AGENT_INBOX_PARAM, agentInbox.graphId);
   }, []);
 

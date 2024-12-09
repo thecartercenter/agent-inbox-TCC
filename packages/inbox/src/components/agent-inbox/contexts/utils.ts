@@ -10,8 +10,8 @@ export const tmpCleanInterrupts = (interrupts: Record<string, any[]>) => {
       }
       return [k, v];
     })
-  )
-}
+  );
+};
 
 export function getInterruptFromThread(
   thread: Thread
@@ -37,7 +37,7 @@ export function getInterruptFromThread(
 export function processInterruptedThread<
   ThreadValues extends Record<string, any>,
 >(thread: Thread<ThreadValues>): ThreadData<ThreadValues> | undefined {
-  console.log(thread)
+  console.log(thread);
   const interrupts = getInterruptFromThread(thread);
   if (interrupts) {
     return {

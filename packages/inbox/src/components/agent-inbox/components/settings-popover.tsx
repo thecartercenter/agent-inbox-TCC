@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,65 +70,65 @@ export function SettingsPopover() {
 
   return (
     <>
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <PillButton
-          variant="outline"
-          className="flex gap-2 items-center justify-center text-gray-800"
-          size="lg"
-        >
-          <Settings />
-          <span>Settings</span>
-        </PillButton>
-      </PopoverTrigger>
-      <PopoverContent className="w-80">
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <h4 className="font-medium leading-none">Settings</h4>
-            <p className="text-sm text-muted-foreground">
-              Configuration settings for Agent Inbox
-            </p>
-          </div>
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col items-start gap-4 w-full"
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <PillButton
+            variant="outline"
+            className="flex gap-2 items-center justify-center text-gray-800 w-fit"
+            size="lg"
           >
-            <div className="flex flex-col gap-4 items-start w-full">
-              <div className="flex flex-col gap-2 items-start w-full">
-                <Label htmlFor="graph-id" className="px-1">
-                  Graph ID <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="graph-id"
-                  placeholder="agent"
-                  className="w-full"
-                  value={graphId}
-                  onChange={(e) => setGraphId(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-2 items-start w-full">
-                <Label htmlFor="deployment-url" className="px-1">
-                  LangGraph Deployment URL
-                </Label>
-                <Input
-                  id="deployment-url"
-                  placeholder="https://my-app.langgraph.app"
-                  className="w-full"
-                  value={deploymentUrl}
-                  onChange={(e) => setDeploymentUrl(e.target.value)}
-                />
-              </div>
-              <AddAgentInboxDialog />
+            <Settings />
+            <span>Settings</span>
+          </PillButton>
+        </PopoverTrigger>
+        <PopoverContent className="w-80">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">Settings</h4>
+              <p className="text-sm text-muted-foreground">
+                Configuration settings for Agent Inbox
+              </p>
             </div>
-            <div className="flex w-full justify-end">
-              <Button type="submit" size="sm" onClick={handleSubmit}>
-                Save
-              </Button>
-            </div>
-          </form>
-        </div>
-      </PopoverContent>
-    </Popover>
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col items-start gap-4 w-full"
+            >
+              <div className="flex flex-col gap-4 items-start w-full">
+                <div className="flex flex-col gap-2 items-start w-full">
+                  <Label htmlFor="graph-id" className="px-1">
+                    Graph ID <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="graph-id"
+                    placeholder="agent"
+                    className="w-full"
+                    value={graphId}
+                    onChange={(e) => setGraphId(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2 items-start w-full">
+                  <Label htmlFor="deployment-url" className="px-1">
+                    LangGraph Deployment URL
+                  </Label>
+                  <Input
+                    id="deployment-url"
+                    placeholder="https://my-app.langgraph.app"
+                    className="w-full"
+                    value={deploymentUrl}
+                    onChange={(e) => setDeploymentUrl(e.target.value)}
+                  />
+                </div>
+                <AddAgentInboxDialog />
+              </div>
+              <div className="flex w-full justify-end">
+                <Button type="submit" size="sm" onClick={handleSubmit}>
+                  Save
+                </Button>
+              </div>
+            </form>
+          </div>
+        </PopoverContent>
+      </Popover>
     </>
   );
 }
