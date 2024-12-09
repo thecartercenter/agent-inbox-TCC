@@ -58,7 +58,6 @@ export function ThreadView<
     !threadData.interrupts ||
     threadData.interrupts.length === 0
   ) {
-    updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
     return null;
   }
 
