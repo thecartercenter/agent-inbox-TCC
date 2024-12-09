@@ -37,7 +37,6 @@ export function getInterruptFromThread(
 export function processInterruptedThread<
   ThreadValues extends Record<string, any>,
 >(thread: Thread<ThreadValues>): ThreadData<ThreadValues> | undefined {
-  console.log(thread);
   const interrupts = getInterruptFromThread(thread);
   if (interrupts) {
     return {

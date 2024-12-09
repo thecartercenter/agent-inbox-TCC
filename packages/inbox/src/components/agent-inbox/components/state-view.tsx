@@ -245,16 +245,21 @@ export function StateViewObject(props: StateViewProps) {
 
 interface StateViewComponentProps {
   threadData: ThreadData<Record<string, any>>;
+  handleShowSidePanel: (showState: boolean, showDescription: boolean) => void;
+  view: "description" | "state";
 }
 
-export function StateView({ threadData }: StateViewComponentProps) {
+export function StateView({
+  threadData,
+  handleShowSidePanel,
+  view,
+}: StateViewComponentProps) {
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
 
   const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
 
   const [expanded, setExpanded] = useState(false);
-  const [view, setView] = useState<"description" | "state">("description");
 
   const threadValues = threadData.thread.values;
   const description = threadData.interrupts?.[0].description;
@@ -281,37 +286,7 @@ export function StateView({ threadData }: StateViewComponentProps) {
   };
 
   return (
-    <div className="w-full overflow-y-auto pl-6 bg-[#F9FAFB] shadow-inner-left">
-      <div className="flex flex-wrap gap-3 items-center w-full pt-8">
-        <PillButton
-          onClick={() => setView("description")}
-          variant={view === "description" ? "default" : "outline"}
-        >
-          Description
-        </PillButton>
-        <PillButton
-          onClick={() => setView("state")}
-          variant={view === "state" ? "default" : "outline"}
-        >
-          State
-        </PillButton>
-        {deploymentUrl && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex items-center gap-1"
-            onClick={handleOpenInStudio}
-          >
-            <NextImage
-              src={GraphIcon}
-              height={16}
-              width={16}
-              alt="LangGraph Icon"
-            />
-            <span>Open in Studio</span>
-          </Button>
-        )}
-      </div>
+    <div className="w-full overflow-y-auto pl-6 border-l-[1px] border-gray-100">
       {view === "description" && (
         <div className="flex flex-col gap-1 pt-6 pb-2 w-[90%] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <MarkdownText>
@@ -336,7 +311,7 @@ export function StateView({ threadData }: StateViewComponentProps) {
         )}
 
         <Button
-          onClick={() => {}}
+          onClick={() => handleShowSidePanel(false, false)}
           variant="ghost"
           className="text-gray-600"
           size="sm"

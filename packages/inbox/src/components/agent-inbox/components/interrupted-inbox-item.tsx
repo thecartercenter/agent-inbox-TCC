@@ -4,9 +4,9 @@ import React from "react";
 import { prettifyText } from "../utils";
 import { InboxItemStatuses } from "./statuses";
 import { Thread } from "@langchain/langgraph-sdk";
-import NextLink from "next/link";
 import { format } from "date-fns";
 import { useQueryParams } from "../hooks/use-query-params";
+import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 
 interface InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -37,7 +37,12 @@ export function InterruptedInboxItem<
 
   return (
     <div
-      onClick={() => updateQueryParams("threadId", threadData.thread.thread_id)}
+      onClick={() =>
+        updateQueryParams(
+          VIEW_STATE_THREAD_QUERY_PARAM,
+          threadData.thread.thread_id
+        )
+      }
       className={cn(
         "grid grid-cols-12 w-full p-6 items-center cursor-pointer",
         !isLast &&

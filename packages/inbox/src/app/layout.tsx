@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { ThreadsProvider } from "@/components/agent-inbox/contexts/ThreadContext";
 import React from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar, AppSidebarTrigger } from "@/components/app-sidebar";
 
 const inter = Inter({
@@ -31,7 +31,7 @@ export default function RootLayout({
               <AppSidebar />
               <main className="flex flex-row w-full min-h-full pt-6 pl-6 gap-6">
                 <AppSidebarTrigger isOutside={true} />
-                <div className="min-w-full h-full bg-white rounded-tl-[58px]">
+                <div className="w-full h-full bg-white rounded-tl-[58px] overflow-hidden">
                   {children}
                 </div>
               </main>
