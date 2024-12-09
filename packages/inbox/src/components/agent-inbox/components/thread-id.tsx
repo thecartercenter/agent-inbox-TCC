@@ -8,7 +8,6 @@ import {
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 export function ThreadIdTooltip({ threadId }: { threadId: string }) {
   const firstThreeChars = threadId.slice(0, 3);
@@ -23,10 +22,7 @@ export function ThreadIdTooltip({ threadId }: { threadId: string }) {
           </p>
         </TooltipTrigger>
         <TooltipContent>
-          <ThreadIdCopyable
-            threadIdClassName="bg-transparent"
-            threadId={threadId}
-          />
+          <ThreadIdCopyable threadId={threadId} />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -35,11 +31,9 @@ export function ThreadIdTooltip({ threadId }: { threadId: string }) {
 
 export function ThreadIdCopyable({
   threadId,
-  threadIdClassName,
   showUUID = false,
 }: {
   threadId: string;
-  threadIdClassName?: string;
   showUUID?: boolean;
 }) {
   const [copied, setCopied] = React.useState(false);

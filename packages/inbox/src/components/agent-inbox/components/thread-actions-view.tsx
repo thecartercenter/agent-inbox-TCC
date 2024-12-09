@@ -6,7 +6,6 @@ import { constructOpenInStudioURL, prettifyText } from "../utils";
 import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
-import { useRouter } from "next/navigation";
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import {

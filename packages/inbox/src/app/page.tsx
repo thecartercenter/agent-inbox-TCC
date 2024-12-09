@@ -1,6 +1,5 @@
 "use client";
 
-import { InboxButtons } from "@/components/agent-inbox/components/inbox-buttons";
 import { AgentInbox } from "@/components/agent-inbox";
 import React from "react";
 

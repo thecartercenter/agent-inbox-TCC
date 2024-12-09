@@ -2,7 +2,6 @@ import { ChevronRight, X, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   baseMessageObject,
-  constructOpenInStudioURL,
   isArrayOfMessages,
   prettifyText,
   unknownToPrettyDate,
@@ -14,12 +13,6 @@ import { ToolCall } from "@langchain/core/messages/tool";
 import React from "react";
 import { Button } from "../../ui/button";
 import { ToolCallTable } from "./tool-call-table";
-import { STUDIO_URL_LOCAL_STORAGE_KEY } from "../constants";
-import NextImage from "next/image";
-import GraphIcon from "@/components/icons/GraphIcon.svg";
-import { useLocalStorage } from "../hooks/use-local-storage";
-import { useToast } from "@/hooks/use-toast";
-import { PillButton } from "@/components/ui/pill-button";
 import { MarkdownText } from "@/components/ui/markdown-text";
 import { ThreadData } from "../types";
 
@@ -254,11 +247,6 @@ export function StateView({
   handleShowSidePanel,
   view,
 }: StateViewComponentProps) {
-  const { getItem } = useLocalStorage();
-  const { toast } = useToast();
-
-  const deploymentUrl = getItem(STUDIO_URL_LOCAL_STORAGE_KEY);
-
   const [expanded, setExpanded] = useState(false);
 
   const threadValues = threadData.thread.values;
@@ -267,23 +255,6 @@ export function StateView({
   if (!threadValues) {
     return <div>No state found</div>;
   }
-
-  const handleOpenInStudio = () => {
-    if (!deploymentUrl) {
-      toast({
-        title: "Error",
-        description: "Please set the LangGraph deployment URL in settings.",
-        duration: 5000,
-      });
-      return;
-    }
-
-    const studioUrl = constructOpenInStudioURL(
-      deploymentUrl,
-      threadData.thread.thread_id
-    );
-    window.open(studioUrl, "_blank");
-  };
 
   return (
     <div className="w-full overflow-y-auto pl-6 border-l-[1px] border-gray-100">
