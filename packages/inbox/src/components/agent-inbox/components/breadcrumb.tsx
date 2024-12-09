@@ -1,5 +1,6 @@
 "use client";
 
+import NextLink from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
@@ -59,6 +60,12 @@ export function BreadCrumb({ className }: { className?: string }) {
     return null;
   }
 
+  const constructInboxLink = (inbox: ThreadStatusWithAll) => {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete(VIEW_STATE_THREAD_QUERY_PARAM);
+    return `${currentUrl.pathname}${currentUrl.search}`;
+  };
+
   return (
     <div
       className={cn(
@@ -66,23 +73,32 @@ export function BreadCrumb({ className }: { className?: string }) {
         className
       )}
     >
-      <Button size="sm" className="text-gray-500" variant="link">
-        {agentInboxLabel}
-      </Button>
+      <NextLink href="/">
+        <Button size="sm" className="text-gray-500" variant="link">
+          {agentInboxLabel}
+        </Button>
+      </NextLink>
+
       {selectedInboxLabel && (
         <>
           <ChevronRight className="h-[14px] w-[14px]" />
-          <Button size="sm" className="text-gray-500" variant="link">
-            {selectedInboxLabel}
-          </Button>
+          <NextLink
+            href={constructInboxLink(selectedInboxLabel as ThreadStatusWithAll)}
+          >
+            <Button size="sm" className="text-gray-500" variant="link">
+              {selectedInboxLabel}
+            </Button>
+          </NextLink>
         </>
       )}
       {selectedThreadActionLabel && (
         <>
           <ChevronRight className="h-[14px] w-[14px]" />
-          <Button size="sm" className="text-gray-500" variant="link">
-            {selectedThreadActionLabel}
-          </Button>
+          <NextLink href={window.location.pathname + window.location.search}>
+            <Button size="sm" className="text-gray-500" variant="link">
+              {selectedThreadActionLabel}
+            </Button>
+          </NextLink>
         </>
       )}
     </div>
