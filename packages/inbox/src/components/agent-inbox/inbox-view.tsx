@@ -46,7 +46,7 @@ export function AgentInboxView<
   const noThreadsFound = !threadDataToRender.length;
 
   return (
-    <div className="w-full h-full overflow-y-auto">
+    <div className="min-w-[1000px] h-full overflow-y-auto">
       <div className="pl-5 pt-4">
         <InboxButtons changeInbox={changeInbox} />
       </div>

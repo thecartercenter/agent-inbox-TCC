@@ -37,7 +37,7 @@ export default function RootLayout({
                   <BreadCrumb className="pl-5" />
                   <div
                     className={cn(
-                      "w-full lg:min-w-[1000px] h-full bg-white rounded-tl-[58px]",
+                      "h-full bg-white rounded-tl-[58px]",
                       "overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
                     )}
                   >
