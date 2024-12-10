@@ -259,14 +259,14 @@ export function StateView({
   return (
     <div className="w-full overflow-y-auto pl-6 border-l-[1px] border-gray-100 flex flex-row gap-0">
       {view === "description" && (
-        <div className="flex flex-col items-start justify-start gap-1 pt-6 pb-2 w-[90%] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <div className="pt-6 pb-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <MarkdownText>
             {description || "No description provided"}
           </MarkdownText>
         </div>
       )}
       {view === "state" && (
-        <div className="flex flex-col items-start justify-start gap-1 pt-6 pb-2 w-[90%]">
+        <div className="flex flex-col items-start justify-start gap-1 pt-6 pb-2">
           {Object.entries(threadValues).map(([k, v], idx) => (
             <StateViewObject
               expanded={expanded}

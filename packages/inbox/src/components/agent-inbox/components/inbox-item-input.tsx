@@ -135,6 +135,29 @@ function ResponseComponent({
 }
 const Response = React.memo(ResponseComponent);
 
+function AcceptComponent({
+  streaming,
+  handleSubmit,
+}: {
+  streaming: boolean;
+  handleSubmit: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => Promise<void>;
+}) {
+  return (
+    <div className="flex items-start py-6 w-full">
+      <Button
+        variant="brand"
+        disabled={streaming}
+        onClick={handleSubmit}
+        className="w-full"
+      >
+        Accept
+      </Button>
+    </div>
+  );
+}
+
 function EditAndOrAcceptComponent({
   humanResponse,
   streaming,
@@ -156,11 +179,17 @@ function EditAndOrAcceptComponent({
 }) {
   const defaultRows = React.useRef<Record<string, number>>({});
   const editResponse = humanResponse.find((r) => r.type === "edit");
+  const acceptResponse = humanResponse.find((r) => r.type === "accept");
   if (
     !editResponse ||
     typeof editResponse.args !== "object" ||
     !editResponse.args
   ) {
+    if (acceptResponse) {
+      return (
+        <AcceptComponent streaming={streaming} handleSubmit={handleSubmit} />
+      );
+    }
     return null;
   }
   const header = editResponse.acceptAllowed ? "Edit/Accept" : "Edit";

@@ -12,10 +12,15 @@ export function isArrayOfMessages(
 ): value is BaseMessage[] {
   if (
     value.every(isBaseMessage) ||
-    value.every(
-      (v) =>
-        "id" in v && "type" in v && "content" in v && "additional_kwargs" in v
-    )
+    (Array.isArray(value) &&
+      value.every(
+        (v) =>
+          typeof v === "object" &&
+          "id" in v &&
+          "type" in v &&
+          "content" in v &&
+          "additional_kwargs" in v
+      ))
   ) {
     return true;
   }
