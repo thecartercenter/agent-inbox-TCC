@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { HumanInterrupt } from "../types";
 import React from "react";
-import { prettifyText } from "../utils";
 import { InboxItemStatuses } from "./statuses";
 import { Thread } from "@langchain/langgraph-sdk";
 import { format } from "date-fns";

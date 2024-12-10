@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Thread } from "@langchain/langgraph-sdk";
 import { ArrowLeft } from "lucide-react";
 import { HumanInterrupt, ThreadData } from "../types";
-import { constructOpenInStudioURL, prettifyText } from "../utils";
+import { constructOpenInStudioURL } from "../utils";
 import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
