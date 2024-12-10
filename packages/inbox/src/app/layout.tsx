@@ -7,6 +7,7 @@ import React from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar, AppSidebarTrigger } from "@/components/app-sidebar";
 import { BreadCrumb } from "@/components/agent-inbox/components/breadcrumb";
+import { cn } from "@/lib/utils";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,7 +35,12 @@ export default function RootLayout({
                 <AppSidebarTrigger isOutside={true} />
                 <div className="flex flex-col gap-6 w-full min-h-full">
                   <BreadCrumb className="pl-5" />
-                  <div className="w-full h-full bg-white rounded-tl-[58px] overflow-hidden">
+                  <div
+                    className={cn(
+                      "w-full min-w-[1000px] h-full bg-white rounded-tl-[58px]",
+                      "overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                    )}
+                  >
                     {children}
                   </div>
                 </div>
