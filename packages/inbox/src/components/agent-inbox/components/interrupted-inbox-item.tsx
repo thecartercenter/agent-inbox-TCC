@@ -52,7 +52,7 @@ export function InterruptedInboxItem<
         <div className="w-[6px] h-[6px] rounded-full bg-blue-400" />
         <div className="flex items-center justify-start gap-2">
           <p className="text-black text-sm font-semibold">
-            {prettifyText(threadData.interrupts[0].action_request.action)}
+            {threadData.interrupts[0].action_request.action || "Unknown"}
           </p>
           {descriptionPreview && (
             <p className="text-sm text-gray-700 font-light">{`${descriptionPreview}${descriptionTruncated ? "..." : ""}`}</p>

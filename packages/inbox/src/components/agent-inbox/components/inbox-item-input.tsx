@@ -27,6 +27,34 @@ function ResetButton({ handleReset }: { handleReset: () => void }) {
   );
 }
 
+function ArgsRenderer({ args }: { args: Record<string, any> }) {
+  return (
+    <div className="flex flex-col gap-6 items-start w-full">
+      {Object.entries(args).map(([k, v]) => {
+        let value = "";
+        if (["string", "number"].includes(typeof v)) {
+          value = v as string;
+        } else {
+          value = JSON.stringify(v, null);
+        }
+
+        return (
+          <div key={`args-${k}`} className="flex flex-col gap-1 items-start">
+            <p className="text-sm leading-[18px] text-gray-600 text-wrap">
+              {prettifyText(k)}:
+            </p>
+            <span className="text-[13px] leading-[18px] text-black bg-zinc-100 rounded-xl p-3 w-full max-w-full">
+              <MarkdownText className="text-wrap break-all break-words whitespace-pre-wrap">
+                {value}
+              </MarkdownText>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface InboxItemInputProps {
   interruptValue: HumanInterrupt;
   humanResponse: HumanResponseWithEdits[];
@@ -65,7 +93,7 @@ function ResponseComponent({
   humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
   showArgsInResponse: boolean;
-  interruptValue: any;
+  interruptValue: HumanInterrupt;
   onResponseChange: (change: string, response: HumanResponseWithEdits) => void;
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -88,30 +116,7 @@ function ResponseComponent({
       </div>
 
       {showArgsInResponse && (
-        <div className="flex flex-col gap-6 items-start w-full">
-          {Object.entries(interruptValue.action_request.args).map(([k, v]) => {
-            let value = "";
-            if (["string", "number"].includes(typeof v)) {
-              value = v as string;
-            } else {
-              value = JSON.stringify(v, null);
-            }
-
-            return (
-              <div
-                key={`args-${k}`}
-                className="flex flex-col gap-1 items-start w-full"
-              >
-                <p className="text-sm leading-[18px] text-gray-600">
-                  {prettifyText(k)}:
-                </p>
-                <span className="text-[13px] leading-[18px] text-black bg-zinc-100 rounded-xl p-3">
-                  <MarkdownText>{value}</MarkdownText>
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <ArgsRenderer args={interruptValue.action_request.args} />
       )}
 
       <div className="flex flex-col gap-[6px] items-start w-full">
@@ -137,15 +142,20 @@ const Response = React.memo(ResponseComponent);
 
 function AcceptComponent({
   streaming,
+  actionRequestArgs,
   handleSubmit,
 }: {
   streaming: boolean;
+  actionRequestArgs: Record<string, any>;
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => Promise<void>;
 }) {
   return (
-    <div className="flex items-start py-6 w-full">
+    <div className="flex flex-col gap-4 items-start w-full p-6 rounded-lg border-[1px] border-gray-300">
+      {actionRequestArgs && Object.keys(actionRequestArgs).length > 0 && (
+        <ArgsRenderer args={actionRequestArgs} />
+      )}
       <Button
         variant="brand"
         disabled={streaming}
@@ -164,10 +174,12 @@ function EditAndOrAcceptComponent({
   initialValues,
   onEditChange,
   handleSubmit,
+  interruptValue,
 }: {
   humanResponse: HumanResponseWithEdits[];
   streaming: boolean;
   initialValues: Record<string, string>;
+  interruptValue: HumanInterrupt;
   onEditChange: (
     text: string | string[],
     response: HumanResponseWithEdits,
@@ -187,7 +199,11 @@ function EditAndOrAcceptComponent({
   ) {
     if (acceptResponse) {
       return (
-        <AcceptComponent streaming={streaming} handleSubmit={handleSubmit} />
+        <AcceptComponent
+          actionRequestArgs={interruptValue.action_request.args}
+          streaming={streaming}
+          handleSubmit={handleSubmit}
+        />
       );
     }
     return null;
@@ -464,30 +480,7 @@ export function InboxItemInput({
       )}
     >
       {showArgsOutsideActionCards && (
-        <div className="flex flex-col gap-6 items-start w-full">
-          {Object.entries(interruptValue.action_request.args).map(([k, v]) => {
-            let value = "";
-            if (["string", "number"].includes(typeof v)) {
-              value = v as string;
-            } else {
-              value = JSON.stringify(v, null);
-            }
-
-            return (
-              <div
-                key={`args-${k}`}
-                className="flex flex-col gap-1 items-start w-full"
-              >
-                <p className="text-sm leading-[18px] text-gray-600">
-                  {prettifyText(k)}:
-                </p>
-                <span className="text-[13px] leading-[18px] text-black bg-zinc-100 rounded-xl p-3">
-                  <MarkdownText>{value}</MarkdownText>
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <ArgsRenderer args={interruptValue.action_request.args} />
       )}
 
       <div className="flex flex-col gap-2 items-start w-full">
@@ -495,6 +488,7 @@ export function InboxItemInput({
           humanResponse={humanResponse}
           streaming={streaming}
           initialValues={initialValues}
+          interruptValue={interruptValue}
           onEditChange={onEditChange}
           handleSubmit={handleSubmit}
         />

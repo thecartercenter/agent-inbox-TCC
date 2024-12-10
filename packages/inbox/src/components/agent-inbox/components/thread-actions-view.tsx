@@ -122,17 +122,15 @@ export function ThreadActionsView<
     window.open(studioUrl, "_blank");
   };
 
-  const threadTitle = prettifyText(
-    threadData.interrupts[0].action_request.action
-  );
-
+  const threadTitle =
+    threadData.interrupts[0].action_request.action || "Unknown";
   const actionsDisabled = loading || streaming;
 
   return (
-    <div className="flex flex-col w-full min-h-full p-12 gap-9">
+    <div className="flex flex-col min-h-full w-full p-12 gap-9">
       {/* Header */}
-      <div className="flex flex-row items-center justify-between w-full">
-        <div className="flex items-center justify-start w-full gap-3">
+      <div className="flex flex-wrap items-center justify-between w-full gap-3">
+        <div className="flex items-center justify-start gap-3">
           <TooltipIconButton
             variant="ghost"
             onClick={() => updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM)}
@@ -140,10 +138,10 @@ export function ThreadActionsView<
           >
             <ArrowLeft className="w-5 h-5" />
           </TooltipIconButton>
-          <p className="text-2xl tracking-tighter">{threadTitle}</p>
+          <p className="text-2xl tracking-tighter text-pretty">{threadTitle}</p>
           <ThreadIdCopyable threadId={threadData.thread.thread_id} />
         </div>
-        <div className="flex flex-row gap-2 items-center justify-end w-full">
+        <div className="flex flex-row gap-2 items-center justify-start">
           {deploymentUrl && (
             <Button
               size="sm"
