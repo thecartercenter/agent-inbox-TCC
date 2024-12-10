@@ -77,7 +77,7 @@ export function AppSidebar() {
                       className={item.selected ? "bg-gray-100 rounded-md" : ""}
                     >
                       <SidebarMenuButton
-                        onClick={() => changeAgentInbox(item.graphId)}
+                        onClick={() => changeAgentInbox(item.graphId, true)}
                       >
                         <div
                           className="w-6 h-6 rounded-md flex items-center justify-center text-white"

@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import { useQueryParams } from "../hooks/use-query-params";
-import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import {
+  AGENT_INBOX_PARAM,
+  INBOX_PARAM,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+} from "../constants";
 import { HumanInterrupt, ThreadStatusWithAll } from "../types";
 import { prettifyText } from "../utils";
 import { useThreadsContext } from "../contexts/ThreadContext";
@@ -54,15 +58,23 @@ export function BreadCrumb({ className }: { className?: string }) {
     }
   }, [searchParams, agentInboxes, threadData]);
 
-  if (!agentInboxLabel) {
-    return null;
-  }
+  const constructBaseUrl = () => {
+    const selectedAgentInbox = agentInboxes.find((a) => a.selected);
+    if (!selectedAgentInbox) {
+      return "/";
+    }
+    return `/?${AGENT_INBOX_PARAM}=${selectedAgentInbox.graphId}`;
+  };
 
   const constructInboxLink = () => {
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.delete(VIEW_STATE_THREAD_QUERY_PARAM);
     return `${currentUrl.pathname}${currentUrl.search}`;
   };
+
+  if (!agentInboxLabel) {
+    return null;
+  }
 
   return (
     <div
@@ -71,7 +83,7 @@ export function BreadCrumb({ className }: { className?: string }) {
         className
       )}
     >
-      <NextLink href="/">
+      <NextLink href={constructBaseUrl()}>
         <Button size="sm" className="text-gray-500" variant="link">
           {agentInboxLabel}
         </Button>

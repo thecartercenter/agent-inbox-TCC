@@ -39,7 +39,7 @@ type ThreadContentType<
   threadData: ThreadData<ThreadValues>[];
   hasMoreThreads: boolean;
   agentInboxes: AgentInbox[];
-  changeAgentInbox: (graphId: string) => void;
+  changeAgentInbox: (graphId: string, replaceAll?: boolean) => void;
   addAgentInbox: (agentInbox: AgentInbox) => void;
   ignoreThread: (threadId: string) => Promise<void>;
   fetchThreads: (inbox: ThreadStatusWithAll) => Promise<void>;
@@ -234,14 +234,23 @@ export function ThreadsProvider<
     updateQueryParams(AGENT_INBOX_PARAM, agentInbox.graphId);
   }, []);
 
-  const changeAgentInbox = (graphId: string) => {
+  const changeAgentInbox = (graphId: string, replaceAll?: boolean) => {
     setAgentInboxes((prev) =>
       prev.map((i) => ({
         ...i,
         selected: i.graphId === graphId,
       }))
     );
-    updateQueryParams(AGENT_INBOX_PARAM, graphId);
+    if (!replaceAll) {
+      updateQueryParams(AGENT_INBOX_PARAM, graphId);
+    } else {
+      const url = new URL(window.location.href);
+      const newParams = new URLSearchParams({
+        [AGENT_INBOX_PARAM]: graphId,
+      });
+      const newUrl = url.pathname + "?" + newParams.toString();
+      window.location.href = newUrl;
+    }
   };
 
   const fetchThreads = React.useCallback(
