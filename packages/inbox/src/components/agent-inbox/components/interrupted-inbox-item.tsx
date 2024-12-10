@@ -24,10 +24,10 @@ export function InterruptedInboxItem<
   const { updateQueryParams } = useQueryParams();
   const descriptionPreview =
     threadData.interrupts[0].description &&
-    threadData.interrupts[0].description.slice(0, 75);
+    threadData.interrupts[0].description.slice(0, 65);
   const descriptionTruncated =
     threadData.interrupts[0].description &&
-    threadData.interrupts[0].description.length > 75;
+    threadData.interrupts[0].description.length > 65;
 
   const updatedAtDateString = format(
     new Date(threadData.thread.updated_at),
