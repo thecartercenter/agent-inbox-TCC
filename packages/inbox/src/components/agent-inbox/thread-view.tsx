@@ -15,7 +15,7 @@ export function ThreadView<
   const { threadData: threads, loading } = useThreadsContext<ThreadValues>();
   const [threadData, setThreadData] =
     React.useState<ThreadData<ThreadValues>>();
-  const [showDescription, setShowDescription] = React.useState(false);
+  const [showDescription, setShowDescription] = React.useState(true);
   const [showState, setShowState] = React.useState(false);
   const showSidePanel = showDescription || showState;
 
