@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import Markdown, { Options } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -8,9 +9,25 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
     <Markdown
       remarkPlugins={[remarkGfm]}
       components={{
-        a: ({ node: _node, ...props }) => (
-          <a {...props} target="_blank" rel="noopener noreferrer" />
+        pre: ({ node: _node, ...props }) => (
+          <pre
+            {...props}
+            className="my-4 rounded-lg bg-muted p-4 text-wrap break-words whitespace-pre-wrap"
+          />
         ),
+        code: ({ node: _node, ...props }) => {
+          const isInline = !props.className;
+          return (
+            <code
+              {...props}
+              className={
+                isInline
+                  ? "rounded bg-muted px-1.5 py-0.5 font-mono text-sm"
+                  : "block font-mono text-sm"
+              }
+            />
+          );
+        },
         h1: ({ node: _node, ...props }) => (
           <h1
             {...props}
@@ -54,6 +71,17 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
           <ol {...props} className="my-6 ml-6 list-decimal [&>li]:mt-2" />
         ),
         li: ({ node: _node, ...props }) => <li {...props} className="ml-4" />,
+        a: ({ node: _node, className, ...props }) => (
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "font-medium underline underline-offset-4 break-all",
+              className
+            )}
+            {...props}
+          />
+        ),
       }}
       {...props}
     >

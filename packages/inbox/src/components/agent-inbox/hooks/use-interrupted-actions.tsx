@@ -5,12 +5,13 @@ import {
   HumanResponseWithEdits,
   SubmitType,
   ThreadData,
+  ThreadStatusWithAll,
 } from "../types";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { createDefaultHumanResponse } from "../utils";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { useQueryParams } from "./use-query-params";
 
 interface UseInterruptedActionsInput<
@@ -75,8 +76,8 @@ export default function useInterruptedActions<
   setThreadData,
 }: UseInterruptedActionsInput<ThreadValues>): UseInterruptedActionsValue {
   const { toast } = useToast();
-  const { updateQueryParams } = useQueryParams();
-  const { fetchSingleThread, sendHumanResponse, ignoreThread } =
+  const { updateQueryParams, getSearchParam } = useQueryParams();
+  const { fetchSingleThread, fetchThreads, sendHumanResponse, ignoreThread } =
     useThreadsContext<ThreadValues>();
 
   const [humanResponse, setHumanResponse] = React.useState<
@@ -121,6 +122,19 @@ export default function useInterruptedActions<
       });
       return;
     }
+    const currentInbox = getSearchParam(INBOX_PARAM) as
+      | ThreadStatusWithAll
+      | undefined;
+    if (!currentInbox) {
+      toast({
+        title: "Error",
+        description: "No inbox selected",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
     let errorOccurred = false;
 
     if (
@@ -260,6 +274,8 @@ export default function useInterruptedActions<
         if (updatedThreadData && updatedThreadData?.status === "interrupted") {
           setThreadData(updatedThreadData as ThreadData<ThreadValues>);
         } else {
+          // Re-fetch threads before routing back so the inbox is up to date
+          await fetchThreads(currentInbox);
           updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
         }
         setStreamFinished(false);
@@ -293,8 +309,24 @@ export default function useInterruptedActions<
       return;
     }
 
+    const currentInbox = getSearchParam(INBOX_PARAM) as
+      | ThreadStatusWithAll
+      | undefined;
+    if (!currentInbox) {
+      toast({
+        title: "Error",
+        description: "No inbox selected",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
     setLoading(true);
+
     await sendHumanResponse(threadData.thread.thread_id, [ignoreResponse]);
+    await fetchThreads(currentInbox);
+
     setLoading(false);
     toast({
       title: "Successfully ignored thread",
@@ -307,8 +339,25 @@ export default function useInterruptedActions<
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
+
+    const currentInbox = getSearchParam(INBOX_PARAM) as
+      | ThreadStatusWithAll
+      | undefined;
+    if (!currentInbox) {
+      toast({
+        title: "Error",
+        description: "No inbox selected",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
     setLoading(true);
+
     await ignoreThread(threadData.thread.thread_id);
+    await fetchThreads(currentInbox);
+
     setLoading(false);
     updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
   };
