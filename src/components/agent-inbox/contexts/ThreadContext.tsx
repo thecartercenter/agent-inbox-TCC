@@ -24,6 +24,7 @@ import {
   OFFSET_PARAM,
   AGENT_INBOX_PARAM,
   AGENT_INBOXES_LOCAL_STORAGE_KEY,
+  LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
 } from "../constants";
 import {
   getInterruptFromThread,
@@ -71,24 +72,22 @@ const ThreadsContext = React.createContext<ThreadContentType | undefined>(
   undefined
 );
 
-const getClient = (
-  agentInboxes: AgentInbox[],
-  toast: (input: ToastInput) => void,
-  func: string
-) => {
+interface GetClientArgs {
+  agentInboxes: AgentInbox[];
+  getItem: (key: string) => string | null | undefined;
+  toast: (input: ToastInput) => void;
+}
+
+const getClient = ({ agentInboxes, getItem, toast }: GetClientArgs) => {
   if (agentInboxes.length === 0) {
     toast({
       title: "Error",
-      description:
-        "Agent inbox not found. Please add an inbox in settings. (" +
-        func +
-        ")",
+      description: "Agent inbox not found. Please add an inbox in settings. (",
       variant: "destructive",
       duration: 3000,
     });
     return;
   }
-
   const deploymentUrl = agentInboxes.find((i) => i.selected)?.deploymentUrl;
   if (!deploymentUrl) {
     toast({
@@ -100,7 +99,19 @@ const getClient = (
     });
     return;
   }
-  return createClient({ deploymentUrl });
+
+  const langchainApiKeyLS = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
+  if (!langchainApiKeyLS) {
+    toast({
+      title: "Error",
+      description: "Please add your LangChain API key in settings.",
+      variant: "destructive",
+      duration: 5000,
+    });
+    return;
+  }
+
+  return createClient({ deploymentUrl, langchainApiKey: langchainApiKeyLS });
 };
 
 export function ThreadsProvider<
@@ -256,7 +267,11 @@ export function ThreadsProvider<
   const fetchThreads = React.useCallback(
     async (inbox: ThreadStatusWithAll) => {
       setLoading(true);
-      const client = getClient(agentInboxes, toast, "fetchThreads");
+      const client = getClient({
+        agentInboxes,
+        getItem,
+        toast,
+      });
       if (!client) {
         return;
       }
@@ -369,7 +384,11 @@ export function ThreadsProvider<
         }
       | undefined
     > => {
-      const client = getClient(agentInboxes, toast, "fetchSingleThread");
+      const client = getClient({
+        agentInboxes,
+        getItem,
+        toast,
+      });
       if (!client) {
         return;
       }
@@ -401,7 +420,11 @@ export function ThreadsProvider<
     ): Promise<
       { thread_id: string; thread_state: ThreadState<ThreadValues> }[]
     > => {
-      const client = getClient(agentInboxes, toast, "bulkGetThreadStates");
+      const client = getClient({
+        agentInboxes,
+        getItem,
+        toast,
+      });
       if (!client) {
         return [];
       }
@@ -434,7 +457,11 @@ export function ThreadsProvider<
   );
 
   const ignoreThread = async (threadId: string) => {
-    const client = getClient(agentInboxes, toast, "ignoreThread");
+    const client = getClient({
+      agentInboxes,
+      getItem,
+      toast,
+    });
     if (!client) {
       return;
     }
@@ -488,7 +515,11 @@ export function ThreadsProvider<
       return undefined;
     }
 
-    const client = getClient(agentInboxes, toast, "sendHumanResponse");
+    const client = getClient({
+      agentInboxes,
+      getItem,
+      toast,
+    });
     if (!client) {
       return;
     }
