@@ -3,7 +3,7 @@
 ## Prerequisites
 
 Before getting started, ensure you have:
-- Node.js (v16 or higher) and npm/yarn installed
+- Node.js, and yarn installed
 - A LangGraph deployment set up and running (locally, or in production through LangGraph Platform)
 - Your LangGraph API key
 
