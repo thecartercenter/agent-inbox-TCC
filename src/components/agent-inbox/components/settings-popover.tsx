@@ -6,16 +6,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Settings } from "lucide-react";
-import React, { useEffect } from "react";
+import React from "react";
 import { PillButton } from "@/components/ui/pill-button";
 import { AddAgentInboxDialog } from "./add-agent-inbox-dialog";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { INBOX_PARAM, LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY } from "../constants";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useQueryParams } from "../hooks/use-query-params";
 import { ThreadStatusWithAll } from "../types";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function SettingsPopover() {
   const langchainApiKeyNotSet = React.useRef(true);
@@ -25,7 +25,7 @@ export function SettingsPopover() {
   const { getSearchParam } = useQueryParams();
   const { fetchThreads } = useThreadsContext();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -88,9 +88,10 @@ export function SettingsPopover() {
                     LangGraph server.
                   </p>
                 </div>
-                <Input
+                <PasswordInput
                   id="langchain-api-key"
                   placeholder="lsv2_pt_..."
+                  className="min-w-full"
                   required
                   value={langchainApiKey}
                   onChange={(e) => {
