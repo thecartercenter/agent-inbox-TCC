@@ -498,7 +498,7 @@ export function ThreadsProvider<
           command: {
             resume: response,
           },
-          streamMode: "events",
+          streamMode: "debug",
         }) as any; // Type assertion needed due to conditional return type
       }
       return client.runs.create(threadId, graphId, {

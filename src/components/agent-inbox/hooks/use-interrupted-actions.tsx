@@ -136,6 +136,7 @@ export default function useInterruptedActions<
     }
 
     let errorOccurred = false;
+    initialHumanInterruptEditValue.current = {};
 
     if (
       humanResponse.some((r) => ["response", "edit", "accept"].includes(r.type))
@@ -206,6 +207,7 @@ export default function useInterruptedActions<
         });
 
         for await (const chunk of response) {
+          console.log("chunk", chunk);
           if (
             chunk.data?.event === "on_chain_start" &&
             chunk.data?.metadata?.langgraph_node
@@ -323,6 +325,7 @@ export default function useInterruptedActions<
     }
 
     setLoading(true);
+    initialHumanInterruptEditValue.current = {};
 
     await sendHumanResponse(threadData.thread.thread_id, [ignoreResponse]);
     await fetchThreads(currentInbox);
@@ -354,6 +357,7 @@ export default function useInterruptedActions<
     }
 
     setLoading(true);
+    initialHumanInterruptEditValue.current = {};
 
     await ignoreThread(threadData.thread.thread_id);
     await fetchThreads(currentInbox);
