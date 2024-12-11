@@ -30,7 +30,7 @@ interface UseInterruptedActionsInput<
 interface UseInterruptedActionsValue {
   // Actions
   handleSubmit: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent
   ) => Promise<void>;
   handleIgnore: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -111,7 +111,7 @@ export default function useInterruptedActions<
   }, [threadData.interrupts]);
 
   const handleSubmit = async (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent
   ) => {
     e.preventDefault();
     if (!humanResponse) {

@@ -23,6 +23,10 @@ async function handleRequest(req: NextRequest, method: string) {
     if (!deploymentUrl) {
       throw new Error("DEPLOYMENT-URL header is required");
     }
+    const langchainApiKey = req.headers.get("LANGCHAIN-API-KEY");
+    if (!langchainApiKey) {
+      throw new Error("LANGCHAIN-API-KEY header is required");
+    }
 
     // Remove trailing slash if present
     const baseUrl = deploymentUrl.endsWith("/")
@@ -32,7 +36,7 @@ async function handleRequest(req: NextRequest, method: string) {
     const options: RequestInit = {
       method,
       headers: {
-        "x-api-key": process.env.LANGCHAIN_API_KEY || "",
+        "x-api-key": langchainApiKey,
       },
     };
 

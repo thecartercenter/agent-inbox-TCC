@@ -17,20 +17,18 @@ cd agent-inbox
 yarn install
 ```
 
-Then, set your `LANGCHAIN_API_KEY` environment variable so that the Agent Inbox can connect to your LangGraph deployment(s):
-
-```env
-LANGCHAIN_API_KEY="YOUR_API_KEY"
-```
-
 ## Configuration
 
-Once up and running, you should create your first inbox by opening the settings popover (bottom left, inside the sidebar), and adding a new inbox. This dialog has three fields:
-- **Graph ID**: (required) The ID of your LangGraph graph. This will be used when sending human responses to your graph.
-- **Deployment URL**: (required) The URL of your LangGraph deployment. This is how the Agent Inbox will connect to your LangGraph deployment for fetching interrupts, and sending human responses.
-- **Name**: (optional) A name for your inbox. This will be used as a label for the inbox.
+Once up and running, you'll need to take two actions so that the Agent Inbox can connect to your LangGraph deployment.
 
-These values are stored in the browser's local storage.
+1. Add your LangChain API key: Click the "Settings" button in the sidebar, and enter your LangChain API key.
+
+2. Create your first inbox by opening the settings popover (bottom left, inside the sidebar), and clicking "Add Inbox". This will open a dialog with three fields:
+  > - **Graph ID**: (required) The ID of your LangGraph graph. This will be used when sending human responses to your graph.
+  > - **Deployment URL**: (required) The URL of your LangGraph deployment. This is how the Agent Inbox will connect to your LangGraph deployment for fetching interrupts, and sending human responses.
+  > - **Name**: (optional) A name for your inbox. This will be used as a label for the inbox.
+
+These values are stored in your browser's local storage, and are only used to connect & authenticate requests to the LangGraph deployment.
 
 ## Interrupts
 

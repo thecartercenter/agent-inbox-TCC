@@ -78,7 +78,7 @@ interface InboxItemInputProps {
   setHasEdited: React.Dispatch<React.SetStateAction<boolean>>;
 
   handleSubmit: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent
   ) => Promise<void>;
 }
 
@@ -96,13 +96,20 @@ function ResponseComponent({
   interruptValue: HumanInterrupt;
   onResponseChange: (change: string, response: HumanResponseWithEdits) => void;
   handleSubmit: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent
   ) => Promise<void>;
 }) {
   const res = humanResponse.find((r) => r.type === "response");
   if (!res || typeof res.args !== "string") {
     return null;
   }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4 p-6 items-start w-full rounded-xl border-[1px] border-gray-300">
@@ -125,6 +132,7 @@ function ResponseComponent({
           disabled={streaming}
           value={res.args}
           onChange={(e) => onResponseChange(e.target.value, res)}
+          onKeyDown={handleKeyDown}
           rows={4}
           placeholder="Your response here..."
         />
@@ -148,7 +156,7 @@ function AcceptComponent({
   streaming: boolean;
   actionRequestArgs: Record<string, any>;
   handleSubmit: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent
   ) => Promise<void>;
 }) {
   return (
@@ -186,7 +194,7 @@ function EditAndOrAcceptComponent({
     key: string | string[]
   ) => void;
   handleSubmit: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent
   ) => Promise<void>;
 }) {
   const defaultRows = React.useRef<Record<string, number>>({});
@@ -241,6 +249,13 @@ function EditAndOrAcceptComponent({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 items-start w-full p-6 rounded-lg border-[1px] border-gray-300">
       <div className="flex items-center justify-between w-full">
@@ -277,6 +292,7 @@ function EditAndOrAcceptComponent({
                 className="h-full"
                 value={value}
                 onChange={(e) => onEditChange(e.target.value, editResponse, k)}
+                onKeyDown={handleKeyDown}
                 rows={numRows}
               />
             </div>
