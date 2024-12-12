@@ -63,7 +63,7 @@ export function BreadCrumb({ className }: { className?: string }) {
     if (!selectedAgentInbox) {
       return "/";
     }
-    return `/?${AGENT_INBOX_PARAM}=${selectedAgentInbox.graphId}`;
+    return `/?${AGENT_INBOX_PARAM}=${selectedAgentInbox.id}`;
   };
 
   const constructInboxLink = () => {

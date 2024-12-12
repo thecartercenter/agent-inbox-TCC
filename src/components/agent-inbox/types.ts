@@ -72,6 +72,10 @@ export type SubmitType = "accept" | "response" | "edit";
 
 export interface AgentInbox {
   /**
+   * A unique identifier for the inbox.
+   */
+  id: string;
+  /**
    * The ID of the graph.
    */
   graphId: string;

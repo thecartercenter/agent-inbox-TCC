@@ -1,5 +1,6 @@
 "use client";
 
+import { v4 as uuidv4, validate } from "uuid";
 import {
   AgentInbox,
   HumanInterrupt,
@@ -180,18 +181,28 @@ export function ThreadsProvider<
       return;
     }
 
-    if (!agentInboxSearchParam) {
+    // Ensure each agent inbox has an ID, and if not, add one
+    parsedAgentInboxes = parsedAgentInboxes.map((i) => {
+      return {
+        ...i,
+        id: i.id || uuidv4(),
+      };
+    });
+
+    // If there is no agent inbox search param, or the search param is not
+    // a valid UUID, update search param and local storage
+    if (!agentInboxSearchParam || !validate(agentInboxSearchParam)) {
       const selectedInbox = parsedAgentInboxes.find((i) => i.selected);
       if (!selectedInbox) {
         parsedAgentInboxes[0].selected = true;
-        updateQueryParams(AGENT_INBOX_PARAM, parsedAgentInboxes[0].graphId);
+        updateQueryParams(AGENT_INBOX_PARAM, parsedAgentInboxes[0].id);
         setAgentInboxes(parsedAgentInboxes);
         setItem(
           AGENT_INBOXES_LOCAL_STORAGE_KEY,
           JSON.stringify(parsedAgentInboxes)
         );
       } else {
-        updateQueryParams(AGENT_INBOX_PARAM, selectedInbox.graphId);
+        updateQueryParams(AGENT_INBOX_PARAM, selectedInbox.id);
         setAgentInboxes(parsedAgentInboxes);
         setItem(
           AGENT_INBOXES_LOCAL_STORAGE_KEY,
@@ -202,7 +213,7 @@ export function ThreadsProvider<
     }
 
     const selectedInbox = parsedAgentInboxes.find(
-      (i) => i.graphId === agentInboxSearchParam
+      (i) => i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam
     );
     if (!selectedInbox) {
       toast({
@@ -217,7 +228,7 @@ export function ThreadsProvider<
     parsedAgentInboxes = parsedAgentInboxes.map((i) => {
       return {
         ...i,
-        selected: i.graphId === agentInboxSearchParam,
+        selected: i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam,
       };
     });
     setAgentInboxes(parsedAgentInboxes);
@@ -232,7 +243,7 @@ export function ThreadsProvider<
     if (!agentInboxes || !agentInboxes.length) {
       setAgentInboxes([agentInbox]);
       setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([agentInbox]));
-      updateQueryParams(AGENT_INBOX_PARAM, agentInbox.graphId);
+      updateQueryParams(AGENT_INBOX_PARAM, agentInbox.id);
       return;
     }
     const parsedAgentInboxes = JSON.parse(agentInboxes);
@@ -242,22 +253,22 @@ export function ThreadsProvider<
       AGENT_INBOXES_LOCAL_STORAGE_KEY,
       JSON.stringify(parsedAgentInboxes)
     );
-    updateQueryParams(AGENT_INBOX_PARAM, agentInbox.graphId);
+    updateQueryParams(AGENT_INBOX_PARAM, agentInbox.id);
   }, []);
 
-  const changeAgentInbox = (graphId: string, replaceAll?: boolean) => {
+  const changeAgentInbox = (id: string, replaceAll?: boolean) => {
     setAgentInboxes((prev) =>
       prev.map((i) => ({
         ...i,
-        selected: i.graphId === graphId,
+        selected: i.id === id,
       }))
     );
     if (!replaceAll) {
-      updateQueryParams(AGENT_INBOX_PARAM, graphId);
+      updateQueryParams(AGENT_INBOX_PARAM, id);
     } else {
       const url = new URL(window.location.href);
       const newParams = new URLSearchParams({
-        [AGENT_INBOX_PARAM]: graphId,
+        [AGENT_INBOX_PARAM]: id,
       });
       const newUrl = url.pathname + "?" + newParams.toString();
       window.location.href = newUrl;

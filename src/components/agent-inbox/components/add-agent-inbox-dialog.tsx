@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +30,7 @@ export function AddAgentInboxDialog({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     addAgentInbox({
+      id: uuidv4(),
       graphId,
       deploymentUrl,
       name,
