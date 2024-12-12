@@ -213,7 +213,8 @@ export function ThreadsProvider<
     }
 
     const selectedInbox = parsedAgentInboxes.find(
-      (i) => i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam
+      (i) =>
+        i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam
     );
     if (!selectedInbox) {
       toast({
@@ -228,7 +229,8 @@ export function ThreadsProvider<
     parsedAgentInboxes = parsedAgentInboxes.map((i) => {
       return {
         ...i,
-        selected: i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam,
+        selected:
+          i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam,
       };
     });
     setAgentInboxes(parsedAgentInboxes);
