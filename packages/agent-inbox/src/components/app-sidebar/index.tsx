@@ -39,6 +39,9 @@ const gradients = [
   "linear-gradient(to right, #3B2667, #BC78EC)", // Deep Purple
 ];
 
+const AGENT_INBOX_GITHUB_README_URL =
+  "https://github.com/langchain-ai/agent-uxs/blob/main/packages/agent-inbox/README.md";
+
 /**
  * Used to generate a has for the graph ID to use as a gradient
  * so that the gradient does not change on every render.
@@ -107,7 +110,7 @@ export function AppSidebar() {
               <div className="flex flex-col gap-3 pl-7">
                 <SettingsPopover />
                 <NextLink
-                  href="https://github.com/langchain-ai/agent-uxs/blob/main/packages/inbox/README.md"
+                  href={AGENT_INBOX_GITHUB_README_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
