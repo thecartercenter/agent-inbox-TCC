@@ -520,9 +520,9 @@ export function ThreadsProvider<
     const graphId = agentInboxes.find((i) => i.selected)?.graphId;
     if (!graphId) {
       toast({
-        title: "No graph ID found.",
+        title: "No assistant/graph ID found.",
         description:
-          "Graph IDs are required to send responses. Please add a graph ID in the settings.",
+          "Assistant/graph IDs are required to send responses. Please add an assistant/graph ID in the settings.",
         variant: "destructive",
       });
       return undefined;
