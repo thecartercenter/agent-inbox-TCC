@@ -30,12 +30,12 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
             />
           );
         },
-        // details: ({ node: _node, ...props }) => (
-        //   <details {...props} className="my-4 rounded-lg border p-4" />
-        // ),
-        // summary: ({ node: _node, ...props }) => (
-        //   <summary {...props} className="cursor-pointer font-medium" />
-        // ),
+        details: ({ node: _node, ...props }) => (
+          <details {...props} className="my-4 rounded-lg border p-4" />
+        ),
+        summary: ({ node: _node, ...props }) => (
+          <summary {...props} className="cursor-pointer font-medium" />
+        ),
         h1: ({ node: _node, ...props }) => (
           <h1
             {...props}
