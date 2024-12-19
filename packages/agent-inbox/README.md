@@ -24,7 +24,7 @@ Once up and running, you'll need to take two actions so that the Agent Inbox can
 1. Add your LangChain API key: Click the "Settings" button in the sidebar, and enter your LangChain API key.
 
 2. Create your first inbox by opening the settings popover (bottom left, inside the sidebar), and clicking "Add Inbox". This will open a dialog with three fields:
-  > - **Graph ID**: (required) The ID of your LangGraph graph. This will be used when sending human responses to your graph.
+  > - **Assistant/Graph ID**: (required) The name of your LangGraph graph, or an assistant ID. This will be used when sending human responses to your graph.
   > - **Deployment URL**: (required) The URL of your LangGraph deployment. This is how the Agent Inbox will connect to your LangGraph deployment for fetching interrupts, and sending human responses.
   > - **Name**: (optional) A name for your inbox. This will be used as a label for the inbox.
 

@@ -61,7 +61,7 @@ export function AddAgentInboxDialog({
         >
           <div className="flex flex-col gap-2 items-start justify-start w-full">
             <Label htmlFor="graph-id" className="text-right">
-              Graph ID <span className="text-red-500">*</span>
+              Assistant/Graph ID <span className="text-red-500">*</span>
             </Label>
             <Input
               id="graph-id"

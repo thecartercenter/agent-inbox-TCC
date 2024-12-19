@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import Markdown, { Options } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 export interface MarkdownTextProps extends Options {}
 
@@ -8,6 +9,7 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
   return (
     <Markdown
       remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
       components={{
         pre: ({ node: _node, ...props }) => (
           <pre
@@ -28,6 +30,12 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
             />
           );
         },
+        details: ({ node: _node, ...props }) => (
+          <details {...props} className="my-4 rounded-lg border p-4" />
+        ),
+        summary: ({ node: _node, ...props }) => (
+          <summary {...props} className="cursor-pointer font-medium" />
+        ),
         h1: ({ node: _node, ...props }) => (
           <h1
             {...props}
