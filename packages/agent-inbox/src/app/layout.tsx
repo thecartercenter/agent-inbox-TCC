@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 
 const inter = Inter({
   subsets: ["latin"],
+  preload: true,
+  display: "swap",
 });
 
 export const metadata: Metadata = {
