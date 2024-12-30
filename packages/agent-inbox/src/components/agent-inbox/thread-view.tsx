@@ -20,15 +20,21 @@ export function ThreadView<
   const showSidePanel = showDescription || showState;
 
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!threadId || !threads.length || loading) return;
-    const selectedThread = threads.find((t) => t.thread.thread_id === threadId);
-    if (selectedThread) {
-      setThreadData(selectedThread);
-      return;
-    } else {
-      // Route the user back to the inbox view.
-      updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+    try {
+      if (typeof window === "undefined") return;
+      if (!threadId || !threads.length || loading) return;
+      const selectedThread = threads.find(
+        (t) => t.thread.thread_id === threadId
+      );
+      if (selectedThread) {
+        setThreadData(selectedThread);
+        return;
+      } else {
+        // Route the user back to the inbox view.
+        updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+      }
+    } catch (e) {
+      console.error("Error updating query params & setting thread data", e);
     }
   }, [threads, loading, threadId]);
 

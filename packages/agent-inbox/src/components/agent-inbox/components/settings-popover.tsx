@@ -26,16 +26,20 @@ export function SettingsPopover() {
   const { fetchThreads } = useThreadsContext();
 
   React.useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (langchainApiKey) return;
+    try {
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (langchainApiKey) return;
 
-    const langchainApiKeyLS = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
-    if (langchainApiKeyLS) {
-      // If the key already exists in local storage, then it's already been set.
-      langchainApiKeyNotSet.current = false;
-      setLangchainApiKey(langchainApiKeyLS);
+      const langchainApiKeyLS = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
+      if (langchainApiKeyLS) {
+        // If the key already exists in local storage, then it's already been set.
+        langchainApiKeyNotSet.current = false;
+        setLangchainApiKey(langchainApiKeyLS);
+      }
+    } catch (e) {
+      console.error("Error getting/setting LangChain API key", e);
     }
   }, [langchainApiKey]);
 

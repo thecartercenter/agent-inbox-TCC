@@ -16,16 +16,20 @@ export function AgentInbox<
   const isStateViewOpen = !!selectedThreadIdParam;
 
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
+    try {
+      if (typeof window === "undefined") return;
 
-    const currentInbox = getSearchParam(INBOX_PARAM) as
-      | ThreadStatusWithAll
-      | undefined;
-    if (!currentInbox) {
-      // Set default inbox if none selected
-      updateQueryParams(INBOX_PARAM, selectedInbox);
-    } else {
-      setSelectedInbox(currentInbox);
+      const currentInbox = getSearchParam(INBOX_PARAM) as
+        | ThreadStatusWithAll
+        | undefined;
+      if (!currentInbox) {
+        // Set default inbox if none selected
+        updateQueryParams(INBOX_PARAM, selectedInbox);
+      } else {
+        setSelectedInbox(currentInbox);
+      }
+    } catch (e) {
+      console.error("Error updating query params & setting inbox", e);
     }
   }, [searchParams]);
 
