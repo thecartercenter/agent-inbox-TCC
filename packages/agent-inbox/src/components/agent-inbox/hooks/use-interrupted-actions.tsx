@@ -207,7 +207,6 @@ export default function useInterruptedActions<
         });
 
         for await (const chunk of response) {
-          console.log("chunk", chunk);
           if (
             chunk.data?.event === "on_chain_start" &&
             chunk.data?.metadata?.langgraph_node
