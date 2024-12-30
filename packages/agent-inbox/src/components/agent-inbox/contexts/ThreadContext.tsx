@@ -143,7 +143,11 @@ export function ThreadsProvider<
     if (!inboxSearchParam) {
       return;
     }
-    fetchThreads(inboxSearchParam);
+    try {
+      fetchThreads(inboxSearchParam);
+    } catch (e) {
+      console.error("Error occurred while fetching threads", e);
+    }
   }, [limitParam, offsetParam, inboxParam, agentInboxes]);
 
   const agentInboxParam = searchParams.get(AGENT_INBOX_PARAM);
@@ -152,7 +156,11 @@ export function ThreadsProvider<
     if (typeof window === "undefined") {
       return;
     }
-    getAgentInboxes();
+    try {
+      getAgentInboxes();
+    } catch (e) {
+      console.error("Error occurred while fetching agent inboxes", e);
+    }
   }, [agentInboxParam]);
 
   const getAgentInboxes = React.useCallback(async () => {

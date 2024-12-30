@@ -24,14 +24,18 @@ export function AgentInboxView<
   };
 
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const offsetQueryParam = getSearchParam(OFFSET_PARAM);
-    const limitQueryParam = getSearchParam(LIMIT_PARAM);
-    if (!offsetQueryParam) {
-      updateQueryParams(OFFSET_PARAM, "0");
-    }
-    if (!limitQueryParam) {
-      updateQueryParams(LIMIT_PARAM, "10");
+    try {
+      if (typeof window === "undefined") return;
+      const offsetQueryParam = getSearchParam(OFFSET_PARAM);
+      const limitQueryParam = getSearchParam(LIMIT_PARAM);
+      if (!offsetQueryParam) {
+        updateQueryParams(OFFSET_PARAM, "0");
+      }
+      if (!limitQueryParam) {
+        updateQueryParams(LIMIT_PARAM, "10");
+      }
+    } catch (e) {
+      console.error("Error updating query params", e);
     }
   }, [searchParams]);
 

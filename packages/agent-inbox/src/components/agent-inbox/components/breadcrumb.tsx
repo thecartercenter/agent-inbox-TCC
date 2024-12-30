@@ -24,37 +24,41 @@ export function BreadCrumb({ className }: { className?: string }) {
     React.useState<string>();
 
   React.useEffect(() => {
-    const selectedAgentInbox = agentInboxes.find((a) => a.selected);
-    if (selectedAgentInbox) {
-      const selectedAgentInboxLabel =
-        selectedAgentInbox.name || prettifyText(selectedAgentInbox.graphId);
-      setAgentInboxLabel(selectedAgentInboxLabel);
-    } else {
-      setAgentInboxLabel(undefined);
-    }
-
-    const selectedInboxParam = searchParams.get(INBOX_PARAM) as
-      | ThreadStatusWithAll
-      | undefined;
-    if (selectedInboxParam) {
-      setSelectedInboxLabel(prettifyText(selectedInboxParam));
-    } else {
-      setSelectedInboxLabel(undefined);
-    }
-
-    const selectedThreadIdParam = searchParams.get(
-      VIEW_STATE_THREAD_QUERY_PARAM
-    );
-    const selectedThread = threadData.find(
-      (t) => t.thread.thread_id === selectedThreadIdParam
-    );
-    const selectedThreadAction = (
-      selectedThread?.interrupts as HumanInterrupt[] | undefined
-    )?.[0]?.action_request?.action;
-    if (selectedThreadAction) {
-      setSelectedThreadActionLabel(prettifyText(selectedThreadAction));
-    } else {
-      setSelectedThreadActionLabel(undefined);
+    try {
+      const selectedAgentInbox = agentInboxes.find((a) => a.selected);
+      if (selectedAgentInbox) {
+        const selectedAgentInboxLabel =
+          selectedAgentInbox.name || prettifyText(selectedAgentInbox.graphId);
+        setAgentInboxLabel(selectedAgentInboxLabel);
+      } else {
+        setAgentInboxLabel(undefined);
+      }
+  
+      const selectedInboxParam = searchParams.get(INBOX_PARAM) as
+        | ThreadStatusWithAll
+        | undefined;
+      if (selectedInboxParam) {
+        setSelectedInboxLabel(prettifyText(selectedInboxParam));
+      } else {
+        setSelectedInboxLabel(undefined);
+      }
+  
+      const selectedThreadIdParam = searchParams.get(
+        VIEW_STATE_THREAD_QUERY_PARAM
+      );
+      const selectedThread = threadData.find(
+        (t) => t.thread.thread_id === selectedThreadIdParam
+      );
+      const selectedThreadAction = (
+        selectedThread?.interrupts as HumanInterrupt[] | undefined
+      )?.[0]?.action_request?.action;
+      if (selectedThreadAction) {
+        setSelectedThreadActionLabel(prettifyText(selectedThreadAction));
+      } else {
+        setSelectedThreadActionLabel(undefined);
+      }
+    } catch (e) {
+      console.error("Error while updating breadcrumb", e);
     }
   }, [searchParams, agentInboxes, threadData]);
 

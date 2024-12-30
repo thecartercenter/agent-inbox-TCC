@@ -99,15 +99,19 @@ export default function useInterruptedActions<
   const [acceptAllowed, setAcceptAllowed] = React.useState(false);
 
   React.useEffect(() => {
-    if (!threadData.interrupts) return;
-    const { responses, defaultSubmitType, hasAccept } =
-      createDefaultHumanResponse(
-        threadData.interrupts,
-        initialHumanInterruptEditValue
-      );
-    setSelectedSubmitType(defaultSubmitType);
-    setHumanResponse(responses);
-    setAcceptAllowed(hasAccept);
+    try {
+      if (!threadData.interrupts) return;
+      const { responses, defaultSubmitType, hasAccept } =
+        createDefaultHumanResponse(
+          threadData.interrupts,
+          initialHumanInterruptEditValue
+        );
+      setSelectedSubmitType(defaultSubmitType);
+      setHumanResponse(responses);
+      setAcceptAllowed(hasAccept);
+    } catch (e) {
+      console.error("Error formatting and setting human response state", e);
+    }
   }, [threadData.interrupts]);
 
   const handleSubmit = async (
