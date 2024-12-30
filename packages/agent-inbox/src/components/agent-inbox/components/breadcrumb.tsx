@@ -33,7 +33,7 @@ export function BreadCrumb({ className }: { className?: string }) {
       } else {
         setAgentInboxLabel(undefined);
       }
-  
+
       const selectedInboxParam = searchParams.get(INBOX_PARAM) as
         | ThreadStatusWithAll
         | undefined;
@@ -42,7 +42,7 @@ export function BreadCrumb({ className }: { className?: string }) {
       } else {
         setSelectedInboxLabel(undefined);
       }
-  
+
       const selectedThreadIdParam = searchParams.get(
         VIEW_STATE_THREAD_QUERY_PARAM
       );

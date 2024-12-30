@@ -31,7 +31,7 @@ export function SettingsPopover() {
         return;
       }
       if (langchainApiKey) return;
-  
+
       const langchainApiKeyLS = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
       if (langchainApiKeyLS) {
         // If the key already exists in local storage, then it's already been set.

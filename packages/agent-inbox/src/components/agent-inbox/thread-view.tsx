@@ -23,7 +23,9 @@ export function ThreadView<
     try {
       if (typeof window === "undefined") return;
       if (!threadId || !threads.length || loading) return;
-      const selectedThread = threads.find((t) => t.thread.thread_id === threadId);
+      const selectedThread = threads.find(
+        (t) => t.thread.thread_id === threadId
+      );
       if (selectedThread) {
         setThreadData(selectedThread);
         return;
