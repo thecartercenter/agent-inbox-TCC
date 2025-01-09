@@ -14,7 +14,7 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
         pre: ({ node: _node, ...props }) => (
           <pre
             {...props}
-            className="my-3 rounded-lg bg-muted p-4 text-wrap break-words whitespace-pre-wrap"
+            className="my-1 rounded-lg bg-muted p-4 text-wrap break-words whitespace-pre-wrap"
           />
         ),
         code: ({ node: _node, ...props }) => {
@@ -73,10 +73,10 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
           />
         ),
         ul: ({ node: _node, ...props }) => (
-          <ul {...props} className="my-3 ml-6 list-disc [&>li]:mt-1" />
+          <ul {...props} className="my-1 ml-6 list-disc [&>li]:mt-1" />
         ),
         ol: ({ node: _node, ...props }) => (
-          <ol {...props} className="my-3 ml-6 list-decimal [&>li]:mt-1" />
+          <ol {...props} className="my-1 ml-6 list-decimal [&>li]:mt-1" />
         ),
         li: ({ node: _node, ...props }) => <li {...props} className="ml-4" />,
         a: ({ node: _node, className, ...props }) => (
