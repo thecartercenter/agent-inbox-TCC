@@ -39,37 +39,37 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
         h1: ({ node: _node, ...props }) => (
           <h1
             {...props}
-            className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl mb-4"
+            className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl mb-2"
           />
         ),
         h2: ({ node: _node, ...props }) => (
           <h2
             {...props}
-            className="scroll-m-20 text-3xl font-semibold tracking-tight mb-3"
+            className="scroll-m-20 text-3xl font-semibold tracking-tight mb-1"
           />
         ),
         h3: ({ node: _node, ...props }) => (
           <h3
             {...props}
-            className="scroll-m-20 text-2xl font-semibold tracking-tight mb-2"
+            className="scroll-m-20 text-2xl font-semibold tracking-tight mb-1"
           />
         ),
         h4: ({ node: _node, ...props }) => (
           <h4
             {...props}
-            className="scroll-m-20 text-xl font-semibold tracking-tight mb-2"
+            className="scroll-m-20 text-xl font-semibold tracking-tight mb-1"
           />
         ),
         h5: ({ node: _node, ...props }) => (
           <h5
             {...props}
-            className="scroll-m-20 text-lg font-semibold tracking-tight mb-2"
+            className="scroll-m-20 text-lg font-semibold tracking-tight mb-1"
           />
         ),
         h6: ({ node: _node, ...props }) => (
           <h6
             {...props}
-            className="scroll-m-20 text-base font-semibold tracking-tight mb-2"
+            className="scroll-m-20 text-base font-semibold tracking-tight mb-1"
           />
         ),
         ul: ({ node: _node, ...props }) => (
