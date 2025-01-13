@@ -13,19 +13,45 @@ import { Label } from "@/components/ui/label";
 import React from "react";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryParams } from "../hooks/use-query-params";
+import { NO_INBOXES_FOUND_PARAM } from "../constants";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function AddAgentInboxDialog({
   closeSettingsPopover,
+  hideTrigger,
+  langchainApiKey,
+  handleChangeLangChainApiKey,
 }: {
   closeSettingsPopover: () => void;
+  hideTrigger?: boolean;
+  langchainApiKey?: string;
+  handleChangeLangChainApiKey?: (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => void;
 }) {
+  const { searchParams, updateQueryParams } = useQueryParams();
   const { toast } = useToast();
   const { addAgentInbox } = useThreadsContext();
   const [open, setOpen] = React.useState(false);
-
   const [graphId, setGraphId] = React.useState("");
   const [deploymentUrl, setDeploymentUrl] = React.useState("");
   const [name, setName] = React.useState("");
+
+  const noInboxesFoundParam = searchParams.get(NO_INBOXES_FOUND_PARAM);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (noInboxesFoundParam === "true") {
+        setOpen(true);
+      }
+    } catch (e) {
+      console.error("Error getting/setting no inboxes found param", e);
+    }
+  }, [noInboxesFoundParam]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -42,14 +68,32 @@ export function AddAgentInboxDialog({
       duration: 3000,
     });
     closeSettingsPopover();
+    updateQueryParams(NO_INBOXES_FOUND_PARAM);
     setOpen(false);
   };
 
+  const isDeployedGraph = deploymentUrl.includes("default.us.langgraph.app");
+  const showLangChainApiKeyField =
+    noInboxesFoundParam === "true" &&
+    langchainApiKey !== undefined &&
+    handleChangeLangChainApiKey &&
+    isDeployedGraph;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Add Inbox</Button>
-      </DialogTrigger>
+    <Dialog
+      open={open}
+      onOpenChange={(c) => {
+        if (!c) {
+          updateQueryParams(NO_INBOXES_FOUND_PARAM);
+        }
+        setOpen(c);
+      }}
+    >
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline">Add Inbox</Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Inbox</DialogTitle>
@@ -97,6 +141,28 @@ export function AddAgentInboxDialog({
               onChange={(e) => setName(e.target.value)}
             />
           </div>
+          {showLangChainApiKeyField && (
+            <div className="flex flex-col items-start gap-2 w-full">
+              <div className="flex flex-col gap-1 w-full items-start">
+                <Label htmlFor="langchain-api-key">
+                  LangChain API Key <span className="text-red-500">*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  This value is stored in your browser&apos;s local storage and
+                  is only used to authenticate requests sent to your LangGraph
+                  server.
+                </p>
+              </div>
+              <PasswordInput
+                id="langchain-api-key"
+                placeholder="lsv2_pt_..."
+                className="min-w-full"
+                required
+                value={langchainApiKey}
+                onChange={handleChangeLangChainApiKey}
+              />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Button variant="brand" type="submit">
               Submit

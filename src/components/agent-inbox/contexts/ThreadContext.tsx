@@ -26,6 +26,7 @@ import {
   AGENT_INBOX_PARAM,
   AGENT_INBOXES_LOCAL_STORAGE_KEY,
   LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
+  NO_INBOXES_FOUND_PARAM,
 } from "../constants";
 import {
   getInterruptFromThread,
@@ -167,12 +168,7 @@ export function ThreadsProvider<
     const agentInboxSearchParam = getSearchParam(AGENT_INBOX_PARAM);
     const agentInboxes = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
     if (!agentInboxes || !agentInboxes.length) {
-      toast({
-        title: "Error",
-        description: "Agent inbox not found. Please add an inbox in settings.",
-        variant: "destructive",
-        duration: 3000,
-      });
+      updateQueryParams(NO_INBOXES_FOUND_PARAM, "true");
       return;
     }
     let parsedAgentInboxes: AgentInbox[] = [];

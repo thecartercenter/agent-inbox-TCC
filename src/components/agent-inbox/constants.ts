@@ -5,3 +5,4 @@ export const OFFSET_PARAM = "offset";
 export const LIMIT_PARAM = "limit";
 export const INBOX_PARAM = "inbox";
 export const AGENT_INBOX_PARAM = "agent_inbox";
+export const NO_INBOXES_FOUND_PARAM = "no_inboxes_found";

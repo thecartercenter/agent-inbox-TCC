@@ -43,6 +43,13 @@ export function SettingsPopover() {
     }
   }, [langchainApiKey]);
 
+  const handleChangeLangChainApiKey = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setLangchainApiKey(e.target.value);
+    setItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY, e.target.value);
+  };
+
   return (
     <>
       <Popover
@@ -98,13 +105,7 @@ export function SettingsPopover() {
                   className="min-w-full"
                   required
                   value={langchainApiKey}
-                  onChange={(e) => {
-                    setLangchainApiKey(e.target.value);
-                    setItem(
-                      LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
-                      e.target.value
-                    );
-                  }}
+                  onChange={handleChangeLangChainApiKey}
                 />
               </div>
               <AddAgentInboxDialog
@@ -114,6 +115,12 @@ export function SettingsPopover() {
           </div>
         </PopoverContent>
       </Popover>
+      <AddAgentInboxDialog
+        closeSettingsPopover={() => setOpen(false)}
+        hideTrigger
+        langchainApiKey={langchainApiKey}
+        handleChangeLangChainApiKey={handleChangeLangChainApiKey}
+      />
     </>
   );
 }
