@@ -45,38 +45,38 @@ export function MarkdownText({ children, ...props }: MarkdownTextProps) {
         h2: ({ node: _node, ...props }) => (
           <h2
             {...props}
-            className="scroll-m-20 text-3xl font-semibold tracking-tight mb-1"
+            className="scroll-m-20 text-3xl font-semibold tracking-tight"
           />
         ),
         h3: ({ node: _node, ...props }) => (
           <h3
             {...props}
-            className="scroll-m-20 text-2xl font-semibold tracking-tight mb-1"
+            className="scroll-m-20 text-2xl font-semibold tracking-tight"
           />
         ),
         h4: ({ node: _node, ...props }) => (
           <h4
             {...props}
-            className="scroll-m-20 text-xl font-semibold tracking-tight mb-1"
+            className="scroll-m-20 text-xl font-semibold tracking-tight"
           />
         ),
         h5: ({ node: _node, ...props }) => (
           <h5
             {...props}
-            className="scroll-m-20 text-lg font-semibold tracking-tight mb-1"
+            className="scroll-m-20 text-lg font-semibold tracking-tight"
           />
         ),
         h6: ({ node: _node, ...props }) => (
           <h6
             {...props}
-            className="scroll-m-20 text-base font-semibold tracking-tight mb-1"
+            className="scroll-m-20 text-base font-semibold tracking-tight"
           />
         ),
         ul: ({ node: _node, ...props }) => (
-          <ul {...props} className="my-1 ml-6 list-disc [&>li]:mt-1" />
+          <ul {...props} className="ml-6 list-disc [&>li]:mt-1" />
         ),
         ol: ({ node: _node, ...props }) => (
-          <ol {...props} className="my-1 ml-6 list-decimal [&>li]:mt-1" />
+          <ol {...props} className="ml-6 list-decimal [&>li]:mt-1" />
         ),
         li: ({ node: _node, ...props }) => <li {...props} className="ml-4" />,
         a: ({ node: _node, className, ...props }) => (
