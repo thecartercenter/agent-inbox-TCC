@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { FileText } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
@@ -57,7 +57,7 @@ function hashString(str: string): number {
 }
 
 export function AppSidebar() {
-  const { agentInboxes, changeAgentInbox } = useThreadsContext();
+  const { agentInboxes, changeAgentInbox, deleteAgentInbox } = useThreadsContext();
 
   return (
     <Sidebar className="border-r-[0px] bg-[#F9FAFB]">
@@ -100,6 +100,35 @@ export function AppSidebar() {
                           )}
                         >
                           {label}
+                        </span>
+                        <span className="flex flex-row gap-1 items-center justify-end ml-auto">
+                          {/* TODO: This is a button nested inside a button. This is bad and should be fixed. */}
+                          <TooltipIconButton
+                            variant="ghost"
+                            tooltip="Delete"
+                            className="text-gray-800 hover:text-red-500 transition-colors ease-in-out duration-200"
+                            delayDuration={100}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAgentInbox(item.id);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </TooltipIconButton>
+
+                          {/* TODO: Implement editing inboxes */}
+                          {/* <TooltipIconButton
+                            className="text-gray-800 hover:text-blue-500 transition-colors ease-in-out duration-200"
+                            tooltip="Edit"
+                            delayDuration={100}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              push(`/edit`);
+                            }}
+                            variant="link"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </TooltipIconButton> */}
                         </span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

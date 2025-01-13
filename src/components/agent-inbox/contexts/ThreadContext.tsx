@@ -42,6 +42,7 @@ type ThreadContentType<
   threadData: ThreadData<ThreadValues>[];
   hasMoreThreads: boolean;
   agentInboxes: AgentInbox[];
+  deleteAgentInbox: (id: string) => void;
   changeAgentInbox: (graphId: string, replaceAll?: boolean) => void;
   addAgentInbox: (agentInbox: AgentInbox) => void;
   ignoreThread: (threadId: string) => Promise<void>;
@@ -185,6 +186,14 @@ export function ThreadsProvider<
       return;
     }
 
+    if (!parsedAgentInboxes.length) {
+      const noInboxesFoundParam = searchParams.get(NO_INBOXES_FOUND_PARAM);
+      if (noInboxesFoundParam !== "true") {
+        updateQueryParams(NO_INBOXES_FOUND_PARAM, "true");
+      }
+      return;
+    }
+
     // Ensure each agent inbox has an ID, and if not, add one
     parsedAgentInboxes = parsedAgentInboxes.map((i) => {
       return {
@@ -260,6 +269,35 @@ export function ThreadsProvider<
       JSON.stringify(parsedAgentInboxes)
     );
     updateQueryParams(AGENT_INBOX_PARAM, agentInbox.id);
+  }, []);
+
+  const deleteAgentInbox = React.useCallback((id: string) => {
+    const agentInboxes = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+    if (!agentInboxes || !agentInboxes.length) {
+      return;
+    }
+    const parsedAgentInboxes: AgentInbox[] = JSON.parse(agentInboxes);
+    const updatedAgentInboxes = parsedAgentInboxes.filter((i) => i.id !== id);
+
+    if (!updatedAgentInboxes.length) {
+      updateQueryParams(NO_INBOXES_FOUND_PARAM, "true");
+      setAgentInboxes([]);
+      setItem(
+        AGENT_INBOXES_LOCAL_STORAGE_KEY,
+        JSON.stringify([])
+      );
+      // Clear all query params
+      const url = new URL(window.location.href);
+      window.location.href = url.pathname;
+      return;
+    }
+
+    setAgentInboxes(updatedAgentInboxes);
+    setItem(
+      AGENT_INBOXES_LOCAL_STORAGE_KEY,
+      JSON.stringify(updatedAgentInboxes)
+    );
+    changeAgentInbox(updatedAgentInboxes[0].id, true);
   }, []);
 
   const changeAgentInbox = (id: string, replaceAll?: boolean) => {
@@ -565,6 +603,7 @@ export function ThreadsProvider<
     threadData,
     hasMoreThreads,
     agentInboxes,
+    deleteAgentInbox,
     changeAgentInbox,
     addAgentInbox,
     ignoreThread,
