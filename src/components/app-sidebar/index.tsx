@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { FileText } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
@@ -20,6 +20,7 @@ import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
 import { prettifyText } from "../agent-inbox/utils";
 import { cn } from "@/lib/utils";
+import { AGENT_INBOX_GITHUB_README_URL } from "../agent-inbox/constants";
 
 const gradients = [
   "linear-gradient(to right, #FF416C, #FF4B2B)", // Red-Orange
@@ -39,9 +40,6 @@ const gradients = [
   "linear-gradient(to right, #3B2667, #BC78EC)", // Deep Purple
 ];
 
-const AGENT_INBOX_GITHUB_README_URL =
-  "https://github.com/langchain-ai/agent-inbox/blob/main/README.md";
-
 /**
  * Used to generate a has for the graph ID to use as a gradient
  * so that the gradient does not change on every render.
@@ -57,7 +55,8 @@ function hashString(str: string): number {
 }
 
 export function AppSidebar() {
-  const { agentInboxes, changeAgentInbox } = useThreadsContext();
+  const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
+    useThreadsContext();
 
   return (
     <Sidebar className="border-r-[0px] bg-[#F9FAFB]">
@@ -100,6 +99,35 @@ export function AppSidebar() {
                           )}
                         >
                           {label}
+                        </span>
+                        <span className="flex flex-row gap-1 items-center justify-end ml-auto">
+                          {/* TODO: This is a button nested inside a button. This is bad and should be fixed. */}
+                          <TooltipIconButton
+                            variant="ghost"
+                            tooltip="Delete"
+                            className="text-gray-800 hover:text-red-500 transition-colors ease-in-out duration-200"
+                            delayDuration={100}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAgentInbox(item.id);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </TooltipIconButton>
+
+                          {/* TODO: Implement editing inboxes */}
+                          {/* <TooltipIconButton
+                            className="text-gray-800 hover:text-blue-500 transition-colors ease-in-out duration-200"
+                            tooltip="Edit"
+                            delayDuration={100}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              push(`/edit`);
+                            }}
+                            variant="link"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </TooltipIconButton> */}
                         </span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

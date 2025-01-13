@@ -14,7 +14,10 @@ import React from "react";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryParams } from "../hooks/use-query-params";
-import { NO_INBOXES_FOUND_PARAM } from "../constants";
+import {
+  AGENT_INBOX_GITHUB_README_URL,
+  NO_INBOXES_FOUND_PARAM,
+} from "../constants";
 import { PasswordInput } from "@/components/ui/password-input";
 
 export function AddAgentInboxDialog({
@@ -95,10 +98,31 @@ export function AddAgentInboxDialog({
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add Inbox</DialogTitle>
-          <DialogDescription>Add a new agent inbox.</DialogDescription>
-        </DialogHeader>
+        {noInboxesFoundParam === "true" ? (
+          <DialogHeader>
+            <DialogTitle>Welcome to the Agent Inbox!</DialogTitle>
+            <DialogDescription>
+              <p>To get started, please add an inbox below.</p>
+              <p>
+                Not sure where to start? Check out our docs
+                <a
+                  href={AGENT_INBOX_GITHUB_README_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-brand-500 hover:underline ml-1"
+                >
+                  here
+                </a>
+                .
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+        ) : (
+          <DialogHeader>
+            <DialogTitle>Add Inbox</DialogTitle>
+            <DialogDescription>Add a new agent inbox.</DialogDescription>
+          </DialogHeader>
+        )}
         <form
           className="flex flex-col items-center justify-center gap-4 py-4 w-full"
           onSubmit={handleSubmit}
