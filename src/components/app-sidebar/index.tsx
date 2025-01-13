@@ -20,6 +20,7 @@ import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
 import { prettifyText } from "../agent-inbox/utils";
 import { cn } from "@/lib/utils";
+import { AGENT_INBOX_GITHUB_README_URL } from "../agent-inbox/constants";
 
 const gradients = [
   "linear-gradient(to right, #FF416C, #FF4B2B)", // Red-Orange
@@ -39,9 +40,6 @@ const gradients = [
   "linear-gradient(to right, #3B2667, #BC78EC)", // Deep Purple
 ];
 
-const AGENT_INBOX_GITHUB_README_URL =
-  "https://github.com/langchain-ai/agent-inbox/blob/main/README.md";
-
 /**
  * Used to generate a has for the graph ID to use as a gradient
  * so that the gradient does not change on every render.
@@ -57,7 +55,8 @@ function hashString(str: string): number {
 }
 
 export function AppSidebar() {
-  const { agentInboxes, changeAgentInbox, deleteAgentInbox } = useThreadsContext();
+  const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
+    useThreadsContext();
 
   return (
     <Sidebar className="border-r-[0px] bg-[#F9FAFB]">

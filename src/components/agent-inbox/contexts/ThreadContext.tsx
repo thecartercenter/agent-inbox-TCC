@@ -282,10 +282,7 @@ export function ThreadsProvider<
     if (!updatedAgentInboxes.length) {
       updateQueryParams(NO_INBOXES_FOUND_PARAM, "true");
       setAgentInboxes([]);
-      setItem(
-        AGENT_INBOXES_LOCAL_STORAGE_KEY,
-        JSON.stringify([])
-      );
+      setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([]));
       // Clear all query params
       const url = new URL(window.location.href);
       window.location.href = url.pathname;
