@@ -40,7 +40,7 @@ const gradients = [
 ];
 
 const AGENT_INBOX_GITHUB_README_URL =
-  "https://github.com/langchain-ai/agent-uxs/blob/main/packages/agent-inbox/README.md";
+  "https://github.com/langchain-ai/agent-inbox/blob/main/README.md";
 
 /**
  * Used to generate a has for the graph ID to use as a gradient
