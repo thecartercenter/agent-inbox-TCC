@@ -1,7 +1,7 @@
 # Agent Inbox
 
 > [!NOTE]
-> Want to use the Agent Inbox without deploying it yourself? Check out the [hosted version here: dev.agentinbox.ai](https://dev.agentinbox.ai/)
+> Want to use the Agent Inbox without deploying it yourself? Check out the hosted version here: [dev.agentinbox.ai](https://dev.agentinbox.ai/)
 
 ## Prerequisites
 
