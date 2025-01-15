@@ -21,6 +21,12 @@ import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
 import { prettifyText } from "../agent-inbox/utils";
 import { cn } from "@/lib/utils";
 import { AGENT_INBOX_GITHUB_README_URL } from "../agent-inbox/constants";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 const gradients = [
   "linear-gradient(to right, #FF416C, #FF4B2B)", // Red-Orange
@@ -76,60 +82,54 @@ export function AppSidebar() {
                   return (
                     <SidebarMenuItem
                       key={`graph-id-${item.graphId}-${idx}`}
-                      className={item.selected ? "bg-gray-100 rounded-md" : ""}
+                      className={cn(
+                        "flex items-center w-full",
+                        item.selected ? "bg-gray-100 rounded-md" : ""
+                      )}
                     >
-                      <SidebarMenuButton
-                        onClick={() => changeAgentInbox(item.id, true)}
+                      <TooltipProvider>
+                        <Tooltip delayDuration={200}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton
+                              onClick={() => changeAgentInbox(item.id, true)}
+                            >
+                              <div
+                                className="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-white"
+                                style={{
+                                  background:
+                                    gradients[
+                                      hashString(item.graphId) %
+                                        gradients.length
+                                    ],
+                                }}
+                              >
+                                {label.slice(0, 1).toUpperCase()}
+                              </div>
+                              <span
+                                className={cn(
+                                  "truncate min-w-0 font-medium",
+                                  item.selected ? "text-black" : "text-gray-600"
+                                )}
+                              >
+                                {label}
+                              </span>
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent>{label}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipIconButton
+                        variant="ghost"
+                        tooltip="Delete"
+                        className="text-gray-800 hover:text-red-500 transition-colors ease-in-out duration-200"
+                        delayDuration={100}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteAgentInbox(item.id);
+                        }}
                       >
-                        <div
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-white"
-                          style={{
-                            background:
-                              gradients[
-                                hashString(item.graphId) % gradients.length
-                              ],
-                          }}
-                        >
-                          {label.slice(0, 1).toUpperCase()}
-                        </div>
-                        <span
-                          className={cn(
-                            "font-medium",
-                            item.selected ? "text-black" : "text-gray-600"
-                          )}
-                        >
-                          {label}
-                        </span>
-                        <span className="flex flex-row gap-1 items-center justify-end ml-auto">
-                          {/* TODO: This is a button nested inside a button. This is bad and should be fixed. */}
-                          <TooltipIconButton
-                            variant="ghost"
-                            tooltip="Delete"
-                            className="text-gray-800 hover:text-red-500 transition-colors ease-in-out duration-200"
-                            delayDuration={100}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteAgentInbox(item.id);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </TooltipIconButton>
-
-                          {/* TODO: Implement editing inboxes */}
-                          {/* <TooltipIconButton
-                            className="text-gray-800 hover:text-blue-500 transition-colors ease-in-out duration-200"
-                            tooltip="Edit"
-                            delayDuration={100}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              push(`/edit`);
-                            }}
-                            variant="link"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </TooltipIconButton> */}
-                        </span>
-                      </SidebarMenuButton>
+                        <Trash2 className="w-4 h-4" />
+                      </TooltipIconButton>
                     </SidebarMenuItem>
                   );
                 })}

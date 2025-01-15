@@ -131,9 +131,13 @@ export function AddAgentInboxDialog({
             <Label htmlFor="graph-id" className="text-right">
               Assistant/Graph ID <span className="text-red-500">*</span>
             </Label>
+            <p className="text-xs text-muted-foreground">
+              This is the ID of the graph (can be the graph name), or assistant
+              to fetch threads from, and invoke when actions are taken.
+            </p>
             <Input
               id="graph-id"
-              placeholder="email_assistant"
+              placeholder="my_graph"
               className="col-span-3"
               required
               value={graphId}
@@ -144,6 +148,10 @@ export function AddAgentInboxDialog({
             <Label htmlFor="deployment-url" className="text-right">
               Deployment URL <span className="text-red-500">*</span>
             </Label>
+            <p className="text-xs text-muted-foreground">
+              This is the URL of your LangGraph deployment. Can be a local, or
+              production deployment.
+            </p>
             <Input
               id="deployment-url"
               placeholder="https://my-agent.default.us.langgraph.app"
@@ -157,9 +165,12 @@ export function AddAgentInboxDialog({
             <Label htmlFor="name" className="text-right">
               Name
             </Label>
+            <p className="text-xs text-muted-foreground">
+              Optional name for the inbox. Used in the sidebar.
+            </p>
             <Input
               id="name"
-              placeholder="Email Assistant"
+              placeholder="My Agent"
               className="col-span-3"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -169,7 +180,7 @@ export function AddAgentInboxDialog({
             <div className="flex flex-col items-start gap-2 w-full">
               <div className="flex flex-col gap-1 w-full items-start">
                 <Label htmlFor="langchain-api-key">
-                  LangChain API Key <span className="text-red-500">*</span>
+                  LangSmith API Key <span className="text-red-500">*</span>
                 </Label>
                 <p className="text-xs text-muted-foreground">
                   This value is stored in your browser&apos;s local storage and
