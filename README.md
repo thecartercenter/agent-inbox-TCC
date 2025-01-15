@@ -1,5 +1,7 @@
 # Agent Inbox
 
+![Agent Inbox Diagram](./public/agent_inbox_diagram.png)
+
 > [!NOTE]
 > Want to use the Agent Inbox without deploying it yourself? Check out the hosted version here: [dev.agentinbox.ai](https://dev.agentinbox.ai/)
 
