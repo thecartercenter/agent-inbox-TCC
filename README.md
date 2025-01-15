@@ -24,7 +24,7 @@ yarn install
 
 Once up and running, you'll need to take two actions so that the Agent Inbox can connect to your LangGraph deployment.
 
-1. Add your LangChain API key: Click the "Settings" button in the sidebar, and enter your LangChain API key.
+1. Add your LangSmith API key: Click the "Settings" button in the sidebar, and enter your LangSmith API key.
 
 2. Create your first inbox by opening the settings popover (bottom left, inside the sidebar), and clicking "Add Inbox". This will open a dialog with three fields:
   > - **Assistant/Graph ID**: (required) The name of your LangGraph graph, or an assistant ID. This will be used when sending human responses to your graph.
@@ -163,7 +163,7 @@ def my_graph_function():
 Common issues and solutions:
 
 1. **Connection Issues**
-   - Verify your `LANGCHAIN_API_KEY` is set correctly
+   - Verify your `LANGSMITH_API_KEY` is set correctly
    - Ensure your Deployment URL is accessible
    - Check if your LangGraph deployment is running
 
