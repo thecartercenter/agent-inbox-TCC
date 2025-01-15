@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --config .prettierrc --write \"src\""
+    "lint:fix": "next lint --fix",
+    "format": "prettier --config .prettierrc --write \"src\"",
+    "format:check": "prettier --config .prettierrc --check \"src\""
   },
   "dependencies": {
     "@assistant-ui/react": "^0.5.71",
