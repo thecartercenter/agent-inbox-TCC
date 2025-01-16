@@ -14,6 +14,9 @@ Before getting started, ensure you have:
 
 ## Setup
 
+> [!NOTE]
+> 🎥 Prefer a video walkthrough? Checkout [this video](https://youtu.be/gF341XMN8cY) for a step-by-step guide.
+
 To start running the Agent Inbox, first clone the repository and install dependencies:
 
 ```bash
