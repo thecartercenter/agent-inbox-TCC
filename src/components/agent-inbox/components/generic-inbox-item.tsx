@@ -48,7 +48,7 @@ export function GenericInboxItem<
 
   const updatedAtDateString = format(
     new Date(threadData.thread.updated_at),
-    "MM/dd"
+    "MM/dd h:mm a"
   );
 
   return (
