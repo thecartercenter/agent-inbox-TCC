@@ -18,7 +18,7 @@ Before getting started, ensure you have:
 > 🎥 Prefer a video walkthrough? Checkout [this video](https://youtu.be/gF341XMN8cY) for a step-by-step guide.
 
 > [!TIP]
-> You can also view a minium working version of a LangGraph agent using the Agent Inbox in [Python here](https://github.com/langchain-ai/agent-inbox-langgraph-example), and [TypeScript here](https://github.com/langchain-ai/agent-inbox-langgraphjs-example). 
+> You can also view a minimum working version of a LangGraph agent using the Agent Inbox in [Python here](https://github.com/langchain-ai/agent-inbox-langgraph-example), and [TypeScript here](https://github.com/langchain-ai/agent-inbox-langgraphjs-example). 
 
 To start running the Agent Inbox, first clone the repository and install dependencies:
 
