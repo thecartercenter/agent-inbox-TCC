@@ -103,8 +103,11 @@ const getClient = ({ agentInboxes, getItem, toast }: GetClientArgs) => {
     return;
   }
 
-  const langchainApiKeyLS = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
-  if (!langchainApiKeyLS) {
+  const langchainApiKeyLS =
+    getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
+  // Only show this error if the deployment URL is for a deployed LangGraph instance.
+  // Local graphs do NOT require an API key.
+  if (!langchainApiKeyLS && deploymentUrl.includes("us.langgraph.app")) {
     toast({
       title: "Error",
       description: "Please add your LangChain API key in settings.",

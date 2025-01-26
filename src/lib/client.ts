@@ -5,12 +5,12 @@ export const createClient = ({
   langchainApiKey,
 }: {
   deploymentUrl: string;
-  langchainApiKey: string;
+  langchainApiKey: string | undefined;
 }) => {
   return new Client({
     apiUrl: deploymentUrl,
     defaultHeaders: {
-      "x-api-key": langchainApiKey,
+      ...(langchainApiKey && { "x-api-key": langchainApiKey }),
     },
   });
 };
