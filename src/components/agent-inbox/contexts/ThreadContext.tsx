@@ -354,10 +354,31 @@ export function ThreadsProvider<
         }
         const statusInput = inbox === "all" ? {} : { status: inbox };
 
+        const graphAssistantId = agentInboxes.find((i) => i.selected)?.graphId;
+        let metadataInput:
+          | {
+              graph_id: string;
+            }
+          | {
+              assistant_id: string;
+            }
+          | undefined;
+        if (graphAssistantId) {
+          if (validate(graphAssistantId)) {
+            metadataInput = {
+              assistant_id: graphAssistantId,
+            };
+          } else {
+            metadataInput = {
+              graph_id: graphAssistantId,
+            };
+          }
+        }
         const threadSearchArgs = {
           offset,
           limit,
           ...statusInput,
+          ...(metadataInput ? { metadata: metadataInput } : {}),
         };
         const threads = await client.threads.search(threadSearchArgs);
         const data: ThreadData<ThreadValues>[] = [];
