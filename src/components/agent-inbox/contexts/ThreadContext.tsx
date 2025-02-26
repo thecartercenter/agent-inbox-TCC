@@ -30,6 +30,7 @@ import {
 } from "../constants";
 import {
   getInterruptFromThread,
+  getThreadFilterMetadata,
   processInterruptedThread,
   processThreadWithoutInterrupts,
 } from "./utils";
@@ -352,28 +353,10 @@ export function ThreadsProvider<
           });
           return;
         }
-        const statusInput = inbox === "all" ? {} : { status: inbox };
 
-        const graphAssistantId = agentInboxes.find((i) => i.selected)?.graphId;
-        let metadataInput:
-          | {
-              graph_id: string;
-            }
-          | {
-              assistant_id: string;
-            }
-          | undefined;
-        if (graphAssistantId) {
-          if (validate(graphAssistantId)) {
-            metadataInput = {
-              assistant_id: graphAssistantId,
-            };
-          } else {
-            metadataInput = {
-              graph_id: graphAssistantId,
-            };
-          }
-        }
+        const statusInput = inbox === "all" ? {} : { status: inbox };
+        const metadataInput = getThreadFilterMetadata(agentInboxes);
+
         const threadSearchArgs = {
           offset,
           limit,
