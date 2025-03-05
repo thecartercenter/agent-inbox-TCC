@@ -20,13 +20,18 @@ import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
 import { prettifyText } from "../agent-inbox/utils";
 import { cn } from "@/lib/utils";
-import { AGENT_INBOX_GITHUB_README_URL } from "../agent-inbox/constants";
+import {
+  AGENT_INBOX_GITHUB_README_URL,
+  LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
+} from "../agent-inbox/constants";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { AddAgentInboxDialog } from "../agent-inbox/components/add-agent-inbox-dialog";
+import { useLocalStorage } from "../agent-inbox/hooks/use-local-storage";
 
 const gradients = [
   "linear-gradient(to right, #FF416C, #FF4B2B)", // Red-Orange
@@ -63,6 +68,30 @@ function hashString(str: string): number {
 export function AppSidebar() {
   const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
     useThreadsContext();
+  const [langchainApiKey, setLangchainApiKey] = React.useState("");
+  const { getItem, setItem } = useLocalStorage();
+
+  React.useEffect(() => {
+    try {
+      if (typeof window === "undefined" || langchainApiKey) {
+        return;
+      }
+
+      const langchainApiKeyLS = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
+      if (langchainApiKeyLS) {
+        setLangchainApiKey(langchainApiKeyLS);
+      }
+    } catch (e) {
+      console.error("Error getting/setting LangChain API key", e);
+    }
+  }, [langchainApiKey]);
+
+  const handleChangeLangChainApiKey = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setLangchainApiKey(e.target.value);
+    setItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY, e.target.value);
+  };
 
   return (
     <Sidebar className="border-r-[0px] bg-[#F9FAFB]">
@@ -133,6 +162,11 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   );
                 })}
+                <AddAgentInboxDialog
+                  hideTrigger={false}
+                  langchainApiKey={langchainApiKey}
+                  handleChangeLangChainApiKey={handleChangeLangChainApiKey}
+                />
               </div>
 
               <div className="flex flex-col gap-3 pl-7">
