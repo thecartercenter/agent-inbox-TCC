@@ -21,12 +21,13 @@ import {
 import { PasswordInput } from "@/components/ui/password-input";
 
 export function AddAgentInboxDialog({
-  closeSettingsPopover,
   hideTrigger,
   langchainApiKey,
   handleChangeLangChainApiKey,
 }: {
-  closeSettingsPopover: () => void;
+  /**
+   * Whether or not to hide the dialog trigger button.
+   */
   hideTrigger?: boolean;
   langchainApiKey?: string;
   handleChangeLangChainApiKey?: (
@@ -70,8 +71,11 @@ export function AddAgentInboxDialog({
       description: "Agent inbox added successfully",
       duration: 3000,
     });
-    closeSettingsPopover();
     updateQueryParams(NO_INBOXES_FOUND_PARAM);
+
+    setGraphId("");
+    setDeploymentUrl("");
+    setName("");
     setOpen(false);
   };
 
