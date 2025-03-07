@@ -111,7 +111,7 @@ const getClient = ({ agentInboxes, getItem, toast }: GetClientArgs) => {
   if (!langchainApiKeyLS && deploymentUrl.includes("us.langgraph.app")) {
     toast({
       title: "Error",
-      description: "Please add your LangChain API key in settings.",
+      description: "Please add your LangSmith API key in settings.",
       variant: "destructive",
       duration: 5000,
     });

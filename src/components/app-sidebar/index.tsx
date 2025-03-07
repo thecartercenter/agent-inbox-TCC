@@ -82,7 +82,7 @@ export function AppSidebar() {
         setLangchainApiKey(langchainApiKeyLS);
       }
     } catch (e) {
-      console.error("Error getting/setting LangChain API key", e);
+      console.error("Error getting/setting LangSmith API key", e);
     }
   }, [langchainApiKey]);
 
