@@ -38,7 +38,7 @@ export function SettingsPopover() {
         setLangchainApiKey(langchainApiKeyLS);
       }
     } catch (e) {
-      console.error("Error getting/setting LangChain API key", e);
+      console.error("Error getting/setting LangSmith API key", e);
     }
   }, [langchainApiKey]);
 
@@ -89,7 +89,7 @@ export function SettingsPopover() {
             <div className="flex flex-col items-start gap-2 w-full">
               <div className="flex flex-col gap-1 w-full items-start">
                 <Label htmlFor="langchain-api-key">
-                  LangChain API Key <span className="text-red-500">*</span>
+                  LangSmith API Key <span className="text-red-500">*</span>
                 </Label>
                 <p className="text-xs text-muted-foreground">
                   This value is stored in your browser&apos;s local storage and
