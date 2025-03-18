@@ -114,7 +114,7 @@ The human interrupt schema is used to define the types of interrupts, and what a
 
 You can set any combination of these actions in the `config` field on `HumanInterrupt`.
 
-At the moment, you're required to pass a list of `HumanInterrupt` objects in the `interrupt` function, however the UI is currently limited to rendering only the first object in the list. (We are open to suggestions for how to improve this schema, so if you have feedback, please reach out to discuss!). The same goes for the `HumanResponse`, which the Agent Inbox will always send back as a list with a single `HumanResponse` object in it.
+When the Agent Inbox sends a response, it will always send back a list with a single `HumanResponse` object in it.
 
 #### What do the fields mean?
 
@@ -139,11 +139,14 @@ Then, when calling the `interrupt` function, you should pass an instance of `Hum
 
 Here's a simple example of using the interrupt function in your LangGraph project:
 
+<details>
+<summary>Python Example Usage</summary>
+
 ```python
 from typing import TypedDict, Literal, Optional, Union
 from langgraph.types import interrupt
 
-def my_graph_function():
+def my_graph_function(state: MyGraphState):
     # Extract the last tool call from the `messages` field in the state
     tool_call = state["messages"][-1].tool_calls[0]
     # Create an interrupt
@@ -160,11 +163,55 @@ def my_graph_function():
         },
         "description": _generate_email_markdown(state) # Generate a detailed markdown description.
     }
-    # Send the interrupt request inside a list, and extract the first response
-    response = interrupt([request])[0]
+    # Send the interrupt request, and extract the first response.
+    # The Agent Inbox will always respond with a list of `HumanResponse` objects, although
+    # at this time only a single object will be returned.
+    response = interrupt(request)[0]
     if response['type'] == "response":
         # Do something with the response
+    
+    # ...rest of function
 ```
+
+</details>
+
+<details>
+<summary>TypeScript Example Usage</summary>
+
+```typescript
+import { interrupt } from "@langchain/langgraph";
+import { HumanInterrupt, HumanResponse } from "@langchain/langgraph/prebuilt";
+
+function myGraphFunction(state: MyGraphState) {
+  // Extract the last tool call from the `messages` field in the state
+  const toolCall = state.messages[state.messages.length - 1].tool_calls[0];
+  // Create an interrupt
+  const request: HumanInterrupt = {
+    action_request: {
+      action: toolCall.name,
+      args: toolCall.args
+    },
+    config: {
+      allow_ignore: true,
+      allow_respond: true,
+      allow_edit: false,
+      allow_accept: false
+    },
+    description: _generateEmailMarkdown(state) // Generate a detailed markdown description.
+  };
+  // Send the interrupt request, and extract the first response.
+  // The Agent Inbox will always respond with an array of `HumanResponse` objects, although
+  // at this time only a single object will be returned.
+  const response = interrupt<HumanInterrupt, HumanResponse[]>(request)[0];
+  if (response.type === "response") {
+    // Do something with the response
+  }
+  // ...rest of function
+};
+
+```
+
+</details>
 
 ## Troubleshooting
 
@@ -179,5 +226,4 @@ Common issues and solutions:
    - Ensure all required fields are present in your interrupt objects
    - Verify the types of all fields match the schema
    - Check that response handling matches expected types
-   - Check you're sending a single `HumanInterrupt` object inside a list to the `interrupt` function
    - Check you're extracting the first object from the response list returned by the `interrupt` function

@@ -123,7 +123,7 @@ export function ThreadActionsView<
   };
 
   const threadTitle =
-    threadData.interrupts[0].action_request.action || "Unknown";
+    threadData.interrupts[0]?.action_request?.action || "Unknown";
   const actionsDisabled = loading || streaming;
   const ignoreAllowed = threadData.interrupts[0].config.allow_ignore;
 
