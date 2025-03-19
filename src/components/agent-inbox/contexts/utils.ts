@@ -28,9 +28,6 @@ export function getInterruptFromThread(
         return interrupt.flatMap((i) => i.value as HumanInterrupt);
       }
     });
-    // return Object.values(thread.interrupts).flatMap((interrupt) =>
-    //   interrupt.flatMap((i) => i.value as HumanInterrupt)
-    // );
   }
   return undefined;
 }
