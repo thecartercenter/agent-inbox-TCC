@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { FileText, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { FileText, MoreVertical, Trash2 } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
@@ -32,11 +32,7 @@ import {
 } from "../ui/tooltip";
 import { AddAgentInboxDialog } from "../agent-inbox/components/add-agent-inbox-dialog";
 import { useLocalStorage } from "../agent-inbox/hooks/use-local-storage";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from "../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { EditAgentInboxDialog } from "../agent-inbox/components/edit-agent-inbox-dialog";
 
 const gradients = [
@@ -169,10 +165,12 @@ export function AppSidebar() {
                         </PopoverTrigger>
                         <PopoverContent className="w-40 p-2">
                           <div className="flex flex-col gap-1">
-                            <EditAgentInboxDialog 
-                              agentInbox={item} 
+                            <EditAgentInboxDialog
+                              agentInbox={item}
                               langchainApiKey={langchainApiKey}
-                              handleChangeLangChainApiKey={handleChangeLangChainApiKey}
+                              handleChangeLangChainApiKey={
+                                handleChangeLangChainApiKey
+                              }
                             />
                             <button
                               onClick={(e) => {

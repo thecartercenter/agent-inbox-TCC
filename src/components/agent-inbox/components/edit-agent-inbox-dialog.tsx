@@ -9,14 +9,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React from "react";
-import { useThreadsContext } from "../contexts/ThreadContext";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryParams } from "../hooks/use-query-params";
-import {
-  AGENT_INBOX_GITHUB_README_URL,
-  AGENT_INBOXES_LOCAL_STORAGE_KEY,
-  NO_INBOXES_FOUND_PARAM,
-} from "../constants";
+import { AGENT_INBOXES_LOCAL_STORAGE_KEY } from "../constants";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AgentInbox } from "../types";
 import { Pencil } from "lucide-react";
@@ -40,7 +34,9 @@ export function EditAgentInboxDialog({
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [graphId, setGraphId] = React.useState(agentInbox.graphId);
-  const [deploymentUrl, setDeploymentUrl] = React.useState(agentInbox.deploymentUrl);
+  const [deploymentUrl, setDeploymentUrl] = React.useState(
+    agentInbox.deploymentUrl
+  );
   const [name, setName] = React.useState(agentInbox.name || "");
 
   React.useEffect(() => {
@@ -53,7 +49,7 @@ export function EditAgentInboxDialog({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    
+
     // Get current inboxes from local storage
     const agentInboxesStr = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
     if (!agentInboxesStr) {
@@ -65,12 +61,12 @@ export function EditAgentInboxDialog({
       });
       return;
     }
-    
+
     try {
       const agentInboxes: AgentInbox[] = JSON.parse(agentInboxesStr);
-      
+
       // Update the specific inbox
-      const updatedInboxes = agentInboxes.map(inbox => {
+      const updatedInboxes = agentInboxes.map((inbox) => {
         if (inbox.id === agentInbox.id) {
           return {
             ...inbox,
@@ -81,19 +77,19 @@ export function EditAgentInboxDialog({
         }
         return inbox;
       });
-      
+
       // Save back to local storage
       setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify(updatedInboxes));
-      
+
       toast({
         title: "Success",
         description: "Agent inbox updated successfully",
         duration: 3000,
       });
-      
+
       // Close the dialog
       setOpen(false);
-      
+
       // Force a page reload to reflect changes
       window.location.reload();
     } catch (error) {
@@ -224,4 +220,4 @@ export function EditAgentInboxDialog({
       </DialogContent>
     </Dialog>
   );
-} 
+}
