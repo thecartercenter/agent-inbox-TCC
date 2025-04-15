@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText, Trash2, UploadCloud, House } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
@@ -18,7 +18,7 @@ import React from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
-import { prettifyText } from "../agent-inbox/utils";
+import { prettifyText, isDeployedUrl } from "../agent-inbox/utils";
 import { cn } from "@/lib/utils";
 import {
   AGENT_INBOX_GITHUB_README_URL,
@@ -32,38 +32,6 @@ import {
 } from "../ui/tooltip";
 import { AddAgentInboxDialog } from "../agent-inbox/components/add-agent-inbox-dialog";
 import { useLocalStorage } from "../agent-inbox/hooks/use-local-storage";
-
-const gradients = [
-  "linear-gradient(to right, #FF416C, #FF4B2B)", // Red-Orange
-  "linear-gradient(to right, #4158D0, #C850C0)", // Purple-Pink
-  "linear-gradient(to right, #0093E9, #80D0C7)", // Blue-Cyan
-  "linear-gradient(to right, #8EC5FC, #E0C3FC)", // Light Blue-Purple
-  "linear-gradient(to right, #43E97B, #38F9D7)", // Green-Turquoise
-  "linear-gradient(to right, #FA8BFF, #2BD2FF)", // Pink-Blue
-  "linear-gradient(to right, #FEE140, #FA709A)", // Yellow-Pink
-  "linear-gradient(to right, #3EECAC, #EE74E1)", // Green-Pink
-  "linear-gradient(to right, #4facfe, #00f2fe)", // Blue-Cyan
-  "linear-gradient(to right, #F6D242, #FF52E5)", // Yellow-Pink
-  "linear-gradient(to right, #00C6FB, #005BEA)", // Light Blue-Dark Blue
-  "linear-gradient(to right, #FEC163, #DE4313)", // Orange
-  "linear-gradient(to right, #92FE9D, #00C9FF)", // Green-Blue
-  "linear-gradient(to right, #FC466B, #3F5EFB)", // Pink-Purple
-  "linear-gradient(to right, #3B2667, #BC78EC)", // Deep Purple
-];
-
-/**
- * Used to generate a has for the graph ID to use as a gradient
- * so that the gradient does not change on every render.
- */
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-}
 
 export function AppSidebar() {
   const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
@@ -108,6 +76,7 @@ export function AppSidebar() {
               <div className="flex flex-col gap-2 pl-7">
                 {agentInboxes.map((item, idx) => {
                   const label = item.name || prettifyText(item.graphId);
+                  const isDeployed = isDeployedUrl(item.deploymentUrl);
                   return (
                     <SidebarMenuItem
                       key={`graph-id-${item.graphId}-${idx}`}
@@ -122,18 +91,11 @@ export function AppSidebar() {
                             <SidebarMenuButton
                               onClick={() => changeAgentInbox(item.id, true)}
                             >
-                              <div
-                                className="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-white"
-                                style={{
-                                  background:
-                                    gradients[
-                                      hashString(item.graphId) %
-                                        gradients.length
-                                    ],
-                                }}
-                              >
-                                {label.slice(0, 1).toUpperCase()}
-                              </div>
+                              {isDeployed ? (
+                                <UploadCloud className="w-5 h-5 text-blue-500" />
+                              ) : (
+                                <House className="w-5 h-5 text-green-500" />
+                              )}
                               <span
                                 className={cn(
                                   "truncate min-w-0 font-medium",
@@ -144,9 +106,12 @@ export function AppSidebar() {
                               </span>
                             </SidebarMenuButton>
                           </TooltipTrigger>
-                          <TooltipContent>{label}</TooltipContent>
+                          <TooltipContent>
+                            {label} - {isDeployed ? "Deployed" : "Local"}
+                          </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+
                       <TooltipIconButton
                         variant="ghost"
                         tooltip="Delete"
