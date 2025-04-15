@@ -7,6 +7,13 @@ export function prettifyText(action: string) {
   return startCase(action.replace(/_/g, " "));
 }
 
+/**
+ * Determines if a URL is a deployed (cloud) URL.
+ */
+export function isDeployedUrl(url: string): boolean {
+  return url.startsWith("https://");
+}
+
 export function isArrayOfMessages(
   value: Record<string, any>[]
 ): value is BaseMessage[] {

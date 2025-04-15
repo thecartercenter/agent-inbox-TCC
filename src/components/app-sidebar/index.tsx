@@ -18,7 +18,7 @@ import React from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 import { useThreadsContext } from "../agent-inbox/contexts/ThreadContext";
-import { prettifyText } from "../agent-inbox/utils";
+import { prettifyText, isDeployedUrl } from "../agent-inbox/utils";
 import { cn } from "@/lib/utils";
 import {
   AGENT_INBOX_GITHUB_README_URL,
@@ -32,13 +32,6 @@ import {
 } from "../ui/tooltip";
 import { AddAgentInboxDialog } from "../agent-inbox/components/add-agent-inbox-dialog";
 import { useLocalStorage } from "../agent-inbox/hooks/use-local-storage";
-
-/**
- * Determines if a URL is a local development URL.
- */
-function isLocalUrl(url: string): boolean {
-  return url.startsWith("http://") || url.includes("localhost");
-}
 
 export function AppSidebar() {
   const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
@@ -83,7 +76,7 @@ export function AppSidebar() {
               <div className="flex flex-col gap-2 pl-7">
                 {agentInboxes.map((item, idx) => {
                   const label = item.name || prettifyText(item.graphId);
-                  const isLocal = isLocalUrl(item.deploymentUrl);
+                  const isDeployed = isDeployedUrl(item.deploymentUrl);
                   return (
                     <SidebarMenuItem
                       key={`graph-id-${item.graphId}-${idx}`}
@@ -98,10 +91,10 @@ export function AppSidebar() {
                             <SidebarMenuButton
                               onClick={() => changeAgentInbox(item.id, true)}
                             >
-                              {isLocal ? (
-                                <House className="w-5 h-5 text-green-500 mr-2" />
-                              ) : (
+                              {isDeployed ? (
                                 <UploadCloud className="w-5 h-5 text-blue-500 mr-2" />
+                              ) : (
+                                <House className="w-5 h-5 text-green-500 mr-2" />
                               )}
                               <span
                                 className={cn(
@@ -114,7 +107,7 @@ export function AppSidebar() {
                             </SidebarMenuButton>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {label} - {isLocal ? "Local" : "Deployed"}
+                            {label} - {isDeployed ? "Deployed" : "Local"}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
