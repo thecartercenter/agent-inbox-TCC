@@ -165,13 +165,7 @@ export function AppSidebar() {
                         </PopoverTrigger>
                         <PopoverContent className="w-40 p-2">
                           <div className="flex flex-col gap-1">
-                            <EditAgentInboxDialog
-                              agentInbox={item}
-                              langchainApiKey={langchainApiKey}
-                              handleChangeLangChainApiKey={
-                                handleChangeLangChainApiKey
-                              }
-                            />
+                            <EditAgentInboxDialog agentInbox={item} />
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
