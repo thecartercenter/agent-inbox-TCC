@@ -262,7 +262,16 @@ export function ThreadsProvider<
     if (!agentInboxes || !agentInboxes.length) {
       setAgentInboxes([agentInbox]);
       setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([agentInbox]));
-      updateQueryParams(AGENT_INBOX_PARAM, agentInbox.id);
+      // Use URL replacement to fully refresh with new inbox
+      const url = new URL(window.location.href);
+      const newParams = new URLSearchParams({
+        [AGENT_INBOX_PARAM]: agentInbox.id,
+        [INBOX_PARAM]: "interrupted", // Default inbox type
+        [OFFSET_PARAM]: "0",
+        [LIMIT_PARAM]: "10",
+      });
+      const newUrl = url.pathname + "?" + newParams.toString();
+      window.location.href = newUrl;
       return;
     }
     const parsedAgentInboxes = JSON.parse(agentInboxes);
@@ -272,7 +281,16 @@ export function ThreadsProvider<
       AGENT_INBOXES_LOCAL_STORAGE_KEY,
       JSON.stringify(parsedAgentInboxes)
     );
-    updateQueryParams(AGENT_INBOX_PARAM, agentInbox.id);
+    // Use URL replacement to fully refresh with new inbox
+    const url = new URL(window.location.href);
+    const newParams = new URLSearchParams({
+      [AGENT_INBOX_PARAM]: agentInbox.id,
+      [INBOX_PARAM]: "interrupted", // Default inbox type
+      [OFFSET_PARAM]: "0",
+      [LIMIT_PARAM]: "10",
+    });
+    const newUrl = url.pathname + "?" + newParams.toString();
+    window.location.href = newUrl;
   }, []);
 
   const deleteAgentInbox = React.useCallback((id: string) => {
