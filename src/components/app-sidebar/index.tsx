@@ -161,7 +161,11 @@ export function AppSidebar() {
                         className="text-gray-500 mr-1"
                         delayDuration={100}
                       >
-                        {isLocal ? <Computer className="w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
+                        {isLocal ? (
+                          <Computer className="w-4 h-4" />
+                        ) : (
+                          <UploadCloud className="w-4 h-4" />
+                        )}
                       </TooltipIconButton>
                       <TooltipIconButton
                         variant="ghost"
