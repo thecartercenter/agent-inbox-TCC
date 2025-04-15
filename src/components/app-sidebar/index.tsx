@@ -92,9 +92,9 @@ export function AppSidebar() {
                               onClick={() => changeAgentInbox(item.id, true)}
                             >
                               {isDeployed ? (
-                                <UploadCloud className="w-5 h-5 text-blue-500 mr-2" />
+                                <UploadCloud className="w-5 h-5 text-blue-500" />
                               ) : (
-                                <House className="w-5 h-5 text-green-500 mr-2" />
+                                <House className="w-5 h-5 text-green-500" />
                               )}
                               <span
                                 className={cn(
