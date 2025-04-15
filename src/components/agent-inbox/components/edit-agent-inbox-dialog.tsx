@@ -11,24 +11,17 @@ import { Label } from "@/components/ui/label";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AGENT_INBOXES_LOCAL_STORAGE_KEY } from "../constants";
-import { PasswordInput } from "@/components/ui/password-input";
 import { AgentInbox } from "../types";
 import { Pencil } from "lucide-react";
 import { useLocalStorage } from "../hooks/use-local-storage";
 
 export function EditAgentInboxDialog({
   agentInbox,
-  langchainApiKey,
-  handleChangeLangChainApiKey,
 }: {
   /**
    * The agent inbox to edit
    */
   agentInbox: AgentInbox;
-  langchainApiKey?: string;
-  handleChangeLangChainApiKey?: (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => void;
 }) {
   const { getItem, setItem } = useLocalStorage();
   const { toast } = useToast();
@@ -103,12 +96,6 @@ export function EditAgentInboxDialog({
     }
   };
 
-  const isDeployedGraph = deploymentUrl.includes("default.us.langgraph.app");
-  const showLangChainApiKeyField =
-    langchainApiKey !== undefined &&
-    handleChangeLangChainApiKey &&
-    isDeployedGraph;
-
   return (
     <Dialog
       open={open}
@@ -182,28 +169,6 @@ export function EditAgentInboxDialog({
               onChange={(e) => setName(e.target.value)}
             />
           </div>
-          {showLangChainApiKeyField && (
-            <div className="flex flex-col items-start gap-2 w-full">
-              <div className="flex flex-col gap-1 w-full items-start">
-                <Label htmlFor="langchain-api-key">
-                  LangSmith API Key <span className="text-red-500">*</span>
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  This value is stored in your browser&apos;s local storage and
-                  is only used to authenticate requests sent to your LangGraph
-                  server.
-                </p>
-              </div>
-              <PasswordInput
-                id="langchain-api-key"
-                placeholder="lsv2_pt_..."
-                className="min-w-full"
-                required
-                value={langchainApiKey}
-                onChange={handleChangeLangChainApiKey}
-              />
-            </div>
-          )}
           <div className="grid grid-cols-2 gap-4">
             <Button variant="brand" type="submit">
               Save
