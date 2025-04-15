@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText, Trash2, Computer, UploadCloud } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
@@ -65,6 +65,13 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
+/**
+ * Determines if a URL is a local development URL.
+ */
+function isLocalUrl(url: string): boolean {
+  return url.startsWith("http://") || url.includes("localhost");
+}
+
 export function AppSidebar() {
   const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
     useThreadsContext();
@@ -108,6 +115,7 @@ export function AppSidebar() {
               <div className="flex flex-col gap-2 pl-7">
                 {agentInboxes.map((item, idx) => {
                   const label = item.name || prettifyText(item.graphId);
+                  const isLocal = isLocalUrl(item.deploymentUrl);
                   return (
                     <SidebarMenuItem
                       key={`graph-id-${item.graphId}-${idx}`}
@@ -147,6 +155,14 @@ export function AppSidebar() {
                           <TooltipContent>{label}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      <TooltipIconButton
+                        variant="ghost"
+                        tooltip={isLocal ? "Local" : "Deployed"}
+                        className="text-gray-500 mr-1"
+                        delayDuration={100}
+                      >
+                        {isLocal ? <Computer className="w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
+                      </TooltipIconButton>
                       <TooltipIconButton
                         variant="ghost"
                         tooltip="Delete"
