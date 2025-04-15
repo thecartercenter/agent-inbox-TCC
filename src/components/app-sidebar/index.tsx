@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { FileText, Trash2, Computer, UploadCloud } from "lucide-react";
+import { FileText, Trash2, Computer, UploadCloud, House } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
@@ -130,18 +130,10 @@ export function AppSidebar() {
                             <SidebarMenuButton
                               onClick={() => changeAgentInbox(item.id, true)}
                             >
-                              <div
-                                className="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-white"
-                                style={{
-                                  background:
-                                    gradients[
-                                      hashString(item.graphId) %
-                                        gradients.length
-                                    ],
-                                }}
-                              >
-                                {label.slice(0, 1).toUpperCase()}
-                              </div>
+                              {isLocal ? 
+                                <House className="w-5 h-5 text-green-500 mr-2" /> : 
+                                <UploadCloud className="w-5 h-5 text-blue-500 mr-2" />
+                              }
                               <span
                                 className={cn(
                                   "truncate min-w-0 font-medium",
@@ -152,21 +144,12 @@ export function AppSidebar() {
                               </span>
                             </SidebarMenuButton>
                           </TooltipTrigger>
-                          <TooltipContent>{label}</TooltipContent>
+                          <TooltipContent>
+                            {label} - {isLocal ? "Local" : "Deployed"}
+                          </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <TooltipIconButton
-                        variant="ghost"
-                        tooltip={isLocal ? "Local" : "Deployed"}
-                        className="text-gray-500 mr-1"
-                        delayDuration={100}
-                      >
-                        {isLocal ? (
-                          <Computer className="w-4 h-4" />
-                        ) : (
-                          <UploadCloud className="w-4 h-4" />
-                        )}
-                      </TooltipIconButton>
+                      
                       <TooltipIconButton
                         variant="ghost"
                         tooltip="Delete"
