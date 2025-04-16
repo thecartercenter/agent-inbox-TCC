@@ -1,8 +1,7 @@
-import { Thread } from "@langchain/langgraph-sdk";
 import { StateView } from "./components/state-view";
 import { ThreadActionsView } from "./components/thread-actions-view";
 import { useThreadsContext } from "./contexts/ThreadContext";
-import { HumanInterrupt, ThreadData } from "./types";
+import { ThreadData } from "./types";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "./hooks/use-query-params";
@@ -15,7 +14,7 @@ export function ThreadView<
   const { threadData: threads, loading } = useThreadsContext<ThreadValues>();
   const [threadData, setThreadData] =
     React.useState<ThreadData<ThreadValues>>();
-  const [showDescription, setShowDescription] = React.useState(true);
+  const [showDescription, setShowDescription] = React.useState(false);
   const [showState, setShowState] = React.useState(false);
   const showSidePanel = showDescription || showState;
 
@@ -35,6 +34,8 @@ export function ThreadView<
       );
       if (selectedThread) {
         setThreadData(selectedThread);
+        // Keep description hidden by default
+        setShowDescription(false);
         return;
       } else {
         // Route the user back to the inbox view.
@@ -65,12 +66,7 @@ export function ThreadView<
     }
   };
 
-  if (
-    !threadData ||
-    threadData.status !== "interrupted" ||
-    !threadData.interrupts ||
-    threadData.interrupts.length === 0
-  ) {
+  if (!threadData) {
     return null;
   }
 
@@ -83,13 +79,7 @@ export function ThreadView<
         )}
       >
         <ThreadActionsView<ThreadValues>
-          threadData={
-            threadData as {
-              thread: Thread<ThreadValues>;
-              status: "interrupted";
-              interrupts: HumanInterrupt[];
-            }
-          }
+          threadData={threadData}
           setThreadData={setThreadData}
           handleShowSidePanel={handleShowSidePanel}
           showState={showState}
