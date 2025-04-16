@@ -10,7 +10,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { FileText, Trash2, UploadCloud, House } from "lucide-react";
+import {
+  FileText,
+  Trash2,
+  UploadCloud,
+  House,
+  MoreVertical,
+} from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
 import { PillButton } from "../ui/pill-button";
@@ -143,7 +149,6 @@ export function AppSidebar() {
                           </div>
                         </PopoverContent>
                       </Popover>
-
                     </SidebarMenuItem>
                   );
                 })}
