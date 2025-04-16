@@ -19,6 +19,13 @@ export function ThreadView<
   const [showState, setShowState] = React.useState(false);
   const showSidePanel = showDescription || showState;
 
+  // Scroll to top when thread view is mounted
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   React.useEffect(() => {
     try {
       if (typeof window === "undefined") return;

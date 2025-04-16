@@ -133,9 +133,11 @@ export function ThreadActionsView<
       <div className="flex flex-wrap items-center justify-between w-full gap-3">
         <div className="flex items-center justify-start gap-3">
           <TooltipIconButton
+            tooltip="Back to inbox"
             variant="ghost"
-            onClick={() => updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM)}
-            tooltip="Back"
+            onClick={() => {
+              updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+            }}
           >
             <ArrowLeft className="w-5 h-5" />
           </TooltipIconButton>
