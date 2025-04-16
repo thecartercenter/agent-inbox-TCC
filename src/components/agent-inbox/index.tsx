@@ -39,10 +39,6 @@ export function AgentInbox<
 
     // Case 1: Going from list view to thread view
     if (!prevIsStateViewOpen.current && isStateViewOpen) {
-      console.log(
-        "Transitioning from list to thread view, saving scroll position..."
-      );
-
       // Try to save scroll position
       if (window.scrollY > 0) {
         saveScrollPosition(); // Save window scroll
@@ -52,10 +48,6 @@ export function AgentInbox<
     }
     // Case 2: Going from thread view to list view
     else if (prevIsStateViewOpen.current && !isStateViewOpen) {
-      console.log(
-        "Transitioning back to list view, restoring scroll position..."
-      );
-
       // Try multiple times to restore scroll with increasing delays
       const maxAttempts = 5;
 
@@ -63,7 +55,6 @@ export function AgentInbox<
         setTimeout(
           () => {
             if (containerRef.current) {
-              console.log(`Restore attempt ${i + 1}/${maxAttempts}`);
               restoreScrollPosition(containerRef.current);
             }
           },
@@ -77,9 +68,7 @@ export function AgentInbox<
       isStateViewOpen &&
       lastThreadId.current !== selectedThreadIdParam
     ) {
-      console.log(
-        "Switching between different threads, no scroll action needed"
-      );
+      // No action needed when switching between thread views
     }
 
     // Update previous state for next render

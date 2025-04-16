@@ -102,13 +102,6 @@ export function AgentInboxView<
   );
   const noThreadsFound = !threadDataToRender.length;
 
-  // Save the parent component reference to the main container
-  React.useEffect(() => {
-    if (containerRef.current) {
-      console.log("Container ref set to main container element");
-    }
-  }, [containerRef.current]);
-
   // Correct way to save scroll position before navigation
   const handleThreadClick = () => {
     // First try the inner scrollable div
@@ -116,41 +109,35 @@ export function AgentInboxView<
       scrollableContentRef.current &&
       scrollableContentRef.current.scrollTop > 0
     ) {
-      console.log(
-        `Saving inner scroll position: ${scrollableContentRef.current.scrollTop}px`
-      );
       saveScrollPosition(scrollableContentRef.current);
     }
     // Then try the outer container
     else if (containerRef.current && containerRef.current.scrollTop > 0) {
-      console.log(
-        `Saving main container scroll position: ${containerRef.current.scrollTop}px`
-      );
       saveScrollPosition(containerRef.current);
     }
     // Finally try window
     else if (window.scrollY > 0) {
-      console.log(`Saving window scroll position: ${window.scrollY}px`);
       saveScrollPosition();
     }
-    // If none have scroll, check why
+    // If none have scroll, find scrollable elements as fallback
     else {
-      console.log(
-        "Warning: No scroll position detected! Element structure may have changed."
-      );
-
-      // Find all scrollable elements and log their scroll positions (for debugging)
       const scrollableElements = document.querySelectorAll(
         '[class*="overflow"]'
       );
-      scrollableElements.forEach((el, i) => {
+      scrollableElements.forEach((el) => {
         const htmlEl = el as HTMLElement;
         if (htmlEl.scrollTop > 0) {
-          console.log(`Found scrollable element ${i}: ${htmlEl.scrollTop}px`);
+          saveScrollPosition(htmlEl);
+          return;
         }
       });
     }
   };
+
+  // And remove the Container ref set console log
+  React.useEffect(() => {
+    // Just track ref setup without logging
+  }, [containerRef.current]);
 
   return (
     <div ref={containerRef} className="min-w-[1000px] h-full overflow-y-auto">
