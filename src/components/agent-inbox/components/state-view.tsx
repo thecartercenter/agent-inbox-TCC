@@ -10,10 +10,17 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BaseMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
+import React from "react";
 import { Button } from "../../ui/button";
 import { ToolCallTable } from "./tool-call-table";
 import { MarkdownText } from "@/components/ui/markdown-text";
 import { ThreadData } from "../types";
+import {
+  EmptyStateView,
+  InterruptedDescriptionView,
+  NonInterruptedDescriptionView,
+  ThreadStateView,
+} from "./views";
 
 interface StateViewRecursiveProps {
   value: unknown;
@@ -247,7 +254,6 @@ export function StateView({
   view,
 }: StateViewComponentProps) {
   const [expanded, setExpanded] = useState(false);
-
   const threadValues = threadData.thread.values;
   const description = threadData.interrupts?.[0]?.description;
   const isInterrupted =
@@ -256,31 +262,22 @@ export function StateView({
     threadData.interrupts.length > 0;
 
   if (!threadValues) {
-    return <div>No state found</div>;
+    return <EmptyStateView />;
   }
 
   return (
-    <div className="overflow-y-auto pl-6 border-t-[1px] lg:border-t-[0px] lg:border-l-[1px] border-gray-100 flex flex-row gap-0 w-full">
+    <div className="overflow-y-auto pl-6 border-t-[1px] lg:border-t-[0px] lg:border-l-[1px] border-gray-100 flex flex-row gap-0 w-full relative">
       {view === "description" && isInterrupted && (
-        <div className="pt-6 pb-2">
-          <MarkdownText className="text-wrap break-words whitespace-pre-wrap">
-            {description || "No description provided"}
-          </MarkdownText>
-        </div>
+        <InterruptedDescriptionView description={description} />
+      )}
+      {view === "description" && !isInterrupted && (
+        <NonInterruptedDescriptionView />
       )}
       {view === "state" && (
-        <div className="flex flex-col items-start justify-start gap-1 pt-6 pb-2">
-          {Object.entries(threadValues).map(([k, v], idx) => (
-            <StateViewObject
-              expanded={expanded}
-              key={`state-view-${k}-${idx}`}
-              keyName={k}
-              value={v}
-            />
-          ))}
-        </div>
+        <ThreadStateView threadValues={threadValues} expanded={expanded} />
       )}
-      <div className="flex gap-2 items-start justify-end pt-6 pr-6">
+
+      <div className="absolute top-6 right-6 flex gap-2">
         {view === "state" && (
           <Button
             onClick={() => setExpanded((prev) => !prev)}
@@ -295,7 +292,6 @@ export function StateView({
             )}
           </Button>
         )}
-
         <Button
           onClick={() => handleShowSidePanel(false, false)}
           variant="ghost"
