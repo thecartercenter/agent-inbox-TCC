@@ -10,10 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
-import { AGENT_INBOXES_LOCAL_STORAGE_KEY } from "../constants";
 import { AgentInbox } from "../types";
 import { Pencil } from "lucide-react";
-import { useLocalStorage } from "../hooks/use-local-storage";
+import { useInboxes } from "../hooks/use-inboxes";
 
 export function EditAgentInboxDialog({
   agentInbox,
@@ -23,7 +22,7 @@ export function EditAgentInboxDialog({
    */
   agentInbox: AgentInbox;
 }) {
-  const { getItem, setItem } = useLocalStorage();
+  const { updateAgentInbox } = useInboxes();
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [graphId, setGraphId] = React.useState(agentInbox.graphId);
@@ -43,36 +42,14 @@ export function EditAgentInboxDialog({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Get current inboxes from local storage
-    const agentInboxesStr = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
-    if (!agentInboxesStr) {
-      toast({
-        title: "Error",
-        description: "Could not find agent inboxes",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return;
-    }
-
     try {
-      const agentInboxes: AgentInbox[] = JSON.parse(agentInboxesStr);
-
-      // Update the specific inbox
-      const updatedInboxes = agentInboxes.map((inbox) => {
-        if (inbox.id === agentInbox.id) {
-          return {
-            ...inbox,
-            graphId,
-            deploymentUrl,
-            name,
-          };
-        }
-        return inbox;
+      // Update the inbox using the hook's function
+      updateAgentInbox({
+        ...agentInbox,
+        graphId,
+        deploymentUrl,
+        name,
       });
-
-      // Save back to local storage
-      setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify(updatedInboxes));
 
       toast({
         title: "Success",
