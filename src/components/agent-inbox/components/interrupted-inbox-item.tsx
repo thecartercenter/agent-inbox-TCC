@@ -37,13 +37,13 @@ export function InterruptedInboxItem<
 
   const handleThreadClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent default click behavior
-    
+
     // First call the onThreadClick callback provided by the parent
     // This now contains the improved scroll detection logic
     if (onThreadClick) {
       onThreadClick();
     }
-    
+
     // Then navigate to thread view after a short delay
     // to ensure scroll position is properly saved
     setTimeout(() => {
