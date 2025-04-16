@@ -10,11 +10,12 @@ interface InboxItemProps<
 > {
   threadData: ThreadData<ThreadValues>;
   isLast: boolean;
+  onThreadClick?: () => void;
 }
 
 export function InboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
->({ threadData, isLast }: InboxItemProps<ThreadValues>) {
+>({ threadData, isLast, onThreadClick }: InboxItemProps<ThreadValues>) {
   const { searchParams } = useQueryParams();
 
   const inbox = (searchParams.get(INBOX_PARAM) ||
@@ -31,6 +32,7 @@ export function InboxItem<
               }
             }
             isLast={isLast}
+            onThreadClick={onThreadClick}
           />
         );
       } else {
@@ -58,6 +60,7 @@ export function InboxItem<
             }
           }
           isLast={isLast}
+          onThreadClick={onThreadClick}
         />
       );
     } else {

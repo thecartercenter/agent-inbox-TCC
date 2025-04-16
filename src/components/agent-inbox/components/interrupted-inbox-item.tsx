@@ -16,11 +16,12 @@ interface InterruptedInboxItem<
     interrupts: HumanInterrupt[];
   };
   isLast: boolean;
+  onThreadClick?: () => void;
 }
 
 export function InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
->({ threadData, isLast }: InterruptedInboxItem<ThreadValues>) {
+>({ threadData, isLast, onThreadClick }: InterruptedInboxItem<ThreadValues>) {
   const { updateQueryParams } = useQueryParams();
   const descriptionPreview =
     threadData.interrupts[0].description &&
@@ -34,14 +35,28 @@ export function InterruptedInboxItem<
     "MM/dd h:mm a"
   );
 
+  const handleThreadClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default click behavior
+    
+    // First call the onThreadClick callback provided by the parent
+    // This now contains the improved scroll detection logic
+    if (onThreadClick) {
+      onThreadClick();
+    }
+    
+    // Then navigate to thread view after a short delay
+    // to ensure scroll position is properly saved
+    setTimeout(() => {
+      updateQueryParams(
+        VIEW_STATE_THREAD_QUERY_PARAM,
+        threadData.thread.thread_id
+      );
+    }, 50);
+  };
+
   return (
     <div
-      onClick={() =>
-        updateQueryParams(
-          VIEW_STATE_THREAD_QUERY_PARAM,
-          threadData.thread.thread_id
-        )
-      }
+      onClick={handleThreadClick}
       className={cn(
         "grid grid-cols-12 w-full p-6 items-center cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out",
         !isLast && "border-b-[1px] border-gray-200"
