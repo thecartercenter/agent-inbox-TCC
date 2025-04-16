@@ -1,8 +1,7 @@
-import { Thread } from "@langchain/langgraph-sdk";
 import { StateView } from "./components/state-view";
 import { ThreadActionsView } from "./components/thread-actions-view";
 import { useThreadsContext } from "./contexts/ThreadContext";
-import { HumanInterrupt, ThreadData } from "./types";
+import { ThreadData } from "./types";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "./hooks/use-query-params";
@@ -58,12 +57,7 @@ export function ThreadView<
     }
   };
 
-  if (
-    !threadData ||
-    threadData.status !== "interrupted" ||
-    !threadData.interrupts ||
-    threadData.interrupts.length === 0
-  ) {
+  if (!threadData) {
     return null;
   }
 
@@ -76,13 +70,7 @@ export function ThreadView<
         )}
       >
         <ThreadActionsView<ThreadValues>
-          threadData={
-            threadData as {
-              thread: Thread<ThreadValues>;
-              status: "interrupted";
-              interrupts: HumanInterrupt[];
-            }
-          }
+          threadData={threadData}
           setThreadData={setThreadData}
           handleShowSidePanel={handleShowSidePanel}
           showState={showState}
