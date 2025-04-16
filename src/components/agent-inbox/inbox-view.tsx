@@ -134,11 +134,6 @@ export function AgentInboxView<
     }
   };
 
-  // And remove the Container ref set console log
-  React.useEffect(() => {
-    // Just track ref setup without logging
-  }, [containerRef.current]);
-
   return (
     <div ref={containerRef} className="min-w-[1000px] h-full overflow-y-auto">
       <div className="pl-5 pt-4">

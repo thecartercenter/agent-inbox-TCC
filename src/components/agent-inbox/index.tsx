@@ -5,6 +5,7 @@ import { ThreadStatusWithAll } from "./types";
 import { AgentInboxView } from "./inbox-view";
 import { ThreadView } from "./thread-view";
 import { useScrollPosition } from "./hooks/use-scroll-position";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export function AgentInbox<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -17,13 +18,19 @@ export function AgentInbox<
 
   const selectedThreadIdParam = searchParams.get(VIEW_STATE_THREAD_QUERY_PARAM);
   const isStateViewOpen = !!selectedThreadIdParam;
-  const prevIsStateViewOpen = React.useRef<boolean>(false);
+  const prevIsStateViewOpen = React.useRef(false);
 
   // Need to track first render to avoid restoring scroll on initial page load
   const isFirstRender = React.useRef(true);
 
   // Track URL changes to detect when the thread ID changes (not just appears/disappears)
   const lastThreadId = React.useRef<string | null>(null);
+
+  // Track navigation events using pathname and search params from Next.js
+  const pathname = usePathname();
+  const nextSearchParams = useSearchParams();
+  const navigationSignature = `${pathname}?${nextSearchParams}`;
+  const prevNavigationSignature = React.useRef("");
 
   // Effect to handle transitions between list and thread views
   React.useEffect(() => {
@@ -34,6 +41,7 @@ export function AgentInbox<
       isFirstRender.current = false;
       prevIsStateViewOpen.current = isStateViewOpen;
       lastThreadId.current = selectedThreadIdParam;
+      prevNavigationSignature.current = navigationSignature;
       return;
     }
 
@@ -46,40 +54,46 @@ export function AgentInbox<
         saveScrollPosition(containerRef.current);
       }
     }
-    // Case 2: Going from thread view to list view
-    else if (prevIsStateViewOpen.current && !isStateViewOpen) {
-      // Try multiple times to restore scroll with increasing delays
-      const maxAttempts = 5;
-
-      for (let i = 0; i < maxAttempts; i++) {
-        setTimeout(
-          () => {
-            if (containerRef.current) {
-              restoreScrollPosition(containerRef.current);
-            }
-          },
-          50 * (i + 1)
-        );
-      }
-    }
-    // Case 3: Switching between different thread views
-    else if (
-      prevIsStateViewOpen.current &&
-      isStateViewOpen &&
-      lastThreadId.current !== selectedThreadIdParam
-    ) {
-      // No action needed when switching between thread views
-    }
 
     // Update previous state for next render
     prevIsStateViewOpen.current = isStateViewOpen;
     lastThreadId.current = selectedThreadIdParam;
+    prevNavigationSignature.current = navigationSignature;
   }, [
     isStateViewOpen,
     selectedThreadIdParam,
     saveScrollPosition,
-    restoreScrollPosition,
+    navigationSignature,
   ]);
+
+  // Dedicated effect for handling scroll restoration when returning to list view
+  React.useLayoutEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      isFirstRender.current ||
+      isStateViewOpen
+    ) {
+      return;
+    }
+
+    // Detect navigation (including back button) by checking URL changes
+    const isNavigationEvent =
+      prevNavigationSignature.current !== navigationSignature;
+
+    // Only run when switching from thread view to list view
+    if (
+      (prevIsStateViewOpen.current && !isStateViewOpen) ||
+      isNavigationEvent
+    ) {
+      // Use layout effect to run synchronously after DOM mutations but before browser paint
+      if (containerRef.current) {
+        restoreScrollPosition(containerRef.current);
+      } else {
+        // Fallback to window scroll
+        restoreScrollPosition();
+      }
+    }
+  }, [isStateViewOpen, restoreScrollPosition, navigationSignature]);
 
   React.useEffect(() => {
     try {

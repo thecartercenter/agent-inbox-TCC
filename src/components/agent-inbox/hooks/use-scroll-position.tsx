@@ -44,10 +44,22 @@ export function useScrollPosition() {
       window.requestAnimationFrame(() => {
         // Try the provided element first
         if (element && elementType === "element") {
-          element.scrollTop = position;
+          // Use scrollTo with smooth behavior if supported
+          if ("scrollTo" in element) {
+            element.scrollTo({
+              top: position,
+              behavior: "smooth",
+            });
+          } else {
+            // Fallback for older browsers
+            (element as HTMLElement).scrollTop = position;
+          }
         } else {
-          // Fall back to window scroll
-          window.scrollTo(0, position);
+          // Fall back to window scroll with smooth behavior
+          window.scrollTo({
+            top: position,
+            behavior: "smooth",
+          });
         }
       });
     },

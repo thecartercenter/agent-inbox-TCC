@@ -43,13 +43,12 @@ export function InterruptedInboxItem<
       onThreadClick();
     }
 
-    // Small delay to ensure scroll position is captured before navigation
-    setTimeout(() => {
-      updateQueryParams(
-        VIEW_STATE_THREAD_QUERY_PARAM,
-        threadData.thread.thread_id
-      );
-    }, 50);
+    // Navigate immediately using the NextJS router approach
+    // The scroll option is set to false in updateQueryParams to prevent auto-scrolling
+    updateQueryParams(
+      VIEW_STATE_THREAD_QUERY_PARAM,
+      threadData.thread.thread_id
+    );
   };
 
   return (
