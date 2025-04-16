@@ -1,6 +1,5 @@
 "use client";
 
-import { v4 as uuidv4, validate } from "uuid";
 import {
   AgentInbox,
   HumanInterrupt,
@@ -23,10 +22,7 @@ import {
   INBOX_PARAM,
   LIMIT_PARAM,
   OFFSET_PARAM,
-  AGENT_INBOX_PARAM,
-  AGENT_INBOXES_LOCAL_STORAGE_KEY,
   LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
-  NO_INBOXES_FOUND_PARAM,
 } from "../constants";
 import {
   getInterruptFromThread,
@@ -35,6 +31,7 @@ import {
   processThreadWithoutInterrupts,
 } from "./utils";
 import { useLocalStorage } from "../hooks/use-local-storage";
+import { useInboxes } from "../hooks/use-inboxes";
 
 type ThreadContentType<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -46,6 +43,7 @@ type ThreadContentType<
   deleteAgentInbox: (id: string) => void;
   changeAgentInbox: (graphId: string, replaceAll?: boolean) => void;
   addAgentInbox: (agentInbox: AgentInbox) => void;
+  updateAgentInbox: (updatedInbox: AgentInbox) => void;
   ignoreThread: (threadId: string) => Promise<void>;
   fetchThreads: (inbox: ThreadStatusWithAll) => Promise<void>;
   sendHumanResponse: <TStream extends boolean = false>(
@@ -124,15 +122,23 @@ const getClient = ({ agentInboxes, getItem, toast }: GetClientArgs) => {
 export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ children }: { children: React.ReactNode }) {
-  const { getSearchParam, searchParams, updateQueryParams } = useQueryParams();
-  const { getItem, setItem } = useLocalStorage();
+  const { getSearchParam, searchParams } = useQueryParams();
+  const { getItem } = useLocalStorage();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [threadData, setThreadData] = React.useState<
     ThreadData<ThreadValues>[]
   >([]);
   const [hasMoreThreads, setHasMoreThreads] = React.useState(true);
-  const [agentInboxes, setAgentInboxes] = React.useState<AgentInbox[]>([]);
+
+  // Using the new useInboxes hook
+  const {
+    agentInboxes,
+    addAgentInbox,
+    deleteAgentInbox,
+    changeAgentInbox,
+    updateAgentInbox,
+  } = useInboxes();
 
   const limitParam = searchParams.get(LIMIT_PARAM);
   const offsetParam = searchParams.get(OFFSET_PARAM);
@@ -155,188 +161,6 @@ export function ThreadsProvider<
       console.error("Error occurred while fetching threads", e);
     }
   }, [limitParam, offsetParam, inboxParam, agentInboxes]);
-
-  const agentInboxParam = searchParams.get(AGENT_INBOX_PARAM);
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    try {
-      getAgentInboxes();
-    } catch (e) {
-      console.error("Error occurred while fetching agent inboxes", e);
-    }
-  }, [agentInboxParam]);
-
-  const getAgentInboxes = React.useCallback(async () => {
-    const agentInboxSearchParam = getSearchParam(AGENT_INBOX_PARAM);
-    const agentInboxes = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
-    if (!agentInboxes || !agentInboxes.length) {
-      updateQueryParams(NO_INBOXES_FOUND_PARAM, "true");
-      return;
-    }
-    let parsedAgentInboxes: AgentInbox[] = [];
-    try {
-      parsedAgentInboxes = JSON.parse(agentInboxes);
-    } catch (error) {
-      console.error("Error parsing agent inboxes", error);
-      toast({
-        title: "Error",
-        description: "Agent inbox not found. Please add an inbox in settings.",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return;
-    }
-
-    if (!parsedAgentInboxes.length) {
-      const noInboxesFoundParam = searchParams.get(NO_INBOXES_FOUND_PARAM);
-      if (noInboxesFoundParam !== "true") {
-        updateQueryParams(NO_INBOXES_FOUND_PARAM, "true");
-      }
-      return;
-    }
-
-    // Ensure each agent inbox has an ID, and if not, add one
-    parsedAgentInboxes = parsedAgentInboxes.map((i) => {
-      return {
-        ...i,
-        id: i.id || uuidv4(),
-      };
-    });
-
-    // If there is no agent inbox search param, or the search param is not
-    // a valid UUID, update search param and local storage
-    if (!agentInboxSearchParam || !validate(agentInboxSearchParam)) {
-      const selectedInbox = parsedAgentInboxes.find((i) => i.selected);
-      if (!selectedInbox) {
-        parsedAgentInboxes[0].selected = true;
-        updateQueryParams(AGENT_INBOX_PARAM, parsedAgentInboxes[0].id);
-        setAgentInboxes(parsedAgentInboxes);
-        setItem(
-          AGENT_INBOXES_LOCAL_STORAGE_KEY,
-          JSON.stringify(parsedAgentInboxes)
-        );
-      } else {
-        updateQueryParams(AGENT_INBOX_PARAM, selectedInbox.id);
-        setAgentInboxes(parsedAgentInboxes);
-        setItem(
-          AGENT_INBOXES_LOCAL_STORAGE_KEY,
-          JSON.stringify(parsedAgentInboxes)
-        );
-      }
-      return;
-    }
-
-    const selectedInbox = parsedAgentInboxes.find(
-      (i) =>
-        i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam
-    );
-    if (!selectedInbox) {
-      toast({
-        title: "Error",
-        description: "Agent inbox not found. Please add an inbox in settings.",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return;
-    }
-
-    parsedAgentInboxes = parsedAgentInboxes.map((i) => {
-      return {
-        ...i,
-        selected:
-          i.id === agentInboxSearchParam || i.graphId === agentInboxSearchParam,
-      };
-    });
-    setAgentInboxes(parsedAgentInboxes);
-    setItem(
-      AGENT_INBOXES_LOCAL_STORAGE_KEY,
-      JSON.stringify(parsedAgentInboxes)
-    );
-  }, []);
-
-  const addAgentInbox = React.useCallback((agentInbox: AgentInbox) => {
-    const agentInboxes = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
-    if (!agentInboxes || !agentInboxes.length) {
-      setAgentInboxes([agentInbox]);
-      setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([agentInbox]));
-      // Use URL replacement to fully refresh with new inbox
-      const url = new URL(window.location.href);
-      const newParams = new URLSearchParams({
-        [AGENT_INBOX_PARAM]: agentInbox.id,
-        [INBOX_PARAM]: "interrupted", // Default inbox type
-        [OFFSET_PARAM]: "0",
-        [LIMIT_PARAM]: "10",
-      });
-      const newUrl = url.pathname + "?" + newParams.toString();
-      window.location.href = newUrl;
-      return;
-    }
-    const parsedAgentInboxes = JSON.parse(agentInboxes);
-    parsedAgentInboxes.push(agentInbox);
-    setAgentInboxes(parsedAgentInboxes);
-    setItem(
-      AGENT_INBOXES_LOCAL_STORAGE_KEY,
-      JSON.stringify(parsedAgentInboxes)
-    );
-    // Use URL replacement to fully refresh with new inbox
-    const url = new URL(window.location.href);
-    const newParams = new URLSearchParams({
-      [AGENT_INBOX_PARAM]: agentInbox.id,
-      [INBOX_PARAM]: "interrupted", // Default inbox type
-      [OFFSET_PARAM]: "0",
-      [LIMIT_PARAM]: "10",
-    });
-    const newUrl = url.pathname + "?" + newParams.toString();
-    window.location.href = newUrl;
-  }, []);
-
-  const deleteAgentInbox = React.useCallback((id: string) => {
-    const agentInboxes = getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
-    if (!agentInboxes || !agentInboxes.length) {
-      return;
-    }
-    const parsedAgentInboxes: AgentInbox[] = JSON.parse(agentInboxes);
-    const updatedAgentInboxes = parsedAgentInboxes.filter((i) => i.id !== id);
-
-    if (!updatedAgentInboxes.length) {
-      updateQueryParams(NO_INBOXES_FOUND_PARAM, "true");
-      setAgentInboxes([]);
-      setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([]));
-      // Clear all query params
-      const url = new URL(window.location.href);
-      window.location.href = url.pathname;
-      return;
-    }
-
-    setAgentInboxes(updatedAgentInboxes);
-    setItem(
-      AGENT_INBOXES_LOCAL_STORAGE_KEY,
-      JSON.stringify(updatedAgentInboxes)
-    );
-    changeAgentInbox(updatedAgentInboxes[0].id, true);
-  }, []);
-
-  const changeAgentInbox = (id: string, replaceAll?: boolean) => {
-    setAgentInboxes((prev) =>
-      prev.map((i) => ({
-        ...i,
-        selected: i.id === id,
-      }))
-    );
-    if (!replaceAll) {
-      updateQueryParams(AGENT_INBOX_PARAM, id);
-    } else {
-      const url = new URL(window.location.href);
-      const newParams = new URLSearchParams({
-        [AGENT_INBOX_PARAM]: id,
-      });
-      const newUrl = url.pathname + "?" + newParams.toString();
-      window.location.href = newUrl;
-    }
-  };
 
   const fetchThreads = React.useCallback(
     async (inbox: ThreadStatusWithAll) => {
@@ -447,7 +271,7 @@ export function ThreadsProvider<
       }
       setLoading(false);
     },
-    [agentInboxes]
+    [agentInboxes, getItem, getSearchParam, toast]
   );
 
   const fetchSingleThread = React.useCallback(
@@ -628,6 +452,7 @@ export function ThreadsProvider<
     deleteAgentInbox,
     changeAgentInbox,
     addAgentInbox,
+    updateAgentInbox,
     ignoreThread,
     sendHumanResponse,
     fetchThreads,

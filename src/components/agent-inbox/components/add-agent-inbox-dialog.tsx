@@ -19,6 +19,7 @@ import {
   NO_INBOXES_FOUND_PARAM,
 } from "../constants";
 import { PasswordInput } from "@/components/ui/password-input";
+import { isDeployedUrl } from "../utils";
 
 export function AddAgentInboxDialog({
   hideTrigger,
@@ -79,7 +80,7 @@ export function AddAgentInboxDialog({
     setOpen(false);
   };
 
-  const isDeployedGraph = deploymentUrl.includes("default.us.langgraph.app");
+  const isDeployedGraph = isDeployedUrl(deploymentUrl);
   const showLangChainApiKeyField =
     noInboxesFoundParam === "true" &&
     langchainApiKey !== undefined &&
