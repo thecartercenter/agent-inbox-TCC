@@ -16,6 +16,7 @@ import {
   UploadCloud,
   House,
   MoreVertical,
+  Pencil,
 } from "lucide-react";
 import { agentInboxSvg } from "../agent-inbox/components/agent-inbox-logo";
 import { SettingsPopover } from "../agent-inbox/components/settings-popover";
@@ -38,9 +39,14 @@ import {
 } from "../ui/tooltip";
 import { AddAgentInboxDialog } from "../agent-inbox/components/add-agent-inbox-dialog";
 import { useLocalStorage } from "../agent-inbox/hooks/use-local-storage";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { EditAgentInboxDialog } from "../agent-inbox/components/edit-agent-inbox-dialog";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 export function AppSidebar() {
   const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
     useThreadsContext();
@@ -119,36 +125,42 @@ export function AppSidebar() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <TooltipIconButton
-                            variant="ghost"
-                            tooltip="Options"
-                            className="text-gray-800 hover:text-gray-600 transition-colors ease-in-out duration-200"
-                            delayDuration={100}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button className="px-2" variant="ghost">
+                            <MoreVertical className="w-4 h-4 cursor-pointer text-gray-800 hover:text-gray-600 transition-colors ease-in-out duration-200" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem
+                            className="cursor-pointer flex items-center gap-2"
                             onClick={(e) => {
                               e.stopPropagation();
+                              // Find the Edit button in the EditAgentInboxDialog and click it
+                              const editButton = document.querySelector(
+                                `[data-agent-inbox-id="${item.id}"]`
+                              ) as HTMLButtonElement;
+                              editButton?.click();
                             }}
                           >
-                            <MoreVertical className="w-4 h-4" />
-                          </TooltipIconButton>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-40 p-2">
-                          <div className="flex flex-col gap-1">
-                            <EditAgentInboxDialog agentInbox={item} />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteAgentInbox(item.id);
-                              }}
-                              className="flex items-center gap-2 w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 text-red-500"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span>Delete</span>
-                            </button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                            <Pencil className="w-4 h-4" />
+                            <span>Edit</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-red-500 focus:text-red-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAgentInbox(item.id);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <div className="hidden">
+                        <EditAgentInboxDialog agentInbox={item} />
+                      </div>
                     </SidebarMenuItem>
                   );
                 })}

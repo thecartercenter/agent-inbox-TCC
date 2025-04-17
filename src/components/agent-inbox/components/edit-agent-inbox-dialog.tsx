@@ -84,6 +84,7 @@ export function EditAgentInboxDialog({
         <button
           className="flex items-center gap-2 w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100"
           onClick={(e) => e.stopPropagation()}
+          data-agent-inbox-id={agentInbox.id}
         >
           <Pencil className="w-4 h-4" />
           <span>Edit</span>
@@ -153,7 +154,9 @@ export function EditAgentInboxDialog({
             <Button
               variant="outline"
               type="reset"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+              }}
             >
               Cancel
             </Button>
