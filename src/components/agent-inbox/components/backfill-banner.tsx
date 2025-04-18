@@ -84,7 +84,7 @@ export function BackfillBanner() {
       <AlertTitle>Update Your Inboxes</AlertTitle>
       <AlertDescription className="flex flex-col gap-2">
         <p>
-          Weve updated how inbox IDs are generated to better support sharing
+          We have updated how inbox IDs are generated to better support sharing
           links across machines. Your existing inboxes need to be updated.
         </p>
         <div className="flex gap-2 mt-2">

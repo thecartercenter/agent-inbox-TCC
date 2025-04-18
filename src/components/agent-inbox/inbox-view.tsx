@@ -184,7 +184,7 @@ export function AgentInboxView<
             {agentInboxes.length > 0 && (
               <div className="flex flex-col items-center">
                 <p className="text-sm text-gray-500 mb-2">
-                  If youre expecting to see inboxes but dont, try refreshing
+                  If you are expecting to see inboxes but dont, try refreshing
                   your inbox IDs:
                 </p>
                 <Button onClick={handleRefreshInboxes}>
