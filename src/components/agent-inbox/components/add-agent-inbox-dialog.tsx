@@ -17,9 +17,12 @@ import { useQueryParams } from "../hooks/use-query-params";
 import {
   AGENT_INBOX_GITHUB_README_URL,
   NO_INBOXES_FOUND_PARAM,
+  LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
 } from "../constants";
 import { PasswordInput } from "@/components/ui/password-input";
-import { isDeployedUrl } from "../utils";
+import { isDeployedUrl, fetchDeploymentInfo } from "../utils";
+import { useLocalStorage } from "../hooks/use-local-storage";
+import { LoaderCircle } from "lucide-react";
 
 export function AddAgentInboxDialog({
   hideTrigger,
@@ -38,10 +41,13 @@ export function AddAgentInboxDialog({
   const { searchParams, updateQueryParams } = useQueryParams();
   const { toast } = useToast();
   const { addAgentInbox } = useThreadsContext();
+  const { getItem } = useLocalStorage();
   const [open, setOpen] = React.useState(false);
   const [graphId, setGraphId] = React.useState("");
   const [deploymentUrl, setDeploymentUrl] = React.useState("");
   const [name, setName] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   const noInboxesFoundParam = searchParams.get(NO_INBOXES_FOUND_PARAM);
 
@@ -58,31 +64,89 @@ export function AddAgentInboxDialog({
     }
   }, [noInboxesFoundParam]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    addAgentInbox({
-      id: uuidv4(),
-      graphId,
-      deploymentUrl,
-      name,
-      selected: true,
-    });
-    toast({
-      title: "Success",
-      description: "Agent inbox added successfully",
-      duration: 3000,
-    });
-    updateQueryParams(NO_INBOXES_FOUND_PARAM);
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    
+    try {
+      const isDeployed = isDeployedUrl(deploymentUrl);
+      let inboxId = uuidv4();
+      let tenantId: string | undefined = undefined;
+      
+      // For deployed graphs, get the deployment info to generate the ID
+      if (isDeployed) {
+        console.log("Deployed graph detected, getting info from:", deploymentUrl);
+        
+        // Get the LangChain API key from local storage or props
+        const storedApiKey = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
+        const apiKey = langchainApiKey || storedApiKey;
+        
+        if (!apiKey && deploymentUrl.includes("langgraph.app")) {
+          setErrorMessage("API key is required for deployed LangGraph instances");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Fetch deployment info
+        try {
+          const deploymentInfo = await fetchDeploymentInfo(deploymentUrl, apiKey);
+          console.log("Got deployment info:", deploymentInfo);
+          
+          if (deploymentInfo?.host?.project_id) {
+            // Generate ID in format: project_id:graphId
+            inboxId = `${deploymentInfo.host.project_id}:${graphId}`;
+            tenantId = deploymentInfo.host.tenant_id || undefined;
+            console.log(`Created new inbox ID: ${inboxId}`);
+          } else {
+            console.log("No project_id in deployment info, using UUID");
+          }
+        } catch (error) {
+          console.error("Error fetching deployment info:", error);
+          setErrorMessage("Failed to get deployment info. Check your API key and deployment URL.");
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        console.log("Local graph, using UUID for inbox ID");
+      }
 
-    setGraphId("");
-    setDeploymentUrl("");
-    setName("");
-    setOpen(false);
+      // Add the inbox with the generated ID
+      console.log("Adding inbox with ID:", inboxId);
+      addAgentInbox({
+        id: inboxId,
+        graphId,
+        deploymentUrl,
+        name,
+        selected: true,
+        tenantId,
+      });
+
+      toast({
+        title: "Success",
+        description: "Agent inbox added successfully",
+        duration: 3000,
+      });
+      updateQueryParams(NO_INBOXES_FOUND_PARAM);
+
+      setGraphId("");
+      setDeploymentUrl("");
+      setName("");
+      setOpen(false);
+      
+      // Force page reload to ensure the new inbox appears
+      window.location.reload();
+    } catch (error) {
+      console.error("Error adding agent inbox:", error);
+      setErrorMessage("Failed to add the agent inbox. Please try again or check the console for details.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isDeployedGraph = isDeployedUrl(deploymentUrl);
   const showLangChainApiKeyField =
-    noInboxesFoundParam === "true" &&
+    (noInboxesFoundParam === "true" || isDeployedGraph) &&
     langchainApiKey !== undefined &&
     handleChangeLangChainApiKey &&
     isDeployedGraph;
@@ -203,9 +267,26 @@ export function AddAgentInboxDialog({
               />
             </div>
           )}
+          
+          {errorMessage && (
+            <div className="text-red-500 text-sm w-full">{errorMessage}</div>
+          )}
+          
           <div className="grid grid-cols-2 gap-4">
-            <Button variant="brand" type="submit">
-              Submit
+            <Button
+              variant="outline"
+              className="w-full"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Inbox"
+              )}
             </Button>
             <Button
               variant="outline"

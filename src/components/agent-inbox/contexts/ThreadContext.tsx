@@ -14,15 +14,17 @@ import {
   Thread,
   ThreadState,
   ThreadStatus,
+  Client,
 } from "@langchain/langgraph-sdk";
 import { END } from "@langchain/langgraph/web";
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQueryParams } from "../hooks/use-query-params";
 import {
   INBOX_PARAM,
   LIMIT_PARAM,
   OFFSET_PARAM,
   LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
+  AGENT_INBOXES_LOCAL_STORAGE_KEY,
 } from "../constants";
 import {
   getInterruptFromThread,
@@ -32,6 +34,21 @@ import {
 } from "./utils";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useInboxes } from "../hooks/use-inboxes";
+import { runInboxBackfill } from "../utils/backfill";
+
+// Development-only logger
+const logger = {
+  log: (...args: any[]) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(...args);
+    }
+  },
+  error: (...args: any[]) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(...args);
+    }
+  }
+};
 
 type ThreadContentType<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -119,12 +136,93 @@ const getClient = ({ agentInboxes, getItem, toast }: GetClientArgs) => {
   return createClient({ deploymentUrl, langchainApiKey: langchainApiKeyLS });
 };
 
-export function ThreadsProvider<
+export const ThreadsContextProvider = <
   ThreadValues extends Record<string, any> = Record<string, any>,
->({ children }: { children: React.ReactNode }) {
-  const { getSearchParam, searchParams } = useQueryParams();
-  const { getItem } = useLocalStorage();
+>({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const { getItem, setItem } = useLocalStorage();
   const { toast } = useToast();
+  const [agentInboxes, setAgentInboxes] = useState<AgentInbox[]>([]);
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [threads, setThreads] = useState<
+    Record<string, ThreadData<ThreadValues>[]>
+  >({});
+  const clientRef = useRef<Client | null>(null);
+  const backfillCompleted = useRef(false);
+
+  // Load inboxes from localStorage on initial mount only
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    try {
+      const inboxesRaw = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+      logger.log("[DEBUG] Initial load - localStorage inboxes:", inboxesRaw);
+      
+      if (inboxesRaw) {
+        try {
+          const parsed = JSON.parse(inboxesRaw);
+          logger.log("[DEBUG] Initial load - parsed inboxes:", parsed);
+          
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAgentInboxes(parsed);
+            logger.log("[DEBUG] Loaded inboxes from localStorage:", parsed.length);
+          } else {
+            logger.log("[DEBUG] No inboxes found in parsed data");
+          }
+        } catch (e) {
+          logger.error("[DEBUG] Error parsing inboxes:", e);
+        }
+      } else {
+        logger.log("[DEBUG] No inboxes found in localStorage");
+      }
+    } catch (error) {
+      logger.error("Error loading inboxes from localStorage:", error);
+    }
+  }, []);
+
+  // Run the backfill process when the app loads, but only once
+  useEffect(() => {
+    if (typeof window === "undefined" || backfillCompleted.current) return;
+    
+    async function backfillInboxIds() {
+      try {
+        const langchainApiKey = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
+        logger.log("[DEBUG] Running backfill with API key:", langchainApiKey ? "present" : "missing");
+        
+        const result = await runInboxBackfill(langchainApiKey || undefined);
+        logger.log("[DEBUG] Backfill result:", result);
+        
+        // Mark that we've completed the backfill
+        backfillCompleted.current = true;
+        
+        // Force a refresh of the page to ensure we have the latest inboxes
+        if (result) {
+          logger.log("[DEBUG] Reloading inboxes after backfill");
+          const inboxesRaw = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+          if (inboxesRaw) {
+            try {
+              const parsed = JSON.parse(inboxesRaw);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setAgentInboxes(parsed);
+              }
+            } catch (e) {
+              logger.error("[DEBUG] Error parsing inboxes after backfill:", e);
+            }
+          }
+        }
+      } catch (error) {
+        logger.error("Error running inbox ID backfill:", error);
+        // Don't display a toast to avoid confusing users
+      }
+    }
+
+    backfillInboxIds();
+  }, [getItem]);
+
+  const { getSearchParam, searchParams } = useQueryParams();
   const [loading, setLoading] = React.useState(false);
   const [threadData, setThreadData] = React.useState<
     ThreadData<ThreadValues>[]
@@ -133,7 +231,6 @@ export function ThreadsProvider<
 
   // Using the new useInboxes hook
   const {
-    agentInboxes,
     addAgentInbox,
     deleteAgentInbox,
     changeAgentInbox,
@@ -158,7 +255,7 @@ export function ThreadsProvider<
     try {
       fetchThreads(inboxSearchParam);
     } catch (e) {
-      console.error("Error occurred while fetching threads", e);
+      logger.error("Error occurred while fetching threads", e);
     }
   }, [limitParam, offsetParam, inboxParam, agentInboxes]);
 
@@ -267,7 +364,7 @@ export function ThreadsProvider<
         setThreadData(sortedData);
         setHasMoreThreads(threads.length === limit);
       } catch (e) {
-        console.error("Failed to fetch threads", e);
+        logger.error("Failed to fetch threads", e);
       }
       setLoading(false);
     },
@@ -381,7 +478,7 @@ export function ThreadsProvider<
         duration: 3000,
       });
     } catch (e) {
-      console.error("Error ignoring thread", e);
+      logger.error("Error ignoring thread", e);
       toast({
         title: "Error",
         description: "Failed to ignore thread",
@@ -439,7 +536,7 @@ export function ThreadsProvider<
         },
       }) as any; // Type assertion needed due to conditional return type
     } catch (e: any) {
-      console.error("Error sending human response", e);
+      logger.error("Error sending human response", e);
       throw e;
     }
   };
@@ -475,3 +572,6 @@ export function useThreadsContext<
   }
   return context;
 }
+
+// Export alias for backward compatibility
+export const ThreadsProvider = ThreadsContextProvider;

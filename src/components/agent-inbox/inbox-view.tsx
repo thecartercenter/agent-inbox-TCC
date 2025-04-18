@@ -7,6 +7,10 @@ import { ThreadStatusWithAll } from "./types";
 import { Pagination } from "./components/pagination";
 import { Inbox as InboxIcon, LoaderCircle } from "lucide-react";
 import { InboxButtons } from "./components/inbox-buttons";
+import { BackfillBanner } from "./components/backfill-banner";
+import { Button } from "@/components/ui/button";
+import { forceInboxBackfill } from "./utils/backfill";
+import { LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY } from "./constants";
 
 interface AgentInboxViewProps<
   _ThreadValues extends Record<string, any> = Record<string, any>,
@@ -19,7 +23,7 @@ export function AgentInboxView<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ saveScrollPosition, containerRef }: AgentInboxViewProps<ThreadValues>) {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
-  const { loading, threadData } = useThreadsContext<ThreadValues>();
+  const { loading, threadData, agentInboxes } = useThreadsContext<ThreadValues>();
   const selectedInbox = (getSearchParam(INBOX_PARAM) ||
     "interrupted") as ThreadStatusWithAll;
   const scrollableContentRef = React.useRef<HTMLDivElement>(null);
@@ -134,9 +138,24 @@ export function AgentInboxView<
     }
   };
 
+  // Add function to manually refresh inboxes
+  const handleRefreshInboxes = async () => {
+    if (typeof window === "undefined") return;
+    
+    // Get the API key
+    const apiKey = localStorage.getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
+    
+    // Force run the backfill
+    await forceInboxBackfill(apiKey);
+    
+    // Reload the page to see the changes
+    window.location.reload();
+  };
+
   return (
     <div ref={containerRef} className="min-w-[1000px] h-full overflow-y-auto">
       <div className="pl-5 pt-4">
+        <BackfillBanner />
         <InboxButtons changeInbox={changeInbox} />
       </div>
       <div
@@ -154,11 +173,22 @@ export function AgentInboxView<
           );
         })}
         {noThreadsFound && !loading && (
-          <div className="w-full flex items-center justify-center p-4">
-            <div className="flex gap-2 items-center justify-center text-gray-700">
+          <div className="w-full flex items-center justify-center p-4 flex-col">
+            <div className="flex gap-2 items-center justify-center text-gray-700 mb-4">
               <InboxIcon className="w-6 h-6" />
               <p className="font-medium">No threads found</p>
             </div>
+            
+            {agentInboxes.length > 0 && (
+              <div className="flex flex-col items-center">
+                <p className="text-sm text-gray-500 mb-2">
+                  If you're expecting to see inboxes but don't, try refreshing your inbox IDs:
+                </p>
+                <Button onClick={handleRefreshInboxes}>
+                  Refresh Inbox IDs
+                </Button>
+              </div>
+            )}
           </div>
         )}
         {noThreadsFound && loading && (

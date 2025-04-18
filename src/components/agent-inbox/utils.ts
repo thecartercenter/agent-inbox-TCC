@@ -11,7 +11,13 @@ export function prettifyText(action: string) {
  * Determines if a URL is a deployed (cloud) URL.
  */
 export function isDeployedUrl(url: string): boolean {
-  return url.startsWith("https://");
+  if (!url) return false;
+  try {
+    return url.startsWith("https://");
+  } catch (e) {
+    console.error("Error checking if URL is deployed:", e);
+    return false;
+  }
 }
 
 export function isArrayOfMessages(
@@ -226,4 +232,59 @@ export function haveArgsChanged(
       : JSON.stringify(value, null);
     return initialValues[key] !== valueString;
   });
+}
+
+/**
+ * Interface for deployment info response
+ */
+export interface DeploymentInfoResponse {
+  flags: {
+    assistants: boolean;
+    crons: boolean;
+    langsmith: boolean;
+  };
+  host: {
+    kind: string;
+    project_id: string | null;
+    revision_id: string;
+    tenant_id: string | null;
+  };
+}
+
+/**
+ * Fetches information about a deployment from its /info endpoint
+ */
+export async function fetchDeploymentInfo(
+  deploymentUrl: string,
+  langchainApiKey?: string
+): Promise<DeploymentInfoResponse | null> {
+  try {
+    // Ensure deploymentUrl doesn't end with a slash
+    const baseUrl = deploymentUrl.replace(/\/$/, "");
+    const infoUrl = `${baseUrl}/info`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (langchainApiKey) {
+      headers["x-api-key"] = langchainApiKey;
+    }
+
+    const response = await fetch(infoUrl, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      console.error(`Error fetching deployment info: ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data as DeploymentInfoResponse;
+  } catch (error) {
+    console.error("Error fetching deployment info:", error);
+    return null;
+  }
 }
