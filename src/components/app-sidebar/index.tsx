@@ -32,7 +32,7 @@ import {
 } from "../ui/tooltip";
 import { AddAgentInboxDialog } from "../agent-inbox/components/add-agent-inbox-dialog";
 import { useLocalStorage } from "../agent-inbox/hooks/use-local-storage";
-import { DropdownDialogMenu } from "../agent-inbox/components/dropdown-dialog-combo";
+import { DropdownDialogMenu } from "../agent-inbox/components/dropdown-and-dialog";
 
 export function AppSidebar() {
   const { agentInboxes, changeAgentInbox, deleteAgentInbox } =
@@ -113,7 +113,6 @@ export function AppSidebar() {
                         </Tooltip>
                       </TooltipProvider>
 
-                      {/* Use the new component instead of IIFE */}
                       <DropdownDialogMenu
                         item={item}
                         deleteAgentInbox={deleteAgentInbox}
