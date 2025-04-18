@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -127,19 +128,11 @@ export function EditAgentInboxDialog({
           <Button variant="brand" type="submit">
             Save
           </Button>
-          <Button
-            variant="outline"
-            type="reset"
-            onClick={() => {
-              // Close the dialog without submitting
-              const closeButton = document.querySelector(
-                "[data-radix-dialog-close]"
-              ) as HTMLButtonElement;
-              closeButton?.click();
-            }}
-          >
-            Cancel
-          </Button>
+          <DialogClose asChild>
+            <Button variant="outline" type="button">
+              Cancel
+            </Button>
+          </DialogClose>
         </div>
       </form>
     </DialogContent>
