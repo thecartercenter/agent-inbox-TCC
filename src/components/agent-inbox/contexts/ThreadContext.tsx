@@ -14,7 +14,6 @@ import {
   Thread,
   ThreadState,
   ThreadStatus,
-  Client,
 } from "@langchain/langgraph-sdk";
 import { END } from "@langchain/langgraph/web";
 import React, { useState, useEffect, useRef } from "react";
@@ -39,15 +38,15 @@ import { runInboxBackfill } from "../utils/backfill";
 // Development-only logger
 const logger = {
   log: (...args: any[]) => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.log(...args);
     }
   },
   error: (...args: any[]) => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error(...args);
     }
-  }
+  },
 };
 
 type ThreadContentType<
@@ -143,32 +142,30 @@ export const ThreadsContextProvider = <
 }: {
   children: React.ReactNode;
 }) => {
-  const { getItem, setItem } = useLocalStorage();
+  const { getItem } = useLocalStorage();
   const { toast } = useToast();
   const [agentInboxes, setAgentInboxes] = useState<AgentInbox[]>([]);
-  const [busy, setBusy] = useState<Record<string, boolean>>({});
-  const [threads, setThreads] = useState<
-    Record<string, ThreadData<ThreadValues>[]>
-  >({});
-  const clientRef = useRef<Client | null>(null);
   const backfillCompleted = useRef(false);
 
   // Load inboxes from localStorage on initial mount only
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     try {
       const inboxesRaw = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
       logger.log("[DEBUG] Initial load - localStorage inboxes:", inboxesRaw);
-      
+
       if (inboxesRaw) {
         try {
           const parsed = JSON.parse(inboxesRaw);
           logger.log("[DEBUG] Initial load - parsed inboxes:", parsed);
-          
+
           if (Array.isArray(parsed) && parsed.length > 0) {
             setAgentInboxes(parsed);
-            logger.log("[DEBUG] Loaded inboxes from localStorage:", parsed.length);
+            logger.log(
+              "[DEBUG] Loaded inboxes from localStorage:",
+              parsed.length
+            );
           } else {
             logger.log("[DEBUG] No inboxes found in parsed data");
           }
@@ -186,22 +183,27 @@ export const ThreadsContextProvider = <
   // Run the backfill process when the app loads, but only once
   useEffect(() => {
     if (typeof window === "undefined" || backfillCompleted.current) return;
-    
+
     async function backfillInboxIds() {
       try {
         const langchainApiKey = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
-        logger.log("[DEBUG] Running backfill with API key:", langchainApiKey ? "present" : "missing");
-        
+        logger.log(
+          "[DEBUG] Running backfill with API key:",
+          langchainApiKey ? "present" : "missing"
+        );
+
         const result = await runInboxBackfill(langchainApiKey || undefined);
         logger.log("[DEBUG] Backfill result:", result);
-        
+
         // Mark that we've completed the backfill
         backfillCompleted.current = true;
-        
+
         // Force a refresh of the page to ensure we have the latest inboxes
         if (result) {
           logger.log("[DEBUG] Reloading inboxes after backfill");
-          const inboxesRaw = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+          const inboxesRaw = localStorage.getItem(
+            AGENT_INBOXES_LOCAL_STORAGE_KEY
+          );
           if (inboxesRaw) {
             try {
               const parsed = JSON.parse(inboxesRaw);
@@ -561,7 +563,7 @@ export const ThreadsContextProvider = <
       {children}
     </ThreadsContext.Provider>
   );
-}
+};
 
 export function useThreadsContext<
   T extends Record<string, any> = Record<string, any>,

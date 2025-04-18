@@ -16,7 +16,7 @@ import { useQueryParams } from "../hooks/use-query-params";
 import { ThreadStatusWithAll } from "../types";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
-import { forceInboxBackfill, isBackfillCompleted } from "../utils/backfill";
+import { forceInboxBackfill } from "../utils/backfill";
 import { useToast } from "@/hooks/use-toast";
 
 export function SettingsPopover() {
@@ -58,11 +58,12 @@ export function SettingsPopover() {
     setIsRunningBackfill(true);
     try {
       const success = await forceInboxBackfill(langchainApiKey || undefined);
-      
+
       if (success) {
         toast({
           title: "Success",
-          description: "Your inbox IDs have been updated. Please refresh the page to see your inboxes.",
+          description:
+            "Your inbox IDs have been updated. Please refresh the page to see your inboxes.",
           duration: 5000,
         });
         // Force a page reload to apply the updated IDs
@@ -70,7 +71,8 @@ export function SettingsPopover() {
       } else {
         toast({
           title: "Error",
-          description: "Failed to update inbox IDs. Please try again or contact support.",
+          description:
+            "Failed to update inbox IDs. Please try again or contact support.",
           variant: "destructive",
           duration: 5000,
         });
@@ -149,15 +151,20 @@ export function SettingsPopover() {
               <div className="flex flex-col gap-1 w-full items-start">
                 <Label>Update Inbox IDs</Label>
                 <p className="text-xs text-muted-foreground">
-                  Update your inbox IDs to the new format that supports sharing links across machines.
+                  Update your inbox IDs to the new format that supports sharing
+                  links across machines.
                 </p>
               </div>
-              <Button 
+              <Button
                 onClick={handleRunBackfill}
                 disabled={isRunningBackfill}
                 className="flex items-center gap-2"
               >
-                <RefreshCw className={isRunningBackfill ? "animate-spin h-4 w-4" : "h-4 w-4"} />
+                <RefreshCw
+                  className={
+                    isRunningBackfill ? "animate-spin h-4 w-4" : "h-4 w-4"
+                  }
+                />
                 {isRunningBackfill ? "Updating..." : "Update Inbox IDs"}
               </Button>
             </div>

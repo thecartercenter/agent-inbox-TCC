@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { AgentInbox } from "../types";
 import { isDeployedUrl, fetchDeploymentInfo } from "../utils";
 import { AGENT_INBOXES_LOCAL_STORAGE_KEY } from "../constants";
@@ -6,15 +5,15 @@ import { AGENT_INBOXES_LOCAL_STORAGE_KEY } from "../constants";
 // Development-only logger
 const logger = {
   log: (...args: any[]) => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.log(...args);
     }
   },
   error: (...args: any[]) => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error(...args);
     }
-  }
+  },
 };
 
 // Key to track if the backfill has been performed
@@ -56,62 +55,76 @@ export function clearBackfillFlag(): void {
  * Backfills inbox IDs for deployed graphs to use the new format based on project_id
  * @param agentInboxes - The array of agent inboxes
  * @param apiKey - The LangChain API key to use for authentication
- * @returns Promise<AgentInbox[]> - The updated agent inboxes
+ * @returns Promise<{updatedInboxes: AgentInbox[], madeChanges: boolean}> - The updated agent inboxes and whether changes were made
  */
 export async function backfillInboxIds(
   agentInboxes: AgentInbox[],
   apiKey?: string
-): Promise<AgentInbox[]> {
+): Promise<{ updatedInboxes: AgentInbox[]; madeChanges: boolean }> {
   if (!agentInboxes.length) {
     logger.log("No inboxes to backfill");
-    return [];
+    return { updatedInboxes: [], madeChanges: false };
   }
 
   logger.log("Starting backfill for inboxes:", agentInboxes);
   const updatedInboxes: AgentInbox[] = [];
   let madeChanges = false;
-  
+
   for (const inbox of agentInboxes) {
     try {
       // Only process deployed graphs
       if (isDeployedUrl(inbox.deploymentUrl)) {
-        logger.log(`Processing deployed inbox ${inbox.id} with URL ${inbox.deploymentUrl}`);
-        
+        logger.log(
+          `Processing deployed inbox ${inbox.id} with URL ${inbox.deploymentUrl}`
+        );
+
         // Skip if the ID is already in the new format (contains a colon)
-        if (inbox.id && inbox.id.includes(':')) {
+        if (inbox.id && inbox.id.includes(":")) {
           logger.log(`Inbox ${inbox.id} already has new format ID, skipping`);
           updatedInboxes.push(inbox);
           continue;
         }
-        
+
         try {
           // Fetch deployment info
-          const deploymentInfo = await fetchDeploymentInfo(inbox.deploymentUrl, apiKey);
+          const deploymentInfo = await fetchDeploymentInfo(
+            inbox.deploymentUrl,
+            apiKey
+          );
           logger.log(`Got deployment info for ${inbox.id}:`, deploymentInfo);
-          
-          if (deploymentInfo && deploymentInfo.host && deploymentInfo.host.project_id) {
+
+          if (
+            deploymentInfo &&
+            deploymentInfo.host &&
+            deploymentInfo.host.project_id
+          ) {
             // Update the ID to the new format: project_id:graphId
             const newId = `${deploymentInfo.host.project_id}:${inbox.graphId}`;
             logger.log(`Updating inbox ID from ${inbox.id} to ${newId}`);
-            
+
             updatedInboxes.push({
               ...inbox,
               id: newId,
-              tenantId: deploymentInfo.host.tenant_id || undefined
+              tenantId: deploymentInfo.host.tenant_id || undefined,
             });
-            
+
             madeChanges = true;
             continue;
           } else {
-            logger.log(`No project_id found for inbox ${inbox.id}, keeping original ID`);
+            logger.log(
+              `No project_id found for inbox ${inbox.id}, keeping original ID`
+            );
           }
         } catch (error) {
-          logger.error(`Error fetching deployment info for inbox ${inbox.id}:`, error);
+          logger.error(
+            `Error fetching deployment info for inbox ${inbox.id}:`,
+            error
+          );
         }
       } else {
         logger.log(`Inbox ${inbox.id} is a local graph, keeping original ID`);
       }
-      
+
       // For local graphs or if there was an error, keep the existing ID
       updatedInboxes.push(inbox);
     } catch (e) {
@@ -120,9 +133,9 @@ export async function backfillInboxIds(
       updatedInboxes.push(inbox);
     }
   }
-  
+
   logger.log("Backfill completed, updated inboxes:", updatedInboxes);
-  return updatedInboxes;
+  return { updatedInboxes, madeChanges };
 }
 
 /**
@@ -137,17 +150,19 @@ export async function runInboxBackfill(apiKey?: string): Promise<boolean> {
       logger.log("Backfill already completed, skipping");
       return true;
     }
-    
+
     // Get agent inboxes from localStorage
     const inboxesStr = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
     logger.log("Running backfill on inboxes from localStorage:", inboxesStr);
-    
-    if (!inboxesStr || inboxesStr === '[]') {
-      logger.log("No inboxes found in localStorage, marking backfill as completed");
+
+    if (!inboxesStr || inboxesStr === "[]") {
+      logger.log(
+        "No inboxes found in localStorage, marking backfill as completed"
+      );
       markBackfillCompleted();
       return true;
     }
-    
+
     let inboxes: AgentInbox[] = [];
     try {
       inboxes = JSON.parse(inboxesStr);
@@ -162,29 +177,32 @@ export async function runInboxBackfill(apiKey?: string): Promise<boolean> {
       // Don't mark as completed if we couldn't parse
       return false;
     }
-    
+
     logger.log("Starting backfill for", inboxes.length, "inboxes");
-    
+
     // Backfill the inboxes
-    const updatedInboxes = await backfillInboxIds(inboxes, apiKey);
-    
+    const { updatedInboxes, madeChanges } = await backfillInboxIds(
+      inboxes,
+      apiKey
+    );
+
     // Check if backfill made any changes
     const anyChanges = updatedInboxes.some((updatedInbox, index) => {
       return updatedInbox.id !== inboxes[index].id;
     });
-    
-    logger.log("Backfill completed, changes made:", anyChanges);
+
+    logger.log("Backfill completed, changes made:", anyChanges || madeChanges);
     logger.log("Updated inboxes:", updatedInboxes);
-    
+
     // Save the updated inboxes
     localStorage.setItem(
       AGENT_INBOXES_LOCAL_STORAGE_KEY,
       JSON.stringify(updatedInboxes)
     );
-    
+
     // Only mark as completed if we successfully processed all inboxes
     markBackfillCompleted();
-    
+
     return true;
   } catch (error) {
     logger.error("Error during inbox ID backfill:", error);
@@ -201,19 +219,19 @@ export async function runInboxBackfill(apiKey?: string): Promise<boolean> {
 export async function forceInboxBackfill(apiKey?: string): Promise<boolean> {
   try {
     logger.log("Force running inbox backfill...");
-    
+
     // Clear the backfill completed flag
     clearBackfillFlag();
-    
+
     // Get agent inboxes from localStorage
     const inboxesStr = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
     logger.log("Inboxes from localStorage:", inboxesStr);
-    
+
     if (!inboxesStr) {
       logger.log("No inboxes found in localStorage");
       return false;
     }
-    
+
     let inboxes: AgentInbox[] = [];
     try {
       inboxes = JSON.parse(inboxesStr);
@@ -221,26 +239,26 @@ export async function forceInboxBackfill(apiKey?: string): Promise<boolean> {
       logger.error("Error parsing inbox data:", e);
       return false;
     }
-    
+
     if (!inboxes.length) {
       logger.log("Empty inboxes array");
       return false;
     }
-    
+
     logger.log("Force backfilling", inboxes.length, "inboxes");
-    
+
     // Backfill the inboxes
-    const updatedInboxes = await backfillInboxIds(inboxes, apiKey);
-    
+    const { updatedInboxes } = await backfillInboxIds(inboxes, apiKey);
+
     // Save the updated inboxes regardless of changes
     localStorage.setItem(
       AGENT_INBOXES_LOCAL_STORAGE_KEY,
       JSON.stringify(updatedInboxes)
     );
-    
+
     // Mark as completed
     markBackfillCompleted();
-    
+
     return true;
   } catch (error) {
     logger.error("Error during forced inbox ID backfill:", error);
@@ -258,15 +276,15 @@ export function debugAndResetInboxData() {
       logger.log("Not in browser environment");
       return false;
     }
-    
+
     // Display current data
     const backfillStatus = localStorage.getItem(INBOX_ID_BACKFILL_COMPLETE_KEY);
     const inboxesRaw = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
-    
+
     logger.log("=== INBOX DEBUG INFO ===");
     logger.log("Backfill completed:", backfillStatus);
     logger.log("Raw inbox data:", inboxesRaw);
-    
+
     if (inboxesRaw) {
       try {
         const parsed = JSON.parse(inboxesRaw);
@@ -275,19 +293,21 @@ export function debugAndResetInboxData() {
         logger.error("Failed to parse inbox data:", e);
       }
     }
-    
+
     // Reset data if confirmed
-    if (confirm("Do you want to reset inbox data? This will clear all inboxes.")) {
+    if (
+      confirm("Do you want to reset inbox data? This will clear all inboxes.")
+    ) {
       localStorage.removeItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
       localStorage.removeItem(INBOX_ID_BACKFILL_COMPLETE_KEY);
       logger.log("Inbox data has been reset");
-      
+
       if (confirm("Reload page?")) {
         window.location.reload();
       }
       return true;
     }
-    
+
     return false;
   } catch (error) {
     logger.error("Error in debug function:", error);
@@ -296,7 +316,7 @@ export function debugAndResetInboxData() {
 }
 
 // Expose function to window for console access
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).resetInboxData = debugAndResetInboxData;
   (window as any).forceBackfill = forceInboxBackfill;
-} 
+}

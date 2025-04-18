@@ -23,7 +23,8 @@ export function AgentInboxView<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ saveScrollPosition, containerRef }: AgentInboxViewProps<ThreadValues>) {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
-  const { loading, threadData, agentInboxes } = useThreadsContext<ThreadValues>();
+  const { loading, threadData, agentInboxes } =
+    useThreadsContext<ThreadValues>();
   const selectedInbox = (getSearchParam(INBOX_PARAM) ||
     "interrupted") as ThreadStatusWithAll;
   const scrollableContentRef = React.useRef<HTMLDivElement>(null);
@@ -141,13 +142,14 @@ export function AgentInboxView<
   // Add function to manually refresh inboxes
   const handleRefreshInboxes = async () => {
     if (typeof window === "undefined") return;
-    
+
     // Get the API key
-    const apiKey = localStorage.getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
-    
+    const apiKey =
+      localStorage.getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
+
     // Force run the backfill
     await forceInboxBackfill(apiKey);
-    
+
     // Reload the page to see the changes
     window.location.reload();
   };
@@ -178,11 +180,12 @@ export function AgentInboxView<
               <InboxIcon className="w-6 h-6" />
               <p className="font-medium">No threads found</p>
             </div>
-            
+
             {agentInboxes.length > 0 && (
               <div className="flex flex-col items-center">
                 <p className="text-sm text-gray-500 mb-2">
-                  If you're expecting to see inboxes but don't, try refreshing your inbox IDs:
+                  If youre expecting to see inboxes but dont, try refreshing
+                  your inbox IDs:
                 </p>
                 <Button onClick={handleRefreshInboxes}>
                   Refresh Inbox IDs

@@ -68,31 +68,40 @@ export function AddAgentInboxDialog({
     event.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
-    
+
     try {
       const isDeployed = isDeployedUrl(deploymentUrl);
       let inboxId = uuidv4();
       let tenantId: string | undefined = undefined;
-      
+
       // For deployed graphs, get the deployment info to generate the ID
       if (isDeployed) {
-        console.log("Deployed graph detected, getting info from:", deploymentUrl);
-        
+        console.log(
+          "Deployed graph detected, getting info from:",
+          deploymentUrl
+        );
+
         // Get the LangChain API key from local storage or props
-        const storedApiKey = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
+        const storedApiKey =
+          getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
         const apiKey = langchainApiKey || storedApiKey;
-        
+
         if (!apiKey && deploymentUrl.includes("langgraph.app")) {
-          setErrorMessage("API key is required for deployed LangGraph instances");
+          setErrorMessage(
+            "API key is required for deployed LangGraph instances"
+          );
           setIsSubmitting(false);
           return;
         }
-        
+
         // Fetch deployment info
         try {
-          const deploymentInfo = await fetchDeploymentInfo(deploymentUrl, apiKey);
+          const deploymentInfo = await fetchDeploymentInfo(
+            deploymentUrl,
+            apiKey
+          );
           console.log("Got deployment info:", deploymentInfo);
-          
+
           if (deploymentInfo?.host?.project_id) {
             // Generate ID in format: project_id:graphId
             inboxId = `${deploymentInfo.host.project_id}:${graphId}`;
@@ -103,7 +112,9 @@ export function AddAgentInboxDialog({
           }
         } catch (error) {
           console.error("Error fetching deployment info:", error);
-          setErrorMessage("Failed to get deployment info. Check your API key and deployment URL.");
+          setErrorMessage(
+            "Failed to get deployment info. Check your API key and deployment URL."
+          );
           setIsSubmitting(false);
           return;
         }
@@ -133,12 +144,14 @@ export function AddAgentInboxDialog({
       setDeploymentUrl("");
       setName("");
       setOpen(false);
-      
+
       // Force page reload to ensure the new inbox appears
       window.location.reload();
     } catch (error) {
       console.error("Error adding agent inbox:", error);
-      setErrorMessage("Failed to add the agent inbox. Please try again or check the console for details.");
+      setErrorMessage(
+        "Failed to add the agent inbox. Please try again or check the console for details."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -267,11 +280,11 @@ export function AddAgentInboxDialog({
               />
             </div>
           )}
-          
+
           {errorMessage && (
             <div className="text-red-500 text-sm w-full">{errorMessage}</div>
           )}
-          
+
           <div className="grid grid-cols-2 gap-4">
             <Button
               variant="outline"
