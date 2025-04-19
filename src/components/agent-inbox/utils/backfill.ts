@@ -1,3 +1,12 @@
+/**
+ * Agent Inbox Backfill Utilities
+ *
+ * This file contains utilities for backfilling inbox IDs to a new format.
+ * The backfill process updates deployed graph IDs to use a project_id:graphId format,
+ * ensuring consistent identification across the application. This is a one-time
+ * migration process that runs automatically for users with deployed graphs.
+ */
+
 import { AgentInbox } from "../types";
 import { isDeployedUrl, fetchDeploymentInfo } from "../utils";
 import { AGENT_INBOXES_LOCAL_STORAGE_KEY } from "../constants";
@@ -32,6 +41,29 @@ export function isBackfillCompleted(): boolean {
 }
 
 /**
+ * Checks if there are any deployed URLs in the user's inboxes
+ * @returns boolean - true if there are deployed inboxes, false otherwise
+ */
+export function hasDeployedInboxes(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const inboxesStr = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+  if (!inboxesStr) {
+    return false;
+  }
+
+  try {
+    const inboxes: AgentInbox[] = JSON.parse(inboxesStr);
+    return inboxes.some((inbox) => isDeployedUrl(inbox.deploymentUrl));
+  } catch (e) {
+    logger.error("Error checking for deployed inboxes:", e);
+    return false;
+  }
+}
+
+/**
  * Marks the backfill as completed
  */
 export function markBackfillCompleted(): void {
@@ -54,12 +86,10 @@ export function clearBackfillFlag(): void {
 /**
  * Backfills inbox IDs for deployed graphs to use the new format based on project_id
  * @param agentInboxes - The array of agent inboxes
- * @param apiKey - The LangChain API key to use for authentication
  * @returns Promise<{updatedInboxes: AgentInbox[], madeChanges: boolean}> - The updated agent inboxes and whether changes were made
  */
 export async function backfillInboxIds(
-  agentInboxes: AgentInbox[],
-  apiKey?: string
+  agentInboxes: AgentInbox[]
 ): Promise<{ updatedInboxes: AgentInbox[]; madeChanges: boolean }> {
   if (!agentInboxes.length) {
     logger.log("No inboxes to backfill");
@@ -87,10 +117,7 @@ export async function backfillInboxIds(
 
         try {
           // Fetch deployment info
-          const deploymentInfo = await fetchDeploymentInfo(
-            inbox.deploymentUrl,
-            apiKey
-          );
+          const deploymentInfo = await fetchDeploymentInfo(inbox.deploymentUrl);
           logger.log(`Got deployment info for ${inbox.id}:`, deploymentInfo);
 
           if (
@@ -140,15 +167,32 @@ export async function backfillInboxIds(
 
 /**
  * Runs the backfill process for all agent inboxes
- * @param apiKey - The LangChain API key to use for authentication
- * @returns Promise<boolean> - Whether the backfill was successful
+ * @returns Promise<{success: boolean, updatedInboxes: AgentInbox[]}> - Status and updated inboxes
  */
-export async function runInboxBackfill(apiKey?: string): Promise<boolean> {
+export async function runInboxBackfill(): Promise<{
+  success: boolean;
+  updatedInboxes: AgentInbox[];
+}> {
   try {
     // Check if backfill has already been completed
     if (isBackfillCompleted()) {
       logger.log("Backfill already completed, skipping");
-      return true;
+
+      // Get current inboxes to return them
+      const inboxesStr = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+      const currentInboxes = inboxesStr ? JSON.parse(inboxesStr) : [];
+      return { success: true, updatedInboxes: currentInboxes };
+    }
+
+    // Check if there are any deployed inboxes that need backfilling
+    if (!hasDeployedInboxes()) {
+      logger.log("No deployed inboxes found, skipping backfill");
+      markBackfillCompleted();
+
+      // Get current inboxes to return them
+      const inboxesStr = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
+      const currentInboxes = inboxesStr ? JSON.parse(inboxesStr) : [];
+      return { success: true, updatedInboxes: currentInboxes };
     }
 
     // Get agent inboxes from localStorage
@@ -160,7 +204,7 @@ export async function runInboxBackfill(apiKey?: string): Promise<boolean> {
         "No inboxes found in localStorage, marking backfill as completed"
       );
       markBackfillCompleted();
-      return true;
+      return { success: true, updatedInboxes: [] };
     }
 
     let inboxes: AgentInbox[] = [];
@@ -170,21 +214,18 @@ export async function runInboxBackfill(apiKey?: string): Promise<boolean> {
       if (!inboxes.length) {
         logger.log("Empty inboxes array, marking backfill as completed");
         markBackfillCompleted();
-        return true;
+        return { success: true, updatedInboxes: [] };
       }
     } catch (e) {
       logger.error("Error parsing inbox data:", e);
       // Don't mark as completed if we couldn't parse
-      return false;
+      return { success: false, updatedInboxes: [] };
     }
 
     logger.log("Starting backfill for", inboxes.length, "inboxes");
 
     // Backfill the inboxes
-    const { updatedInboxes, madeChanges } = await backfillInboxIds(
-      inboxes,
-      apiKey
-    );
+    const { updatedInboxes, madeChanges } = await backfillInboxIds(inboxes);
 
     // Check if backfill made any changes
     const anyChanges = updatedInboxes.some((updatedInbox, index) => {
@@ -203,20 +244,22 @@ export async function runInboxBackfill(apiKey?: string): Promise<boolean> {
     // Only mark as completed if we successfully processed all inboxes
     markBackfillCompleted();
 
-    return true;
+    return { success: true, updatedInboxes };
   } catch (error) {
     logger.error("Error during inbox ID backfill:", error);
     // Don't mark as completed if there was an error
-    return false;
+    return { success: false, updatedInboxes: [] };
   }
 }
 
 /**
  * Forces the backfill process to run again, even if it was previously completed
- * @param apiKey - The LangChain API key to use for authentication
- * @returns Promise<boolean> - Whether the backfill was successful
+ * @returns Promise<{success: boolean, updatedInboxes: AgentInbox[]}> - Status and updated inboxes
  */
-export async function forceInboxBackfill(apiKey?: string): Promise<boolean> {
+export async function forceInboxBackfill(): Promise<{
+  success: boolean;
+  updatedInboxes: AgentInbox[];
+}> {
   try {
     logger.log("Force running inbox backfill...");
 
@@ -229,7 +272,7 @@ export async function forceInboxBackfill(apiKey?: string): Promise<boolean> {
 
     if (!inboxesStr) {
       logger.log("No inboxes found in localStorage");
-      return false;
+      return { success: false, updatedInboxes: [] };
     }
 
     let inboxes: AgentInbox[] = [];
@@ -237,18 +280,18 @@ export async function forceInboxBackfill(apiKey?: string): Promise<boolean> {
       inboxes = JSON.parse(inboxesStr);
     } catch (e) {
       logger.error("Error parsing inbox data:", e);
-      return false;
+      return { success: false, updatedInboxes: [] };
     }
 
     if (!inboxes.length) {
       logger.log("Empty inboxes array");
-      return false;
+      return { success: false, updatedInboxes: [] };
     }
 
     logger.log("Force backfilling", inboxes.length, "inboxes");
 
     // Backfill the inboxes
-    const { updatedInboxes } = await backfillInboxIds(inboxes, apiKey);
+    const { updatedInboxes } = await backfillInboxIds(inboxes);
 
     // Save the updated inboxes regardless of changes
     localStorage.setItem(
@@ -259,10 +302,10 @@ export async function forceInboxBackfill(apiKey?: string): Promise<boolean> {
     // Mark as completed
     markBackfillCompleted();
 
-    return true;
+    return { success: true, updatedInboxes };
   } catch (error) {
     logger.error("Error during forced inbox ID backfill:", error);
-    return false;
+    return { success: false, updatedInboxes: [] };
   }
 }
 

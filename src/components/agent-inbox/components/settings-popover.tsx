@@ -57,9 +57,9 @@ export function SettingsPopover() {
   const handleRunBackfill = async () => {
     setIsRunningBackfill(true);
     try {
-      const success = await forceInboxBackfill(langchainApiKey || undefined);
+      const result = await forceInboxBackfill(langchainApiKey || undefined);
 
-      if (success) {
+      if (result.success) {
         toast({
           title: "Success",
           description:

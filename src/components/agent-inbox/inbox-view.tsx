@@ -10,7 +10,6 @@ import { InboxButtons } from "./components/inbox-buttons";
 import { BackfillBanner } from "./components/backfill-banner";
 import { Button } from "@/components/ui/button";
 import { forceInboxBackfill } from "./utils/backfill";
-import { LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY } from "./constants";
 
 interface AgentInboxViewProps<
   _ThreadValues extends Record<string, any> = Record<string, any>,
@@ -140,15 +139,9 @@ export function AgentInboxView<
   };
 
   // Add function to manually refresh inboxes
-  const handleRefreshInboxes = async () => {
-    if (typeof window === "undefined") return;
-
-    // Get the API key
-    const apiKey =
-      localStorage.getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
-
+  const handleBackfillAndRefreshInboxes = async () => {
     // Force run the backfill
-    await forceInboxBackfill(apiKey);
+    await forceInboxBackfill();
 
     // Reload the page to see the changes
     window.location.reload();
@@ -187,7 +180,7 @@ export function AgentInboxView<
                   If you are expecting to see inboxes but dont, try refreshing
                   your inbox IDs:
                 </p>
-                <Button onClick={handleRefreshInboxes}>
+                <Button onClick={handleBackfillAndRefreshInboxes}>
                   Refresh Inbox IDs
                 </Button>
               </div>

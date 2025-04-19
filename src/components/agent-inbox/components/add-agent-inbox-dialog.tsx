@@ -86,7 +86,7 @@ export function AddAgentInboxDialog({
           getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
         const apiKey = langchainApiKey || storedApiKey;
 
-        if (!apiKey && deploymentUrl.includes("langgraph.app")) {
+        if (!apiKey && isDeployed) {
           setErrorMessage(
             "API key is required for deployed LangGraph instances"
           );
@@ -102,10 +102,13 @@ export function AddAgentInboxDialog({
           );
           console.log("Got deployment info:", deploymentInfo);
 
-          if (deploymentInfo?.host?.project_id) {
+          if (
+            deploymentInfo?.host?.project_id &&
+            deploymentInfo?.host?.tenant_id
+          ) {
             // Generate ID in format: project_id:graphId
             inboxId = `${deploymentInfo.host.project_id}:${graphId}`;
-            tenantId = deploymentInfo.host.tenant_id || undefined;
+            tenantId = deploymentInfo.host.tenant_id;
             console.log(`Created new inbox ID: ${inboxId}`);
           } else {
             console.log("No project_id in deployment info, using UUID");

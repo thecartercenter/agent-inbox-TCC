@@ -35,9 +35,9 @@ export function BackfillBanner() {
     setIsRunning(true);
     try {
       const langchainApiKey = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
-      const success = await forceInboxBackfill(langchainApiKey || undefined);
+      const result = await forceInboxBackfill(langchainApiKey || undefined);
 
-      if (success) {
+      if (result.success) {
         toast({
           title: "Success",
           description:

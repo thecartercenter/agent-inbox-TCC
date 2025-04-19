@@ -255,8 +255,7 @@ export interface DeploymentInfoResponse {
  * Fetches information about a deployment from its /info endpoint
  */
 export async function fetchDeploymentInfo(
-  deploymentUrl: string,
-  langchainApiKey?: string
+  deploymentUrl: string
 ): Promise<DeploymentInfoResponse | null> {
   try {
     // Ensure deploymentUrl doesn't end with a slash
@@ -266,10 +265,6 @@ export async function fetchDeploymentInfo(
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-
-    if (langchainApiKey) {
-      headers["x-api-key"] = langchainApiKey;
-    }
 
     const response = await fetch(infoUrl, {
       method: "GET",

@@ -149,11 +149,9 @@ export function useInboxes() {
       return;
     }
 
-    // Try to find inbox by ID or graphId
+    // Find inbox by ID - the ID could be a generated UUID or a combined deployment & graph ID
     const selectedInbox = parsedAgentInboxes.find(
-      (inbox) =>
-        inbox.id === agentInboxSearchParam ||
-        inbox.graphId === agentInboxSearchParam
+      (inbox) => inbox.id === agentInboxSearchParam
     );
 
     // If not found, select the first inbox
@@ -362,8 +360,10 @@ export function useInboxes() {
       if (!replaceAll) {
         updateQueryParams(AGENT_INBOX_PARAM, id);
       } else {
-        // In App Router, use the string form of push with a constructed URL
-        const newUrl = `/?${AGENT_INBOX_PARAM}=${id}`;
+        // Use URLSearchParams to construct the URL properly
+        const searchParams = new URLSearchParams();
+        searchParams.set(AGENT_INBOX_PARAM, id);
+        const newUrl = `/?${searchParams.toString()}`;
         router.push(newUrl);
       }
     },

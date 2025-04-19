@@ -135,13 +135,9 @@ const getClient = ({ agentInboxes, getItem, toast }: GetClientArgs) => {
   return createClient({ deploymentUrl, langchainApiKey: langchainApiKeyLS });
 };
 
-export const ThreadsContextProvider = <
+export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
->({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+>({ children }: { children: React.ReactNode }): React.ReactElement {
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
   const [agentInboxes, setAgentInboxes] = useState<AgentInbox[]>([]);
@@ -192,28 +188,19 @@ export const ThreadsContextProvider = <
           langchainApiKey ? "present" : "missing"
         );
 
-        const result = await runInboxBackfill(langchainApiKey || undefined);
+        const result = await runInboxBackfill();
         logger.log("[DEBUG] Backfill result:", result);
 
         // Mark that we've completed the backfill
         backfillCompleted.current = true;
 
-        // Force a refresh of the page to ensure we have the latest inboxes
-        if (result) {
-          logger.log("[DEBUG] Reloading inboxes after backfill");
-          const inboxesRaw = localStorage.getItem(
-            AGENT_INBOXES_LOCAL_STORAGE_KEY
+        // Directly use the returned inboxes instead of reading from localStorage again
+        if (result.success && result.updatedInboxes.length > 0) {
+          logger.log(
+            "[DEBUG] Using returned inboxes after backfill:",
+            result.updatedInboxes.length
           );
-          if (inboxesRaw) {
-            try {
-              const parsed = JSON.parse(inboxesRaw);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setAgentInboxes(parsed);
-              }
-            } catch (e) {
-              logger.error("[DEBUG] Error parsing inboxes after backfill:", e);
-            }
-          }
+          setAgentInboxes(result.updatedInboxes);
         }
       } catch (error) {
         logger.error("Error running inbox ID backfill:", error);
@@ -563,7 +550,7 @@ export const ThreadsContextProvider = <
       {children}
     </ThreadsContext.Provider>
   );
-};
+}
 
 export function useThreadsContext<
   T extends Record<string, any> = Record<string, any>,
@@ -574,6 +561,3 @@ export function useThreadsContext<
   }
   return context;
 }
-
-// Export alias for backward compatibility
-export const ThreadsProvider = ThreadsContextProvider;
