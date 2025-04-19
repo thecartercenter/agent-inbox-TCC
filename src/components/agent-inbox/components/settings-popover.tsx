@@ -18,6 +18,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { forceInboxBackfill } from "../utils/backfill";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "../utils/logger";
 
 export function SettingsPopover() {
   const langchainApiKeyNotSet = React.useRef(true);
@@ -43,7 +44,7 @@ export function SettingsPopover() {
         setLangchainApiKey(langchainApiKeyLS);
       }
     } catch (e) {
-      console.error("Error getting/setting LangSmith API key", e);
+      logger.error("Error getting/setting LangSmith API key", e);
     }
   }, [langchainApiKey]);
 
@@ -77,7 +78,7 @@ export function SettingsPopover() {
         });
       }
     } catch (error) {
-      console.error("Error running backfill:", error);
+      logger.error("Error running backfill:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again later.",

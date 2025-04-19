@@ -10,20 +10,7 @@ import { useLocalStorage } from "./use-local-storage";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { AgentInbox } from "../types";
 import { useRouter } from "next/navigation";
-
-// Development-only logger
-const logger = {
-  log: (...args: any[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(...args);
-    }
-  },
-  error: (...args: any[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(...args);
-    }
-  },
-};
+import { logger } from "../utils/logger";
 
 /**
  * Hook for managing agent inboxes

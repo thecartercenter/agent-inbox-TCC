@@ -34,20 +34,7 @@ import {
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useInboxes } from "../hooks/use-inboxes";
 import { runInboxBackfill } from "../utils/backfill";
-
-// Development-only logger
-const logger = {
-  log: (...args: any[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(...args);
-    }
-  },
-  error: (...args: any[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(...args);
-    }
-  },
-};
+import { logger } from "../utils/logger";
 
 type ThreadContentType<
   ThreadValues extends Record<string, any> = Record<string, any>,

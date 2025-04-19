@@ -10,6 +10,7 @@ import { InboxButtons } from "./components/inbox-buttons";
 import { BackfillBanner } from "./components/backfill-banner";
 import { Button } from "@/components/ui/button";
 import { forceInboxBackfill } from "./utils/backfill";
+import { logger } from "./utils/logger";
 
 interface AgentInboxViewProps<
   _ThreadValues extends Record<string, any> = Record<string, any>,
@@ -92,7 +93,7 @@ export function AgentInboxView<
         updateQueryParams(LIMIT_PARAM, "10");
       }
     } catch (e) {
-      console.error("Error updating query params", e);
+      logger.error("Error updating query params", e);
     }
   }, [searchParams]);
 

@@ -10,20 +10,7 @@
 import { AgentInbox } from "../types";
 import { isDeployedUrl, fetchDeploymentInfo } from "../utils";
 import { AGENT_INBOXES_LOCAL_STORAGE_KEY } from "../constants";
-
-// Development-only logger
-const logger = {
-  log: (...args: any[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(...args);
-    }
-  },
-  error: (...args: any[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(...args);
-    }
-  },
-};
+import { logger } from "./logger";
 
 // Key to track if the backfill has been performed
 export const INBOX_ID_BACKFILL_COMPLETE_KEY = "inbox:id_backfill_completed";

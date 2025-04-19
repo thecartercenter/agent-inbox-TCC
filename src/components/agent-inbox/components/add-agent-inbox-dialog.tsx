@@ -23,6 +23,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { isDeployedUrl, fetchDeploymentInfo } from "../utils";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { LoaderCircle } from "lucide-react";
+import { logger } from "../utils/logger";
 
 export function AddAgentInboxDialog({
   hideTrigger,
@@ -60,7 +61,7 @@ export function AddAgentInboxDialog({
         setOpen(true);
       }
     } catch (e) {
-      console.error("Error getting/setting no inboxes found param", e);
+      logger.error("Error getting/setting no inboxes found param", e);
     }
   }, [noInboxesFoundParam]);
 
@@ -76,7 +77,7 @@ export function AddAgentInboxDialog({
 
       // For deployed graphs, get the deployment info to generate the ID
       if (isDeployed) {
-        console.log(
+        logger.log(
           "Deployed graph detected, getting info from:",
           deploymentUrl
         );
@@ -100,7 +101,7 @@ export function AddAgentInboxDialog({
             deploymentUrl,
             apiKey
           );
-          console.log("Got deployment info:", deploymentInfo);
+          logger.log("Got deployment info:", deploymentInfo);
 
           if (
             deploymentInfo?.host?.project_id &&
@@ -109,12 +110,12 @@ export function AddAgentInboxDialog({
             // Generate ID in format: project_id:graphId
             inboxId = `${deploymentInfo.host.project_id}:${graphId}`;
             tenantId = deploymentInfo.host.tenant_id;
-            console.log(`Created new inbox ID: ${inboxId}`);
+            logger.log(`Created new inbox ID: ${inboxId}`);
           } else {
-            console.log("No project_id in deployment info, using UUID");
+            logger.log("No project_id in deployment info, using UUID");
           }
         } catch (error) {
-          console.error("Error fetching deployment info:", error);
+          logger.error("Error fetching deployment info:", error);
           setErrorMessage(
             "Failed to get deployment info. Check your API key and deployment URL."
           );
@@ -122,11 +123,11 @@ export function AddAgentInboxDialog({
           return;
         }
       } else {
-        console.log("Local graph, using UUID for inbox ID");
+        logger.log("Local graph, using UUID for inbox ID");
       }
 
       // Add the inbox with the generated ID
-      console.log("Adding inbox with ID:", inboxId);
+      logger.log("Adding inbox with ID:", inboxId);
       addAgentInbox({
         id: inboxId,
         graphId,
@@ -151,7 +152,7 @@ export function AddAgentInboxDialog({
       // Force page reload to ensure the new inbox appears
       window.location.reload();
     } catch (error) {
-      console.error("Error adding agent inbox:", error);
+      logger.error("Error adding agent inbox:", error);
       setErrorMessage(
         "Failed to add the agent inbox. Please try again or check the console for details."
       );

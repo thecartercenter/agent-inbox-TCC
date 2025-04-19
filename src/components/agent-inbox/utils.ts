@@ -2,6 +2,7 @@ import { BaseMessage, isBaseMessage } from "@langchain/core/messages";
 import { format } from "date-fns";
 import { startCase } from "lodash";
 import { HumanInterrupt, HumanResponseWithEdits, SubmitType } from "./types";
+import { logger } from "./utils/logger";
 
 export function prettifyText(action: string) {
   return startCase(action.replace(/_/g, " "));
@@ -15,7 +16,7 @@ export function isDeployedUrl(url: string): boolean {
   try {
     return url.startsWith("https://");
   } catch (e) {
-    console.error("Error checking if URL is deployed:", e);
+    logger.error("Error checking if URL is deployed:", e);
     return false;
   }
 }
@@ -143,7 +144,7 @@ export function createDefaultHumanResponse(
           k in initialHumanInterruptEditValue.current &&
           initialHumanInterruptEditValue.current[k] !== stringValue
         ) {
-          console.error(
+          logger.error(
             "KEY AND VALUE FOUND IN initialHumanInterruptEditValue.current THAT DOES NOT MATCH THE ACTION REQUEST",
             {
               key: k,
@@ -253,9 +254,12 @@ export interface DeploymentInfoResponse {
 
 /**
  * Fetches information about a deployment from its /info endpoint
+ * @param deploymentUrl The URL of the deployment to fetch info from
+ * @param langchainApiKey Optional API key for authenticated endpoints
  */
 export async function fetchDeploymentInfo(
-  deploymentUrl: string
+  deploymentUrl: string,
+  langchainApiKey?: string
 ): Promise<DeploymentInfoResponse | null> {
   try {
     // Ensure deploymentUrl doesn't end with a slash
@@ -266,20 +270,25 @@ export async function fetchDeploymentInfo(
       "Content-Type": "application/json",
     };
 
+    // Add authorization header if API key is provided
+    if (langchainApiKey) {
+      headers["Authorization"] = `Bearer ${langchainApiKey}`;
+    }
+
     const response = await fetch(infoUrl, {
       method: "GET",
       headers,
     });
 
     if (!response.ok) {
-      console.error(`Error fetching deployment info: ${response.statusText}`);
+      logger.error(`Error fetching deployment info: ${response.statusText}`);
       return null;
     }
 
     const data = await response.json();
     return data as DeploymentInfoResponse;
   } catch (error) {
-    console.error("Error fetching deployment info:", error);
+    logger.error("Error fetching deployment info:", error);
     return null;
   }
 }

@@ -10,15 +10,13 @@ import {
   isBackfillCompleted,
   markBackfillCompleted,
 } from "../utils/backfill";
-import { useLocalStorage } from "../hooks/use-local-storage";
-import { LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY } from "../constants";
+import { logger } from "../utils/logger";
 
 export function BackfillBanner() {
   const [mounted, setMounted] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const { toast } = useToast();
-  const { getItem } = useLocalStorage();
 
   // Only run this check after mounting on the client
   useEffect(() => {
@@ -34,8 +32,7 @@ export function BackfillBanner() {
   const handleRunBackfill = async () => {
     setIsRunning(true);
     try {
-      const langchainApiKey = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
-      const result = await forceInboxBackfill(langchainApiKey || undefined);
+      const result = await forceInboxBackfill();
 
       if (result.success) {
         toast({
@@ -55,7 +52,7 @@ export function BackfillBanner() {
         });
       }
     } catch (error) {
-      console.error("Error running backfill:", error);
+      logger.error("Error running backfill:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again later.",
