@@ -57,7 +57,7 @@ export function SettingsPopover() {
   const handleRunBackfill = async () => {
     setIsRunningBackfill(true);
     try {
-      const result = await forceInboxBackfill(langchainApiKey || undefined);
+      const result = await forceInboxBackfill();
 
       if (result.success) {
         toast({
@@ -71,8 +71,7 @@ export function SettingsPopover() {
       } else {
         toast({
           title: "Error",
-          description:
-            "Failed to update inbox IDs. Please try again or contact support.",
+          description: "Failed to update inbox IDs. Please try again.",
           variant: "destructive",
           duration: 5000,
         });
