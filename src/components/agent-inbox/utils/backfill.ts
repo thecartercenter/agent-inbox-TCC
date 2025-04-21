@@ -22,6 +22,14 @@ export function isBackfillCompleted(): boolean {
   if (typeof window === "undefined") {
     return false;
   }
+
+  // If the user has no deployed inboxes, they don't need a backfill
+  // so we can mark it as completed
+  if (!hasDeployedInboxes()) {
+    logger.log("No deployed inboxes found, considering backfill as completed");
+    return true;
+  }
+
   // For development, we can force the backfill to run always by returning false
   // return false; // Force backfill to run again
   return localStorage.getItem(INBOX_ID_BACKFILL_COMPLETE_KEY) === "true";

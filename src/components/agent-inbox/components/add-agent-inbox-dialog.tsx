@@ -87,6 +87,8 @@ export function AddAgentInboxDialog({
           getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
         const apiKey = langchainApiKey || storedApiKey;
 
+        // Note: The API key is still required for deployed graphs for other operations,
+        // but not for fetching deployment info
         if (!apiKey && isDeployed) {
           setErrorMessage(
             "API key is required for deployed LangGraph instances"
@@ -97,10 +99,7 @@ export function AddAgentInboxDialog({
 
         // Fetch deployment info
         try {
-          const deploymentInfo = await fetchDeploymentInfo(
-            deploymentUrl,
-            apiKey
-          );
+          const deploymentInfo = await fetchDeploymentInfo(deploymentUrl);
           logger.log("Got deployment info:", deploymentInfo);
 
           if (
@@ -117,7 +116,7 @@ export function AddAgentInboxDialog({
         } catch (error) {
           logger.error("Error fetching deployment info:", error);
           setErrorMessage(
-            "Failed to get deployment info. Check your API key and deployment URL."
+            "Failed to get deployment info. Check your deployment URL."
           );
           setIsSubmitting(false);
           return;
