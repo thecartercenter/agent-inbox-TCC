@@ -23,15 +23,16 @@ export function DropdownDialogMenu({
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  // When dialog opens, close dropdown
-  React.useEffect(() => {
-    if (dialogOpen) {
+  // Handle dialog open/close and ensure dropdown closes when dialog opens
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (open) {
       setDropdownOpen(false);
     }
-  }, [dialogOpen]);
+  };
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
       <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button className="px-2" variant="ghost">
