@@ -1,7 +1,12 @@
 import { BaseMessage, isBaseMessage } from "@langchain/core/messages";
 import { format } from "date-fns";
 import { startCase } from "lodash";
-import { HumanInterrupt, HumanResponseWithEdits, SubmitType } from "./types";
+import {
+  HumanInterrupt,
+  HumanResponseWithEdits,
+  SubmitType,
+  AgentInbox,
+} from "./types";
 import { logger } from "./utils/logger";
 
 export function prettifyText(action: string) {
@@ -12,11 +17,15 @@ export function prettifyText(action: string) {
  * Determines if a URL is a deployed (cloud) URL.
  */
 export function isDeployedUrl(url: string): boolean {
-  if (!url) return false;
   try {
-    return url.startsWith("https://");
-  } catch (e) {
-    logger.error("Error checking if URL is deployed:", e);
+    const parsedUrl = new URL(url);
+    // Simple check: Does it start with https and not contain localhost?
+    return (
+      parsedUrl.protocol === "https:" &&
+      !parsedUrl.hostname.includes("localhost")
+    );
+  } catch (_e) {
+    // If parsing fails, assume it's not a valid deployed URL
     return false;
   }
 }
@@ -95,20 +104,56 @@ export function unknownToPrettyDate(input: unknown): string | undefined {
 }
 
 export function constructOpenInStudioURL(
-  deploymentUrl: string,
+  inbox: AgentInbox,
   threadId?: string
-) {
-  const smithStudioURL = new URL("https://smith.langchain.com/studio/thread");
-  // trim the trailing slash from deploymentUrl
-  const trimmedDeploymentUrl = deploymentUrl.replace(/\/$/, "");
+): string {
+  const smithStudioBaseUrl = "https://smith.langchain.com/studio/thread";
 
-  if (threadId) {
-    smithStudioURL.pathname += `/${threadId}`;
+  if (isDeployedUrl(inbox.deploymentUrl)) {
+    const projectId = extractProjectId(inbox.id);
+    const tenantId = inbox.tenantId;
+
+    if (projectId && tenantId && threadId) {
+      const url = new URL(smithStudioBaseUrl);
+      url.searchParams.set("organizationId", tenantId);
+      url.searchParams.set("hostProjectId", projectId);
+      url.searchParams.set("threadId", threadId);
+      return url.toString();
+    } else {
+      // Handle missing data for deployed graph - return a non-functional link or log error
+      console.warn(
+        "Cannot construct Studio URL for deployed graph: Missing projectId, tenantId, or threadId",
+        {
+          inboxId: inbox.id,
+          hasProjectId: !!projectId,
+          hasTenantId: !!tenantId,
+          hasThreadId: !!threadId,
+        }
+      );
+      return "#"; // Return a placeholder/non-functional link
+    }
+  } else {
+    // --- Existing logic for local/non-deployed URLs ---
+    // TODO: Review if this logic is still appropriate for local development.
+    // Currently appends `baseUrl` and `threadId` to the path.
+    // This might be incorrect if the intention is different for local.
+    const smithStudioURL = new URL(smithStudioBaseUrl);
+    // trim the trailing slash from deploymentUrl
+    const trimmedDeploymentUrl = inbox.deploymentUrl.replace(/\/$/, "");
+
+    if (threadId) {
+      // The original logic appended threadId to the path, which might be wrong.
+      // Let's try adding it as a query param for now, similar to deployed.
+      // Revisit if local URLs need a different structure.
+      // smithStudioURL.pathname += `/${threadId}`; // Original way
+      smithStudioURL.searchParams.append("threadId", threadId);
+    }
+
+    smithStudioURL.searchParams.append("baseUrl", trimmedDeploymentUrl);
+    // -----------------------------------------------------
+
+    return smithStudioURL.toString();
   }
-
-  smithStudioURL.searchParams.append("baseUrl", trimmedDeploymentUrl);
-
-  return smithStudioURL.toString();
 }
 
 export function createDefaultHumanResponse(
@@ -284,4 +329,20 @@ export async function fetchDeploymentInfo(
     logger.error("Error fetching deployment info:", error);
     return null;
   }
+}
+
+export function extractProjectId(inboxId: string): string | null {
+  if (!inboxId || !inboxId.includes(":")) {
+    return null;
+  }
+  const parts = inboxId.split(":");
+  if (parts.length === 2) {
+    // Basic check if the first part looks like a UUID v4
+    const uuidV4Regex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidV4Regex.test(parts[0])) {
+      return parts[0];
+    }
+  }
+  return null;
 }

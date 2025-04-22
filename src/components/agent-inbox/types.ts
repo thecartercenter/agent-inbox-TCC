@@ -95,4 +95,5 @@ export interface AgentInbox {
    * The tenant ID for the deployment (only for deployed graphs).
    */
   tenantId?: string;
+  createdAt: string;
 }
