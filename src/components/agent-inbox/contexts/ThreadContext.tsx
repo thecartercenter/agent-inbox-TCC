@@ -16,14 +16,13 @@ import {
   ThreadStatus,
 } from "@langchain/langgraph-sdk";
 import { END } from "@langchain/langgraph/web";
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { useQueryParams } from "../hooks/use-query-params";
 import {
   INBOX_PARAM,
   LIMIT_PARAM,
   OFFSET_PARAM,
   LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
-  AGENT_INBOXES_LOCAL_STORAGE_KEY,
 } from "../constants";
 import {
   getInterruptFromThread,
@@ -33,7 +32,6 @@ import {
 } from "./utils";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useInboxes } from "../hooks/use-inboxes";
-import { runInboxBackfill } from "../utils/backfill";
 import { logger } from "../utils/logger";
 
 type ThreadContentType<
@@ -127,76 +125,6 @@ export function ThreadsProvider<
 >({ children }: { children: React.ReactNode }): React.ReactElement {
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
-  const [agentInboxes, setAgentInboxes] = useState<AgentInbox[]>([]);
-  const backfillCompleted = useRef(false);
-
-  // Load inboxes from localStorage on initial mount only
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const inboxesRaw = localStorage.getItem(AGENT_INBOXES_LOCAL_STORAGE_KEY);
-      logger.log("[DEBUG] Initial load - localStorage inboxes:", inboxesRaw);
-
-      if (inboxesRaw) {
-        try {
-          const parsed = JSON.parse(inboxesRaw);
-          logger.log("[DEBUG] Initial load - parsed inboxes:", parsed);
-
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setAgentInboxes(parsed);
-            logger.log(
-              "[DEBUG] Loaded inboxes from localStorage:",
-              parsed.length
-            );
-          } else {
-            logger.log("[DEBUG] No inboxes found in parsed data");
-          }
-        } catch (e) {
-          logger.error("[DEBUG] Error parsing inboxes:", e);
-        }
-      } else {
-        logger.log("[DEBUG] No inboxes found in localStorage");
-      }
-    } catch (error) {
-      logger.error("Error loading inboxes from localStorage:", error);
-    }
-  }, []);
-
-  // Run the backfill process when the app loads, but only once
-  useEffect(() => {
-    if (typeof window === "undefined" || backfillCompleted.current) return;
-
-    async function backfillInboxIds() {
-      try {
-        const langchainApiKey = getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY);
-        logger.log(
-          "[DEBUG] Running backfill with API key:",
-          langchainApiKey ? "present" : "missing"
-        );
-
-        const result = await runInboxBackfill();
-        logger.log("[DEBUG] Backfill result:", result);
-
-        // Mark that we've completed the backfill
-        backfillCompleted.current = true;
-
-        // Directly use the returned inboxes instead of reading from localStorage again
-        if (result.success && result.updatedInboxes.length > 0) {
-          logger.log(
-            "[DEBUG] Using returned inboxes after backfill:",
-            result.updatedInboxes.length
-          );
-          setAgentInboxes(result.updatedInboxes);
-        }
-      } catch (error) {
-        logger.error("Error running inbox ID backfill:", error);
-        // Don't display a toast to avoid confusing users
-      }
-    }
-
-    backfillInboxIds();
-  }, [getItem]);
 
   const { getSearchParam, searchParams } = useQueryParams();
   const [loading, setLoading] = React.useState(false);
@@ -205,8 +133,8 @@ export function ThreadsProvider<
   >([]);
   const [hasMoreThreads, setHasMoreThreads] = React.useState(true);
 
-  // Using the new useInboxes hook
   const {
+    agentInboxes,
     addAgentInbox,
     deleteAgentInbox,
     changeAgentInbox,
@@ -238,6 +166,9 @@ export function ThreadsProvider<
   const fetchThreads = React.useCallback(
     async (inbox: ThreadStatusWithAll) => {
       setLoading(true);
+      setThreadData([]);
+      setHasMoreThreads(true);
+
       const client = getClient({
         agentInboxes,
         getItem,
@@ -340,6 +271,8 @@ export function ThreadsProvider<
         setThreadData(sortedData);
         setHasMoreThreads(threads.length === limit);
       } catch (e) {
+        setThreadData([]);
+        setHasMoreThreads(false);
         logger.error("Failed to fetch threads", e);
       }
       setLoading(false);
