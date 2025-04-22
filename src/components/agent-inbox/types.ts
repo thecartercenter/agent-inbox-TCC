@@ -51,20 +51,14 @@ export interface ThreadValues {
   };
 }
 
-export type ThreadData<
+export interface ThreadData<
   ThreadValues extends Record<string, any> = Record<string, any>,
-> = {
+> {
+  status: ThreadStatus | "human_response_needed";
   thread: Thread<ThreadValues>;
-} & (
-  | {
-      status: "interrupted";
-      interrupts: HumanInterrupt[] | undefined;
-    }
-  | {
-      status: "idle" | "busy" | "error";
-      interrupts?: never;
-    }
-);
+  interrupts?: HumanInterrupt[];
+  invalidSchema?: boolean;
+}
 
 export type ThreadStatusWithAll = ThreadStatus | "all";
 

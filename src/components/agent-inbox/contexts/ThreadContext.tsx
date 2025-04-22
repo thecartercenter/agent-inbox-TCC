@@ -9,12 +9,7 @@ import {
 } from "@/components/agent-inbox/types";
 import { useToast, type ToastInput } from "@/hooks/use-toast";
 import { createClient } from "@/lib/client";
-import {
-  Run,
-  Thread,
-  ThreadState,
-  ThreadStatus,
-} from "@langchain/langgraph-sdk";
+import { Run, Thread, ThreadStatus } from "@langchain/langgraph-sdk";
 import { END } from "@langchain/langgraph/web";
 import React from "react";
 import { useQueryParams } from "../hooks/use-query-params";
@@ -206,58 +201,71 @@ export function ThreadsProvider<
           ...(metadataInput ? { metadata: metadataInput } : {}),
         };
         const threads = await client.threads.search(threadSearchArgs);
-        const data: ThreadData<ThreadValues>[] = [];
+        const processedData: ThreadData<ThreadValues>[] = [];
 
-        if (["interrupted", "all"].includes(inbox)) {
-          const interruptedThreads = threads.filter(
-            (t) => t.status === "interrupted"
-          );
+        for (const thread of threads) {
+          const currentThread = thread as Thread<ThreadValues>;
 
-          // Process threads with interrupts in their thread object
-          const processedThreads = interruptedThreads
-            .map((t) => processInterruptedThread(t as Thread<ThreadValues>))
-            .filter((t): t is ThreadData<ThreadValues> => !!t);
-          data.push(...processedThreads);
+          if (currentThread.status === "interrupted") {
+            let processedThreadData: ThreadData<ThreadValues> | null = null;
+            try {
+              const attempt1Result = processInterruptedThread(currentThread);
+              processedThreadData = attempt1Result
+                ? (attempt1Result as ThreadData<ThreadValues>)
+                : null;
 
-          // [LEGACY]: Process threads that need state lookup
-          const threadsWithoutInterrupts = interruptedThreads.filter(
-            (t) => !getInterruptFromThread(t)?.length
-          );
-
-          if (threadsWithoutInterrupts.length > 0) {
-            const states = await bulkGetThreadStates(
-              threadsWithoutInterrupts.map((t) => t.thread_id)
-            );
-
-            const interruptedData = states.map((state) => {
-              const thread = threadsWithoutInterrupts.find(
-                (t) => t.thread_id === state.thread_id
-              );
-              if (!thread) {
-                throw new Error(`Thread not found: ${state.thread_id}`);
+              if (
+                !processedThreadData ||
+                !processedThreadData.interrupts?.length
+              ) {
+                if (!getInterruptFromThread(currentThread)?.length) {
+                  const state = await client.threads.getState<ThreadValues>(
+                    currentThread.thread_id
+                  );
+                  const attempt2Result = processThreadWithoutInterrupts(
+                    currentThread,
+                    {
+                      thread_id: currentThread.thread_id,
+                      thread_state: state,
+                    }
+                  );
+                  processedThreadData = attempt2Result
+                    ? (attempt2Result as ThreadData<ThreadValues>)
+                    : null;
+                }
+                if (!processedThreadData?.interrupts?.length) {
+                  processedThreadData = null;
+                }
               }
-              return processThreadWithoutInterrupts(
-                thread as Thread<ThreadValues>,
-                state
+            } catch (e) {
+              console.error(
+                `Error processing interrupted thread ${currentThread.thread_id}:`,
+                e
               );
-            });
+              processedThreadData = null;
+            }
 
-            data.push(...interruptedData);
+            if (processedThreadData) {
+              processedData.push(processedThreadData);
+            } else {
+              processedData.push({
+                status: "interrupted",
+                thread: currentThread,
+                interrupts: undefined,
+                invalidSchema: true,
+              });
+            }
+          } else {
+            processedData.push({
+              status: currentThread.status,
+              thread: currentThread,
+              interrupts: undefined,
+              invalidSchema: undefined,
+            });
           }
         }
 
-        threads.forEach((t) => {
-          if (t.status === "interrupted") {
-            return;
-          }
-          data.push({
-            status: t.status,
-            thread: t as Thread<ThreadValues>,
-          });
-        });
-
-        // Sort data by created_at in descending order (most recent first)
-        const sortedData = data.sort((a, b) => {
+        const sortedData = processedData.sort((a, b) => {
           return (
             new Date(b.thread.created_at).getTime() -
             new Date(a.thread.created_at).getTime()
@@ -311,48 +319,6 @@ export function ThreadsProvider<
         status: thread.status,
         interrupts: threadInterrupts,
       };
-    },
-    [agentInboxes]
-  );
-
-  const bulkGetThreadStates = React.useCallback(
-    async (
-      threadIds: string[]
-    ): Promise<
-      { thread_id: string; thread_state: ThreadState<ThreadValues> }[]
-    > => {
-      const client = getClient({
-        agentInboxes,
-        getItem,
-        toast,
-      });
-      if (!client) {
-        return [];
-      }
-      const chunkSize = 25;
-      const chunks = [];
-
-      // Split threadIds into chunks of 25
-      for (let i = 0; i < threadIds.length; i += chunkSize) {
-        chunks.push(threadIds.slice(i, i + chunkSize));
-      }
-
-      // Process each chunk sequentially
-      const results: {
-        thread_id: string;
-        thread_state: ThreadState<ThreadValues>;
-      }[] = [];
-      for (const chunk of chunks) {
-        const chunkResults = await Promise.all(
-          chunk.map(async (id) => ({
-            thread_id: id,
-            thread_state: await client.threads.getState<ThreadValues>(id),
-          }))
-        );
-        results.push(...chunkResults);
-      }
-
-      return results;
     },
     [agentInboxes]
   );
