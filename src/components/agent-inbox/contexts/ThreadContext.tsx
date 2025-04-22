@@ -166,8 +166,6 @@ export function ThreadsProvider<
   const fetchThreads = React.useCallback(
     async (inbox: ThreadStatusWithAll) => {
       setLoading(true);
-      setThreadData([]);
-      setHasMoreThreads(true);
 
       const client = getClient({
         agentInboxes,
@@ -271,8 +269,6 @@ export function ThreadsProvider<
         setThreadData(sortedData);
         setHasMoreThreads(threads.length === limit);
       } catch (e) {
-        setThreadData([]);
-        setHasMoreThreads(false);
         logger.error("Failed to fetch threads", e);
       }
       setLoading(false);
