@@ -179,14 +179,10 @@ export function useInboxes() {
         );
         setAgentInboxes(updatedInboxes);
       }
-
-      // Update localStorage (consider if this should only happen on explicit changes like add/delete/update/change)
-      // setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify(updatedInboxes));
     },
     [
       getSearchParam,
       getItem,
-      // setItem,
       agentInboxes, // Include agentInboxes state to compare against
       updateQueryParams,
     ]
