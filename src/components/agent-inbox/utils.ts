@@ -1,7 +1,14 @@
 import { BaseMessage, isBaseMessage } from "@langchain/core/messages";
 import { format } from "date-fns";
 import { startCase } from "lodash";
-import { HumanInterrupt, HumanResponseWithEdits, SubmitType } from "./types";
+import {
+  HumanInterrupt,
+  HumanResponseWithEdits,
+  SubmitType,
+  AgentInbox,
+} from "./types";
+import { logger } from "./utils/logger";
+import { validate } from "uuid";
 
 export function prettifyText(action: string) {
   return startCase(action.replace(/_/g, " "));
@@ -11,7 +18,17 @@ export function prettifyText(action: string) {
  * Determines if a URL is a deployed (cloud) URL.
  */
 export function isDeployedUrl(url: string): boolean {
-  return url.startsWith("https://");
+  try {
+    const parsedUrl = new URL(url);
+    // Simple check: Does it start with https and not contain localhost?
+    return (
+      parsedUrl.protocol === "https:" &&
+      !parsedUrl.hostname.includes("localhost")
+    );
+  } catch (_e) {
+    // If parsing fails, assume it's not a valid deployed URL
+    return false;
+  }
 }
 
 export function isArrayOfMessages(
@@ -88,20 +105,48 @@ export function unknownToPrettyDate(input: unknown): string | undefined {
 }
 
 export function constructOpenInStudioURL(
-  deploymentUrl: string,
+  inbox: AgentInbox,
   threadId?: string
-) {
-  const smithStudioURL = new URL("https://smith.langchain.com/studio/thread");
-  // trim the trailing slash from deploymentUrl
-  const trimmedDeploymentUrl = deploymentUrl.replace(/\/$/, "");
+): string {
+  const smithStudioBaseUrl = "https://smith.langchain.com/studio/thread";
 
-  if (threadId) {
-    smithStudioURL.pathname += `/${threadId}`;
+  if (isDeployedUrl(inbox.deploymentUrl)) {
+    const projectId = extractProjectId(inbox.id);
+    const tenantId = inbox.tenantId;
+
+    if (projectId && tenantId && threadId) {
+      const url = new URL(smithStudioBaseUrl);
+      url.searchParams.set("organizationId", tenantId);
+      url.searchParams.set("hostProjectId", projectId);
+      url.searchParams.set("threadId", threadId);
+      return url.toString();
+    } else {
+      // Handle missing data for deployed graph - return a non-functional link or log error
+      console.warn(
+        "Cannot construct Studio URL for deployed graph: Missing projectId, tenantId, or threadId",
+        {
+          inboxId: inbox.id,
+          hasProjectId: !!projectId,
+          hasTenantId: !!tenantId,
+          hasThreadId: !!threadId,
+        }
+      );
+      return "#"; // Return a placeholder/non-functional link
+    }
+  } else {
+    // --- Logic for local/non-deployed URLs ---
+    const smithStudioURL = new URL(smithStudioBaseUrl);
+    const trimmedDeploymentUrl = inbox.deploymentUrl.replace(/\/$/, "");
+
+    if (threadId) {
+      smithStudioURL.searchParams.append("threadId", threadId);
+    }
+
+    smithStudioURL.searchParams.append("baseUrl", trimmedDeploymentUrl);
+    // -----------------------------------------------------
+
+    return smithStudioURL.toString();
   }
-
-  smithStudioURL.searchParams.append("baseUrl", trimmedDeploymentUrl);
-
-  return smithStudioURL.toString();
 }
 
 export function createDefaultHumanResponse(
@@ -137,7 +182,7 @@ export function createDefaultHumanResponse(
           k in initialHumanInterruptEditValue.current &&
           initialHumanInterruptEditValue.current[k] !== stringValue
         ) {
-          console.error(
+          logger.error(
             "KEY AND VALUE FOUND IN initialHumanInterruptEditValue.current THAT DOES NOT MATCH THE ACTION REQUEST",
             {
               key: k,
@@ -226,4 +271,69 @@ export function haveArgsChanged(
       : JSON.stringify(value, null);
     return initialValues[key] !== valueString;
   });
+}
+
+/**
+ * Interface for deployment info response
+ */
+export interface DeploymentInfoResponse {
+  flags: {
+    assistants: boolean;
+    crons: boolean;
+    langsmith: boolean;
+  };
+  host: {
+    kind: string;
+    project_id: string | null;
+    revision_id: string;
+    tenant_id: string | null;
+  };
+}
+
+/**
+ * Fetches information about a deployment from its /info endpoint
+ * @param deploymentUrl The URL of the deployment to fetch info from
+ */
+export async function fetchDeploymentInfo(
+  deploymentUrl: string
+): Promise<DeploymentInfoResponse | null> {
+  try {
+    // Ensure deploymentUrl doesn't end with a slash
+    const baseUrl = deploymentUrl.replace(/\/$/, "");
+    const infoUrl = `${baseUrl}/info`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    const response = await fetch(infoUrl, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      logger.error(`Error fetching deployment info: ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data as DeploymentInfoResponse;
+  } catch (error) {
+    logger.error("Error fetching deployment info:", error);
+    return null;
+  }
+}
+
+export function extractProjectId(inboxId: string): string | null {
+  if (!inboxId || !inboxId.includes(":")) {
+    return null;
+  }
+  const parts = inboxId.split(":");
+  if (parts.length === 2) {
+    // Ensure the first part is a valid UUID
+    if (validate(parts[0])) {
+      return parts[0];
+    }
+  }
+  return null;
 }

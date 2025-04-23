@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useQueryParams } from "./hooks/use-query-params";
 import { IMPROPER_SCHEMA, VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
 import useInterruptedActions from "./hooks/use-interrupted-actions";
+import { logger } from "./utils/logger";
+
 
 export function ThreadView<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -80,7 +82,7 @@ export function ThreadView<
         updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
       }
     } catch (e) {
-      console.error("Error updating query params & setting thread data", e);
+      logger.error("Error updating query params & setting thread data", e);
     }
   }, [threads, loading, threadId]);
 
@@ -89,7 +91,7 @@ export function ThreadView<
     showDescription: boolean
   ) => {
     if (showState && showDescription) {
-      console.error("Cannot show both state and description");
+      logger.error("Cannot show both state and description");
       return;
     }
     if (showState) {

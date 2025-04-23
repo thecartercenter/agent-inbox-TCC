@@ -13,18 +13,24 @@ import { constructOpenInStudioURL } from "../utils";
 import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import {
+  STUDIO_NOT_WORKING_TROUBLESHOOTING_URL,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+} from "../constants";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "../hooks/use-query-params";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useState } from "react";
+
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { InterruptDetailsView } from "./interrupt-details-view";
+
+import { logger } from "../utils/logger";
 
 interface ThreadActionsViewProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -112,38 +118,82 @@ export function ThreadActionsView<
   const { updateQueryParams } = useQueryParams();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Determine deployment URL for Studio link
-  const deploymentUrl = agentInboxes.find((i) => i.selected)?.deploymentUrl;
 
-  // We're removing this effect to allow side panel for all thread types
-  // React.useEffect(() => {
-  //   if (isInterrupted && handleShowSidePanel) {
-  //     handleShowSidePanel(false, false);
-  //   }
-  // }, [isInterrupted, handleShowSidePanel]);
+  // Get the selected inbox object
+  const selectedInbox = agentInboxes.find((i) => i.selected);
+
+  // Only use interrupted actions for interrupted threads
+  const isInterrupted =
+    threadData.status === "interrupted" &&
+    threadData.interrupts !== undefined &&
+    threadData.interrupts.length > 0;
+
+  // Initialize the hook outside of conditional to satisfy React rules of hooks
+  // Pass null values when not needed
+  const interruptedActions = useInterruptedActions<ThreadValues>({
+    threadData: isInterrupted
+      ? {
+          thread: threadData.thread,
+          status: "interrupted",
+          interrupts: threadData.interrupts || [],
+        }
+      : null,
+    setThreadData: isInterrupted ? setThreadData : null,
+  });
 
   const handleOpenInStudio = () => {
-    if (!deploymentUrl) {
+    if (!selectedInbox) {
       toast({
         title: "Error",
-        description: "Please set the LangGraph deployment URL in settings.",
+        description: "No agent inbox selected.",
+        variant: "destructive",
         duration: 5000,
       });
       return;
     }
 
     const studioUrl = constructOpenInStudioURL(
-      deploymentUrl,
+      selectedInbox, // Pass the full inbox object
       threadData.thread.thread_id
     );
-    window.open(studioUrl, "_blank");
+
+    if (studioUrl === "#") {
+      // Handle case where URL construction failed (e.g., missing data)
+      toast({
+        title: "Error",
+        description: (
+          <>
+            <p>
+              Could not construct Studio URL. Check if inbox has necessary
+              details (Project ID, Tenant ID).
+            </p>
+            <p>
+              If the issue persists, see the{" "}
+              <a
+                href={STUDIO_NOT_WORKING_TROUBLESHOOTING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                troubleshooting section
+              </a>
+            </p>
+          </>
+        ),
+        variant: "destructive",
+        duration: 10000,
+      });
+    } else {
+      window.open(studioUrl, "_blank");
+    }
   };
 
   const handleRefreshThread = async () => {
-    if (!deploymentUrl) {
+    // Use selectedInbox here as well
+    if (!selectedInbox) {
       toast({
         title: "Error",
-        description: "Please set the LangGraph deployment URL in settings.",
+        description: "No agent inbox selected.",
+        variant: "destructive",
         duration: 5000,
       });
       return;
@@ -166,7 +216,7 @@ export function ThreadActionsView<
         duration: 3000,
       });
     } catch (error) {
-      console.error("Error refreshing thread:", error);
+      logger.error("Error refreshing thread:", error);
       toast({
         title: "Error",
         description: "Failed to refresh thread information.",

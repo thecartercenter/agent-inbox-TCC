@@ -15,6 +15,7 @@ import { HumanInterrupt, ThreadStatusWithAll } from "../types";
 import { prettifyText } from "../utils";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import React from "react";
+import { logger } from "../utils/logger";
 
 export function BreadCrumb({ className }: { className?: string }) {
   const { searchParams } = useQueryParams();
@@ -63,7 +64,7 @@ export function BreadCrumb({ className }: { className?: string }) {
         setSelectedThreadActionLabel(undefined);
       }
     } catch (e) {
-      console.error("Error while updating breadcrumb", e);
+      logger.error("Error while updating breadcrumb", e);
     }
   }, [searchParams, agentInboxes, threadData]);
 

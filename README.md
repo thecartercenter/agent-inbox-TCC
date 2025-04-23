@@ -217,13 +217,17 @@ function myGraphFunction(state: MyGraphState) {
 
 Common issues and solutions:
 
-1. **Connection Issues**
-   - Verify your `LANGSMITH_API_KEY` is set correctly
-   - Ensure your Deployment URL is accessible
-   - Check if your LangGraph deployment is running
+### Connection Issues
+ - Verify your `LANGSMITH_API_KEY` is set correctly
+ - Ensure your Deployment URL is accessible
+ - Check if your LangGraph deployment is running
 
-2. **Schema Validation Errors**
-   - Ensure all required fields are present in your interrupt objects
-   - Verify the types of all fields match the schema
-   - Check that response handling matches expected types
-   - Check you're extracting the first object from the response list returned by the `interrupt` function
+### Schema Validation Errors
+ - Ensure all required fields are present in your interrupt objects
+ - Verify the types of all fields match the schema
+ - Check that response handling matches expected types
+ - Check you're extracting the first object from the response list returned by the `interrupt` function
+
+### The Open in Studio button doesn't work for my deployed graphs
+ - This feature requires fields from your LangGraph deployment only made available after **04/18/2025**. If your graph *has not* created a new revision since then, you will need to create a new revision for this feature to work.
+ - Delete the inbox, and re-add it. The logic for capturing the required fields to construct the Studio URL is new, and your inbox will need to be re-added for this feature to work.
