@@ -5,6 +5,9 @@ import {
   AGENT_INBOX_PARAM,
   AGENT_INBOXES_LOCAL_STORAGE_KEY,
   NO_INBOXES_FOUND_PARAM,
+  OFFSET_PARAM,
+  LIMIT_PARAM,
+  INBOX_PARAM,
 } from "../constants";
 import { useLocalStorage } from "./use-local-storage";
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -118,50 +121,75 @@ export function useInboxes() {
         return;
       }
 
+      // Ensure each agent inbox has an ID, and if not, add one
+      currentInboxes = currentInboxes.map((inbox) => {
+        return {
+          ...inbox,
+          id: inbox.id || uuidv4(),
+        };
+      });
+
       const agentInboxSearchParam = getSearchParam(AGENT_INBOX_PARAM);
       logger.log(
         "Agent inbox search param for selection:",
         agentInboxSearchParam
       );
 
-      // Ensure IDs are present (might be redundant if backfill guarantees it, but safe)
-      currentInboxes = currentInboxes.map((inbox) => ({
-        ...inbox,
-        id: inbox.id || uuidv4(),
-      }));
+      // If there is no agent inbox search param, or the search param does not match any inbox
+      // update search param and local storage
+      if (!agentInboxSearchParam) {
+        const selectedInbox = currentInboxes.find((inbox) => inbox.selected);
+        if (!selectedInbox) {
+          currentInboxes[0].selected = true;
+          updateQueryParams(
+            [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+            [currentInboxes[0].id, "0", "10", "interrupted"]
+          );
+          setAgentInboxes(currentInboxes);
+          setItem(
+            AGENT_INBOXES_LOCAL_STORAGE_KEY,
+            JSON.stringify(currentInboxes)
+          );
+        } else {
+          updateQueryParams(
+            [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+            [selectedInbox.id, "0", "10", "interrupted"]
+          );
+          setAgentInboxes(currentInboxes);
+          setItem(
+            AGENT_INBOXES_LOCAL_STORAGE_KEY,
+            JSON.stringify(currentInboxes)
+          );
+        }
+
+        // Mark initial load as complete
+        if (!initialLoadComplete.current) {
+          initialLoadComplete.current = true;
+        }
+
+        return;
+      }
 
       let finalSelectedInboxId: string | null = null;
 
-      if (!agentInboxSearchParam) {
-        // No param: Select first or already selected (in memory)
-        const alreadySelected = currentInboxes.find((inbox) => inbox.selected);
-        finalSelectedInboxId =
-          alreadySelected?.id || currentInboxes[0]?.id || null;
-        logger.log("No search param, selecting inbox:", finalSelectedInboxId);
-        if (finalSelectedInboxId && !initialLoadComplete.current) {
-          initialLoadComplete.current = true;
-          // Update URL only on initial load if needed
-          updateQueryParams(AGENT_INBOX_PARAM, finalSelectedInboxId);
-        }
+      // Param exists: Find inbox by param ID
+      const selectedByParam = currentInboxes.find(
+        (inbox) => inbox.id === agentInboxSearchParam
+      );
+
+      if (selectedByParam) {
+        finalSelectedInboxId = selectedByParam.id;
+        logger.log("Found inbox by search param:", finalSelectedInboxId);
       } else {
-        // Param exists: Find inbox by param ID
-        const selectedByParam = currentInboxes.find(
-          (inbox) => inbox.id === agentInboxSearchParam
+        // Param exists but inbox not found: Select first
+        finalSelectedInboxId = currentInboxes[0]?.id || null;
+        logger.log(
+          "Inbox for search param not found, selecting first inbox:",
+          finalSelectedInboxId
         );
-        if (selectedByParam) {
-          finalSelectedInboxId = selectedByParam.id;
-          logger.log("Found inbox by search param:", finalSelectedInboxId);
-        } else {
-          // Param exists but inbox not found: Select first
-          finalSelectedInboxId = currentInboxes[0]?.id || null;
-          logger.log(
-            "Inbox for search param not found, selecting first inbox:",
-            finalSelectedInboxId
-          );
-          if (finalSelectedInboxId) {
-            // Update URL to reflect the actual selection
-            updateQueryParams(AGENT_INBOX_PARAM, finalSelectedInboxId);
-          }
+        if (finalSelectedInboxId) {
+          // Update URL to reflect the actual selection
+          updateQueryParams(AGENT_INBOX_PARAM, finalSelectedInboxId);
         }
       }
 
@@ -205,7 +233,11 @@ export function useInboxes() {
       if (!agentInboxesStr || agentInboxesStr === "[]") {
         setAgentInboxes([newInbox]);
         setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([newInbox]));
-        updateQueryParams(AGENT_INBOX_PARAM, newInbox.id);
+        // Set agent inbox, offset, and limit
+        updateQueryParams(
+          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+          [newInbox.id, "0", "10", "interrupted"]
+        );
         return;
       }
 
@@ -354,14 +386,21 @@ export function useInboxes() {
 
       // Update URL parameters
       if (!replaceAll) {
-        updateQueryParams(AGENT_INBOX_PARAM, id);
-        router.refresh();
+        // Set agent inbox, offset, limit, and inbox param
+        updateQueryParams(
+          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+          [id, "0", "10", "interrupted"]
+        );
       } else {
-        // Use URLSearchParams to construct the URL properly
-        const searchParams = new URLSearchParams();
-        searchParams.set(AGENT_INBOX_PARAM, id);
-        const newUrl = `/?${searchParams.toString()}`;
-        router.push(newUrl);
+        const url = new URL(window.location.href);
+        const newParams = new URLSearchParams({
+          [AGENT_INBOX_PARAM]: id,
+          [OFFSET_PARAM]: "0",
+          [LIMIT_PARAM]: "10",
+          [INBOX_PARAM]: "interrupted",
+        });
+        const newUrl = url.pathname + "?" + newParams.toString();
+        window.location.href = newUrl;
       }
     },
     [getItem, setItem, updateQueryParams, router]

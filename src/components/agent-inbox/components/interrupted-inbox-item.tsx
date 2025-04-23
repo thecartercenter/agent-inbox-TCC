@@ -1,34 +1,37 @@
 import { cn } from "@/lib/utils";
-import { HumanInterrupt } from "../types";
+import { InterruptedThreadData } from "../types";
 import React from "react";
 import { InboxItemStatuses } from "./statuses";
-import { Thread } from "@langchain/langgraph-sdk";
 import { format } from "date-fns";
 import { useQueryParams } from "../hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { IMPROPER_SCHEMA, VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { ThreadIdCopyable } from "./thread-id";
 
 interface InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
-  threadData: {
-    thread: Thread<ThreadValues>;
-    status: "interrupted";
-    interrupts: HumanInterrupt[];
-  };
+  threadData: InterruptedThreadData<ThreadValues>;
   isLast: boolean;
-  onThreadClick?: () => void;
+  onThreadClick: (id: string) => void;
 }
 
-export function InterruptedInboxItem<
-  ThreadValues extends Record<string, any> = Record<string, any>,
->({ threadData, isLast, onThreadClick }: InterruptedInboxItem<ThreadValues>) {
+export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
+  threadData,
+  isLast,
+  onThreadClick,
+}: InterruptedInboxItem<ThreadValues>) => {
   const { updateQueryParams } = useQueryParams();
-  const descriptionPreview =
-    threadData.interrupts[0].description &&
-    threadData.interrupts[0].description.slice(0, 65);
+  const firstInterrupt = threadData.interrupts?.[0];
+
+  const descriptionPreview = firstInterrupt?.description?.slice(0, 65);
   const descriptionTruncated =
-    threadData.interrupts[0].description &&
-    threadData.interrupts[0].description.length > 65;
+    firstInterrupt?.description && firstInterrupt.description.length > 65;
+
+  const action = firstInterrupt?.action_request?.action;
+  const title = !action || action === IMPROPER_SCHEMA ? "Interrupt" : action;
+  const hasNoDescription =
+    !firstInterrupt ||
+    (!firstInterrupt.description && !threadData.invalidSchema);
 
   const updatedAtDateString = format(
     new Date(threadData.thread.updated_at),
@@ -40,7 +43,7 @@ export function InterruptedInboxItem<
 
     // Call the onThreadClick callback first to save scroll position
     if (onThreadClick) {
-      onThreadClick();
+      onThreadClick(threadData.thread.thread_id);
     }
 
     // Navigate immediately using the NextJS router approach
@@ -51,31 +54,64 @@ export function InterruptedInboxItem<
     );
   };
 
+  const hasDescriptionValue =
+    descriptionPreview ||
+    descriptionTruncated ||
+    (!firstInterrupt && threadData.invalidSchema);
+
   return (
     <div
+      key={threadData.thread.thread_id}
       onClick={handleThreadClick}
       className={cn(
-        "grid grid-cols-12 w-full p-6 items-center cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out",
-        !isLast && "border-b-[1px] border-gray-200"
+        "grid grid-cols-12 w-full p-4 items-center cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out h-[71px]",
+        !isLast && "border-b border-gray-200"
       )}
     >
-      <div className="col-span-9 flex items-center justify-start gap-4">
+      {/* Column 1: Dot - adjusted span slightly */}
+      <div className="col-span-1 flex justify-center">
         <div className="w-[6px] h-[6px] rounded-full bg-blue-400" />
-        <div className="flex items-center justify-start gap-2">
-          <p className="text-black text-sm font-semibold">
-            {threadData.interrupts[0]?.action_request?.action || "Unknown"}
-          </p>
-          {descriptionPreview && (
-            <p className="text-sm text-gray-700 font-light">{`${descriptionPreview}${descriptionTruncated ? "..." : ""}`}</p>
+      </div>
+
+      {/* Column 2-9: Title and Description - merged spans */}
+      <div className="col-span-8 overflow-hidden">
+        <div className="flex items-center">
+          <span className="text-sm font-semibold text-black truncate pr-1">
+            {title}
+          </span>
+
+          {threadData.invalidSchema && (
+            <div className="ml-2">
+              <ThreadIdCopyable
+                showUUID
+                threadId={threadData.thread.thread_id}
+              />
+            </div>
           )}
         </div>
+        {hasDescriptionValue && (
+          <div className="text-sm text-muted-foreground truncate h-[18px]">
+            {descriptionPreview}
+            {descriptionTruncated && "..."}
+            {!firstInterrupt && threadData.invalidSchema && (
+              <i>Invalid interrupt data - cannot display details.</i>
+            )}
+            {hasNoDescription && <span>&nbsp;</span>}
+          </div>
+        )}
       </div>
-      <div className="col-span-2">
-        <InboxItemStatuses config={threadData.interrupts[0].config} />
+
+      {/* Column 10: Statuses - adjusted span */}
+      <div className="col-span-1">
+        {firstInterrupt?.config && (
+          <InboxItemStatuses config={firstInterrupt.config} />
+        )}
       </div>
-      <p className="col-span-1 text-gray-600 font-light text-sm">
+
+      {/* Column 11-12: Timestamp - adjusted span */}
+      <p className="col-span-2 text-right text-sm text-gray-600 font-light">
         {updatedAtDateString}
       </p>
     </div>
   );
-}
+};

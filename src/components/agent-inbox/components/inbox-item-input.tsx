@@ -125,7 +125,7 @@ function ResponseComponent({
         />
       </div>
 
-      {showArgsInResponse && (
+      {showArgsInResponse && interruptValue?.action_request?.args && (
         <ArgsRenderer args={interruptValue.action_request.args} />
       )}
 
@@ -211,7 +211,7 @@ function EditAndOrAcceptComponent({
     if (acceptResponse) {
       return (
         <AcceptComponent
-          actionRequestArgs={interruptValue.action_request.args}
+          actionRequestArgs={interruptValue?.action_request?.args || {}}
           streaming={streaming}
           handleSubmit={handleSubmit}
         />
@@ -331,9 +331,10 @@ export function InboxItemInput({
   handleSubmit,
 }: InboxItemInputProps) {
   const { toast } = useToast();
-  const isEditAllowed = interruptValue.config.allow_edit;
-  const isResponseAllowed = interruptValue.config.allow_respond;
-  const hasArgs = Object.entries(interruptValue.action_request.args).length > 0;
+  const isEditAllowed = interruptValue?.config?.allow_edit ?? false;
+  const isResponseAllowed = interruptValue?.config?.allow_respond ?? false;
+  const hasArgs =
+    Object.entries(interruptValue?.action_request?.args || {}).length > 0;
   const showArgsInResponse =
     hasArgs && !isEditAllowed && !acceptAllowed && isResponseAllowed;
   const showArgsOutsideActionCards =
@@ -498,7 +499,7 @@ export function InboxItemInput({
         ""
       )}
     >
-      {showArgsOutsideActionCards && (
+      {showArgsOutsideActionCards && interruptValue?.action_request?.args && (
         <ArgsRenderer args={interruptValue.action_request.args} />
       )}
 
@@ -518,14 +519,16 @@ export function InboxItemInput({
             <Separator className="w-1/2" />
           </div>
         ) : null}
-        <Response
-          humanResponse={humanResponse}
-          streaming={streaming}
-          showArgsInResponse={showArgsInResponse}
-          interruptValue={interruptValue}
-          onResponseChange={onResponseChange}
-          handleSubmit={handleSubmit}
-        />
+        {isResponseAllowed && (
+          <Response
+            humanResponse={humanResponse}
+            streaming={streaming}
+            showArgsInResponse={showArgsInResponse}
+            interruptValue={interruptValue}
+            onResponseChange={onResponseChange}
+            handleSubmit={handleSubmit}
+          />
+        )}
         {streaming && !currentNode && (
           <p className="text-sm text-gray-600">Waiting for Graph to start...</p>
         )}

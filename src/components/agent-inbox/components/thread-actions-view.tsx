@@ -1,10 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw, AlertTriangle, ClockIcon } from "lucide-react";
-import { ThreadData } from "../types";
+import {
+  ArrowLeft,
+  RefreshCw,
+  AlertTriangle,
+  ClockIcon,
+  AlertCircle,
+  Loader,
+} from "lucide-react";
+import { ThreadData, GenericThreadData } from "../types";
+import useInterruptedActions from "../hooks/use-interrupted-actions";
 import { constructOpenInStudioURL } from "../utils";
 import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
-import useInterruptedActions from "../hooks/use-interrupted-actions";
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
 import {
   STUDIO_NOT_WORKING_TROUBLESHOOTING_URL,
@@ -15,18 +22,28 @@ import { cn } from "@/lib/utils";
 import { useQueryParams } from "../hooks/use-query-params";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useState } from "react";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { InterruptDetailsView } from "./interrupt-details-view";
+
 import { logger } from "../utils/logger";
 
 interface ThreadActionsViewProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
   threadData: ThreadData<ThreadValues>;
+  isInterrupted: boolean;
+  threadTitle: string;
+  showState: boolean;
+  showDescription: boolean;
+  handleShowSidePanel?: (showState: boolean, showDescription: boolean) => void;
   setThreadData: React.Dispatch<
     React.SetStateAction<ThreadData<ThreadValues> | undefined>
   >;
-  handleShowSidePanel: (showState: boolean, showDescription: boolean) => void;
-  showState: boolean;
-  showDescription: boolean;
 }
 
 function ButtonGroup({
@@ -39,7 +56,6 @@ function ButtonGroup({
   handleShowDescription: () => void;
   showingState: boolean;
   showingDescription: boolean;
-  isInterrupted: boolean;
 }) {
   return (
     <div className="flex flex-row gap-0 items-center justify-center">
@@ -69,14 +85,35 @@ function ButtonGroup({
   );
 }
 
+// Helper type guard functions
+function isIdleThread<T extends Record<string, any>>(
+  threadData: ThreadData<T>
+): threadData is GenericThreadData<T> & { status: "idle" } {
+  return threadData.status === "idle";
+}
+
+function isBusyThread<T extends Record<string, any>>(
+  threadData: ThreadData<T>
+): threadData is GenericThreadData<T> & { status: "busy" } {
+  return threadData.status === "busy";
+}
+
+function isErrorThread<T extends Record<string, any>>(
+  threadData: ThreadData<T>
+): threadData is GenericThreadData<T> & { status: "error" } {
+  return threadData.status === "error";
+}
+
 export function ThreadActionsView<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({
   threadData,
-  setThreadData,
-  handleShowSidePanel,
+  isInterrupted: _propIsInterrupted,
+  threadTitle,
   showDescription,
   showState,
+  handleShowSidePanel,
+  setThreadData,
 }: ThreadActionsViewProps<ThreadValues>) {
   const { agentInboxes, fetchSingleThread } = useThreadsContext<ThreadValues>();
   const { toast } = useToast();
@@ -85,16 +122,16 @@ export function ThreadActionsView<
 
   // Get the selected inbox object
   const selectedInbox = agentInboxes.find((i) => i.selected);
+  const deploymentUrl = selectedInbox?.deploymentUrl;
 
   // Only use interrupted actions for interrupted threads
   const isInterrupted =
     threadData.status === "interrupted" &&
     threadData.interrupts !== undefined &&
     threadData.interrupts.length > 0;
-
+  console.log("isInterrupted", isInterrupted);
   // Initialize the hook outside of conditional to satisfy React rules of hooks
-  // Pass null values when not needed
-  const interruptedActions = useInterruptedActions<ThreadValues>({
+  const actions = useInterruptedActions<ThreadValues>({
     threadData: isInterrupted
       ? {
           thread: threadData.thread,
@@ -102,7 +139,7 @@ export function ThreadActionsView<
           interrupts: threadData.interrupts || [],
         }
       : null,
-    setThreadData: isInterrupted ? setThreadData : null,
+    setThreadData,
   });
 
   const handleOpenInStudio = () => {
@@ -172,32 +209,7 @@ export function ThreadActionsView<
       });
 
       // Fetch the latest thread data using the ThreadsContext
-      const updatedThreadData = await fetchSingleThread(
-        threadData.thread.thread_id
-      );
-
-      if (!updatedThreadData) {
-        throw new Error("Failed to fetch updated thread data");
-      }
-
-      // Update the local state with the fresh thread data
-      setThreadData((prevThreadData) => {
-        if (!prevThreadData || !updatedThreadData) return prevThreadData;
-
-        // Create the new thread data with the correct type
-        if (updatedThreadData.status === "interrupted") {
-          return {
-            thread: updatedThreadData.thread,
-            status: "interrupted" as const,
-            interrupts: updatedThreadData.interrupts,
-          };
-        } else {
-          return {
-            thread: updatedThreadData.thread,
-            status: updatedThreadData.status,
-          };
-        }
-      });
+      await fetchSingleThread(threadData.thread.thread_id);
 
       toast({
         title: "Thread refreshed",
@@ -217,81 +229,162 @@ export function ThreadActionsView<
     }
   };
 
-  const threadTitle =
-    isInterrupted && threadData.interrupts
-      ? threadData.interrupts[0]?.action_request?.action || "Thread"
-      : `Thread (${threadData.status})`;
-
-  const actionsDisabled = isInterrupted
-    ? interruptedActions?.loading || interruptedActions?.streaming
-    : false;
-
-  const ignoreAllowed =
-    isInterrupted && threadData.interrupts
-      ? threadData.interrupts[0].config.allow_ignore
-      : false;
-
-  const getStatusIcon = () => {
-    switch (threadData.status) {
-      case "idle":
-        return <ClockIcon className="w-5 h-5 text-gray-500" />;
-      case "busy":
-        return <RefreshCw className="w-5 h-5 text-blue-500" />;
-      case "error":
-        return <AlertTriangle className="w-5 h-5 text-red-500" />;
-      default:
-        return null;
+  // Use the passed handleShowSidePanel prop or update query params directly
+  const updateSidePanel = (state: boolean, description: boolean) => {
+    if (handleShowSidePanel) {
+      handleShowSidePanel(state, description);
+    } else {
+      updateQueryParams("thread_state", String(state));
+      updateQueryParams("thread_description", String(description));
     }
   };
 
-  return (
-    <div className="flex flex-col min-h-full w-full p-12 gap-9">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between w-full gap-3">
-        <div className="flex items-center justify-start gap-3">
-          <TooltipIconButton
-            tooltip="Back to inbox"
-            variant="ghost"
-            onClick={() => {
-              updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
-            }}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </TooltipIconButton>
-          <div className="flex items-center gap-2">
-            {!isInterrupted && getStatusIcon()}
-            <p className="text-2xl tracking-tighter text-pretty">
-              {threadTitle}
-            </p>
+  // Safely access config for determining allowed actions
+  const firstInterrupt = threadData.interrupts?.[0];
+  const config = firstInterrupt?.config;
+  const ignoreAllowed = config?.allow_ignore ?? false;
+  const acceptAllowed = config?.allow_accept ?? false;
+
+  // Status Icon Logic
+  const getStatusIcon = () => {
+    if (isIdleThread(threadData)) {
+      return <ClockIcon className="w-4 h-4 text-gray-500" />;
+    } else if (isBusyThread(threadData)) {
+      return <Loader className="w-4 h-4 text-blue-500 animate-spin" />;
+    } else if (isErrorThread(threadData)) {
+      return <AlertTriangle className="w-4 h-4 text-red-500" />;
+    }
+    return null;
+  };
+
+  // Handle Invalid  Interrupt Threads
+  /////////////////////////////////////
+  if (threadData.invalidSchema) {
+    return (
+      <div className="flex flex-col min-h-full w-full">
+        <div className="p-12 gap-9 flex flex-col w-full">
+          {/* Header (minimal) */}
+          <div className="flex flex-wrap items-center justify-between w-full gap-3">
+            <div className="flex items-center justify-start gap-3">
+              <TooltipIconButton
+                tooltip="Back to inbox"
+                variant="ghost"
+                onClick={() => {
+                  updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+                }}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </TooltipIconButton>
+              <div className="flex items-center gap-2">
+                <p className="text-2xl tracking-tighter text-pretty">
+                  {threadTitle}
+                </p>
+              </div>
+              <ThreadIdCopyable threadId={threadData.thread.thread_id} />
+            </div>
+            {/* Right-side controls with ButtonGroup */}
+            <div className="flex flex-row gap-2 items-center justify-start">
+              {deploymentUrl && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-1 bg-white"
+                  onClick={handleOpenInStudio}
+                >
+                  Studio
+                </Button>
+              )}
+              <ButtonGroup
+                handleShowState={() => updateSidePanel(true, false)}
+                handleShowDescription={() => updateSidePanel(false, true)}
+                showingState={showState}
+                showingDescription={showDescription}
+              />
+            </div>
           </div>
-          <ThreadIdCopyable threadId={threadData.thread.thread_id} />
-        </div>
-        <div className="flex flex-row gap-2 items-center justify-start">
-          {selectedInbox && (
+
+          {/* Interrupt details on the left for invalid interrupts */}
+          <InterruptDetailsView threadData={threadData} />
+
+          {/* Invalid schema message */}
+          <div className="p-4 border border-yellow-200 bg-yellow-50 text-yellow-700 rounded-md w-full">
+            This thread is interrupted, but the required action data is missing
+            or invalid. Standard interrupt actions cannot be performed.
+          </div>
+
+          {/* You might still allow ignoring the thread */}
+          <div className="flex flex-row gap-2 items-center justify-start w-full">
             <Button
-              size="sm"
               variant="outline"
-              className="flex items-center gap-1 bg-white"
-              onClick={handleOpenInStudio}
+              className="text-gray-800 border-gray-500 font-normal bg-white"
+              onClick={actions?.handleIgnore} // Assuming ignore doesn't need config
+              disabled={actions?.loading}
             >
-              Studio
+              Ignore Thread
             </Button>
-          )}
-          <ButtonGroup
-            handleShowState={() => handleShowSidePanel(true, false)}
-            handleShowDescription={() => handleShowSidePanel(false, true)}
-            showingState={showState}
-            showingDescription={showDescription}
-            isInterrupted={isInterrupted}
-          />
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Non-interrupted thread actions */}
-      {!isInterrupted && (
+  // Handle generic Non-Interrupted Threads
+  ////////////////////////////////////////
+  if (
+    threadData.status !== "interrupted" ||
+    !threadData.interrupts ||
+    threadData.interrupts.length === 0
+  ) {
+    return (
+      <div className="flex flex-col min-h-full w-full p-12 gap-9">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between w-full gap-3">
+          <div className="flex items-center justify-start gap-3">
+            <TooltipIconButton
+              tooltip="Back to inbox"
+              variant="ghost"
+              onClick={() => {
+                updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+              }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </TooltipIconButton>
+            <div className="flex items-center gap-2">
+              {!isInterrupted && getStatusIcon()}
+              {isInterrupted && !threadData.invalidSchema && (
+                <AlertCircle className="w-4 h-4 text-yellow-600" />
+              )}{" "}
+              {/* Icon for valid interrupt */}
+              <p className="text-2xl tracking-tighter text-pretty">
+                {threadTitle}
+              </p>
+            </div>
+            <ThreadIdCopyable threadId={threadData.thread.thread_id} />
+          </div>
+          <div className="flex flex-row gap-2 items-center justify-start">
+            {deploymentUrl && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex items-center gap-1 bg-white"
+                onClick={handleOpenInStudio}
+              >
+                Studio
+              </Button>
+            )}
+            <ButtonGroup
+              handleShowState={() => updateSidePanel(true, false)}
+              handleShowDescription={() => updateSidePanel(false, true)}
+              showingState={showState}
+              showingDescription={showDescription}
+            />
+          </div>
+        </div>
+
+        {/* Non-interrupted thread actions */}
         <div className="flex flex-col gap-6">
           {/* Status-specific UI */}
-          {(threadData.status === "idle" || threadData.status === "busy") && (
+          {(isIdleThread(threadData) || isBusyThread(threadData)) && (
             <div className="flex flex-row gap-2 items-center justify-start w-full">
               <Button
                 variant="outline"
@@ -307,7 +400,7 @@ export function ThreadActionsView<
             </div>
           )}
 
-          {threadData.status === "error" && (
+          {isErrorThread(threadData) && (
             <div className="p-4 border border-red-200 bg-red-50 rounded-md">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
@@ -360,66 +453,102 @@ export function ThreadActionsView<
             information about this thread.
           </p>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {isInterrupted && threadData.interrupts && (
-        <>
-          <div className="flex flex-row gap-2 items-center justify-start w-full">
+  // Handle Valid Interrupted Threads
+  //////////////////////////////////////////////////////////
+  return (
+    <div className="flex flex-col min-h-full w-full p-12 gap-9">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between w-full gap-3">
+        <div className="flex items-center justify-start gap-3">
+          <TooltipIconButton
+            tooltip="Back to inbox"
+            variant="ghost"
+            onClick={() => {
+              updateQueryParams(VIEW_STATE_THREAD_QUERY_PARAM);
+            }}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </TooltipIconButton>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-yellow-600" />
+            <p className="text-2xl tracking-tighter text-pretty">
+              {threadTitle}
+            </p>
+          </div>
+          <ThreadIdCopyable threadId={threadData.thread.thread_id} />
+        </div>
+        <div className="flex flex-row gap-2 items-center justify-start">
+          {deploymentUrl && (
             <Button
+              size="sm"
               variant="outline"
-              className="text-gray-800 border-gray-500 font-normal bg-white"
-              onClick={interruptedActions?.handleResolve}
-              disabled={actionsDisabled}
+              className="flex items-center gap-1 bg-white"
+              onClick={handleOpenInStudio}
             >
-              Mark as Resolved
+              Studio
             </Button>
-            {ignoreAllowed && (
+          )}
+          {/* Added ButtonGroup for interrupted threads */}
+          <ButtonGroup
+            handleShowState={() => updateSidePanel(true, false)}
+            handleShowDescription={() => updateSidePanel(false, true)}
+            showingState={showState}
+            showingDescription={showDescription}
+          />
+        </div>
+      </div>
+
+      {/* Interrupted thread actions */}
+      <div className="flex flex-row gap-2 items-center justify-start w-full">
+        <Button
+          variant="outline"
+          className="text-gray-800 border-gray-500 font-normal bg-white"
+          onClick={actions?.handleResolve}
+          disabled={actions?.loading}
+        >
+          Mark as Resolved
+        </Button>
+        {ignoreAllowed && (
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button
                 variant="outline"
-                className="text-gray-800 border-gray-500 font-normal bg-white"
-                onClick={interruptedActions?.handleIgnore}
-                disabled={actionsDisabled}
+                size="sm"
+                onClick={actions?.handleIgnore}
+                disabled={actions?.loading}
               >
                 Ignore
               </Button>
-            )}
-          </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              Ignore this interrupt and end the thread.
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
 
-          {/* Actions */}
-          <InboxItemInput
-            acceptAllowed={interruptedActions?.acceptAllowed ?? false}
-            hasEdited={interruptedActions?.hasEdited ?? false}
-            hasAddedResponse={interruptedActions?.hasAddedResponse ?? false}
-            interruptValue={threadData.interrupts[0]}
-            humanResponse={
-              (interruptedActions?.humanResponse as any) || {
-                type: "accept",
-                args: null,
-              }
-            }
-            initialValues={
-              interruptedActions?.initialHumanInterruptEditValue.current || {}
-            }
-            setHumanResponse={
-              interruptedActions?.setHumanResponse ?? (() => {})
-            }
-            streaming={interruptedActions?.streaming ?? false}
-            streamFinished={interruptedActions?.streamFinished ?? false}
-            currentNode={interruptedActions?.currentNode ?? ""}
-            supportsMultipleMethods={
-              interruptedActions?.supportsMultipleMethods ?? false
-            }
-            setSelectedSubmitType={
-              interruptedActions?.setSelectedSubmitType ?? (() => {})
-            }
-            setHasAddedResponse={
-              interruptedActions?.setHasAddedResponse ?? (() => {})
-            }
-            setHasEdited={interruptedActions?.setHasEdited ?? (() => {})}
-            handleSubmit={interruptedActions?.handleSubmit ?? (async () => {})}
-          />
-        </>
-      )}
+      {/* Actions */}
+      <InboxItemInput
+        acceptAllowed={acceptAllowed}
+        hasEdited={actions?.hasEdited ?? false}
+        hasAddedResponse={actions?.hasAddedResponse ?? false}
+        interruptValue={firstInterrupt!}
+        humanResponse={actions?.humanResponse as any}
+        initialValues={actions?.initialHumanInterruptEditValue.current || {}}
+        setHumanResponse={actions?.setHumanResponse ?? (() => {})}
+        streaming={actions?.streaming ?? false}
+        streamFinished={actions?.streamFinished ?? false}
+        currentNode={actions?.currentNode ?? ""}
+        supportsMultipleMethods={actions?.supportsMultipleMethods ?? false}
+        setSelectedSubmitType={actions?.setSelectedSubmitType ?? (() => {})}
+        setHasAddedResponse={actions?.setHasAddedResponse ?? (() => {})}
+        setHasEdited={actions?.setHasEdited ?? (() => {})}
+        handleSubmit={actions?.handleSubmit ?? (async () => {})}
+      />
     </div>
   );
 }

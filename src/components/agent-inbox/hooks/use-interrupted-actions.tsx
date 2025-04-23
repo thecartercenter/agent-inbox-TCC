@@ -1,11 +1,10 @@
-import { Thread } from "@langchain/langgraph-sdk";
 import {
-  HumanInterrupt,
   HumanResponse,
   HumanResponseWithEdits,
   SubmitType,
   ThreadData,
   ThreadStatusWithAll,
+  InterruptedThreadData,
 } from "../types";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
@@ -18,11 +17,7 @@ import { logger } from "../utils/logger";
 interface UseInterruptedActionsInput<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
-  threadData: {
-    thread: Thread<ThreadValues>;
-    status: "interrupted";
-    interrupts: HumanInterrupt[];
-  } | null;
+  threadData: InterruptedThreadData<ThreadValues> | null;
   setThreadData: React.Dispatch<
     React.SetStateAction<ThreadData<ThreadValues> | undefined>
   > | null;
@@ -101,7 +96,12 @@ export default function useInterruptedActions<
 
   React.useEffect(() => {
     try {
-      if (!threadData || !threadData.interrupts) return;
+      if (
+        !threadData ||
+        !threadData.interrupts ||
+        threadData.interrupts.length === 0
+      )
+        return;
       const { responses, defaultSubmitType, hasAccept } =
         createDefaultHumanResponse(
           threadData.interrupts,
@@ -111,6 +111,11 @@ export default function useInterruptedActions<
       setHumanResponse(responses);
       setAcceptAllowed(hasAccept);
     } catch (e) {
+      console.error("Error formatting and setting human response state", e);
+      // Set fallback values for invalid interrupts
+      setHumanResponse([{ type: "ignore", args: null }]);
+      setSelectedSubmitType(undefined);
+      setAcceptAllowed(false);
       logger.error("Error formatting and setting human response state", e);
     }
   }, [threadData?.interrupts]);
@@ -320,14 +325,11 @@ export default function useInterruptedActions<
       });
       return;
     }
-    const ignoreResponse = humanResponse.find((r) => r.type === "ignore");
+
+    // For invalid interrupts, create an ignore response if not found
+    let ignoreResponse = humanResponse.find((r) => r.type === "ignore");
     if (!ignoreResponse) {
-      toast({
-        title: "Error",
-        description: "The selected thread does not support ignoring.",
-        duration: 5000,
-      });
-      return;
+      ignoreResponse = { type: "ignore", args: null };
     }
 
     const currentInbox = getSearchParam(INBOX_PARAM) as
@@ -401,7 +403,8 @@ export default function useInterruptedActions<
     currentNode,
     loading,
     threadId: threadData?.thread.thread_id || "",
-    isIgnoreAllowed: threadData?.interrupts?.[0]?.config.allow_ignore || false,
+    isIgnoreAllowed:
+      Boolean(threadData?.interrupts?.[0]?.config?.allow_ignore) || true, // Default to true for invalid interrupts
     supportsMultipleMethods:
       humanResponse.filter(
         (r) => r.type === "edit" || r.type === "accept" || r.type === "response"

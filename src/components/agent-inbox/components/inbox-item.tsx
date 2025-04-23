@@ -1,5 +1,8 @@
-import { HumanInterrupt, ThreadData, ThreadStatusWithAll } from "../types";
-import React from "react";
+import {
+  ThreadData,
+  ThreadStatusWithAll,
+  InterruptedThreadData,
+} from "../types";
 import { useQueryParams } from "../hooks/use-query-params";
 import { InterruptedInboxItem } from "./interrupted-inbox-item";
 import { GenericInboxItem } from "./generic-inbox-item";
@@ -10,7 +13,7 @@ interface InboxItemProps<
 > {
   threadData: ThreadData<ThreadValues>;
   isLast: boolean;
-  onThreadClick?: () => void;
+  onThreadClick?: (id: string) => void;
 }
 
 export function InboxItem<
@@ -23,52 +26,64 @@ export function InboxItem<
 
   if (inbox === "all") {
     if (threadData.status === "interrupted") {
-      if (threadData.interrupts?.length) {
+      const interruptedData = threadData as InterruptedThreadData<ThreadValues>;
+      if (interruptedData.interrupts?.length) {
         return (
           <InterruptedInboxItem
-            threadData={
-              threadData as ThreadData<ThreadValues> & {
-                interrupts: HumanInterrupt[];
-              }
-            }
+            threadData={interruptedData}
             isLast={isLast}
-            onThreadClick={onThreadClick}
+            onThreadClick={onThreadClick || (() => {})}
           />
         );
       } else {
         return (
           <GenericInboxItem
-            threadData={
-              threadData as ThreadData<ThreadValues> & { interrupts: undefined }
-            }
+            threadData={{
+              thread: interruptedData.thread,
+              status: "interrupted",
+              interrupts: undefined,
+            }}
             isLast={isLast}
           />
         );
       }
     } else {
-      return <GenericInboxItem threadData={threadData} isLast={isLast} />;
+      // Convert human_response_needed to idle for GenericInboxItem
+      const adaptedStatus =
+        threadData.status === "human_response_needed"
+          ? "idle"
+          : threadData.status;
+
+      return (
+        <GenericInboxItem
+          threadData={{
+            thread: threadData.thread,
+            status: adaptedStatus,
+          }}
+          isLast={isLast}
+        />
+      );
     }
   }
 
   if (inbox === "interrupted" && threadData.status === "interrupted") {
-    if (threadData.interrupts?.length) {
+    const interruptedData = threadData as InterruptedThreadData<ThreadValues>;
+    if (interruptedData.interrupts?.length) {
       return (
         <InterruptedInboxItem
-          threadData={
-            threadData as ThreadData<ThreadValues> & {
-              interrupts: HumanInterrupt[];
-            }
-          }
+          threadData={interruptedData}
           isLast={isLast}
-          onThreadClick={onThreadClick}
+          onThreadClick={onThreadClick || (() => {})}
         />
       );
     } else {
       return (
         <GenericInboxItem
-          threadData={
-            threadData as ThreadData<ThreadValues> & { interrupts: undefined }
-          }
+          threadData={{
+            thread: interruptedData.thread,
+            status: "interrupted",
+            interrupts: undefined,
+          }}
           isLast={isLast}
         />
       );
@@ -76,7 +91,21 @@ export function InboxItem<
   }
 
   if (inbox !== "interrupted" && threadData.status !== "interrupted") {
-    return <GenericInboxItem threadData={threadData} isLast={isLast} />;
+    // Convert human_response_needed to idle for GenericInboxItem
+    const adaptedStatus =
+      threadData.status === "human_response_needed"
+        ? "idle"
+        : threadData.status;
+
+    return (
+      <GenericInboxItem
+        threadData={{
+          thread: threadData.thread,
+          status: adaptedStatus,
+        }}
+        isLast={isLast}
+      />
+    );
   }
 
   return null;

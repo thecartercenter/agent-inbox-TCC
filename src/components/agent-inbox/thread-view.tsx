@@ -5,7 +5,7 @@ import { ThreadData } from "./types";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "./hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
+import { IMPROPER_SCHEMA, VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
 import { logger } from "./utils/logger";
 
 export function ThreadView<
@@ -17,7 +17,23 @@ export function ThreadView<
     React.useState<ThreadData<ThreadValues>>();
   const [showDescription, setShowDescription] = React.useState(true);
   const [showState, setShowState] = React.useState(false);
+
+  // Create interrupt actions if we have an interrupted thread
+  const isInterrupted = threadData?.status === "interrupted";
+
+  // Show side panel for all thread types
   const showSidePanel = showDescription || showState;
+
+  // Derive thread title
+  const threadTitle = React.useMemo(() => {
+    if (
+      threadData?.interrupts?.[0]?.action_request?.action &&
+      threadData.interrupts[0].action_request.action !== IMPROPER_SCHEMA
+    ) {
+      return threadData.interrupts[0].action_request.action;
+    }
+    return `Thread: ${threadData?.thread.thread_id.slice(0, 6)}...`;
+  }, [threadData]);
 
   // Scroll to top when thread view is mounted
   React.useEffect(() => {
@@ -35,8 +51,14 @@ export function ThreadView<
       );
       if (selectedThread) {
         setThreadData(selectedThread);
-        if (selectedThread.status !== "interrupted") {
-          // If the status is not interrupted, we should default to show state as there will be no description
+        // Default to description first, state if no description
+        if (
+          selectedThread.status === "interrupted" &&
+          selectedThread.interrupts?.[0]?.description
+        ) {
+          setShowDescription(true);
+          setShowState(false);
+        } else {
           setShowState(true);
           setShowDescription(false);
         }
@@ -83,10 +105,12 @@ export function ThreadView<
       >
         <ThreadActionsView<ThreadValues>
           threadData={threadData}
-          setThreadData={setThreadData}
-          handleShowSidePanel={handleShowSidePanel}
+          isInterrupted={isInterrupted}
+          threadTitle={threadTitle}
           showState={showState}
           showDescription={showDescription}
+          handleShowSidePanel={handleShowSidePanel}
+          setThreadData={setThreadData}
         />
       </div>
       <div
