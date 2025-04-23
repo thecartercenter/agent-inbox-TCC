@@ -47,6 +47,7 @@ type ThreadContentType<
   updateAgentInbox: (updatedInbox: AgentInbox) => void;
   ignoreThread: (threadId: string) => Promise<void>;
   fetchThreads: (inbox: ThreadStatusWithAll) => Promise<void>;
+  clearThreadData: () => void;
   sendHumanResponse: <TStream extends boolean = false>(
     threadId: string,
     response: HumanResponse[],
@@ -446,6 +447,10 @@ export function ThreadsProvider<
     }
   };
 
+  const clearThreadData = React.useCallback(() => {
+    setThreadData([]);
+  }, []);
+
   const contextValue: ThreadContentType = {
     loading,
     threadData,
@@ -459,6 +464,7 @@ export function ThreadsProvider<
     sendHumanResponse,
     fetchThreads,
     fetchSingleThread,
+    clearThreadData,
   };
 
   return (
