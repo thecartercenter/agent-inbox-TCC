@@ -8,7 +8,6 @@ import { Pagination } from "./components/pagination";
 import { Inbox as InboxIcon, LoaderCircle } from "lucide-react";
 import { InboxButtons } from "./components/inbox-buttons";
 import { BackfillBanner } from "./components/backfill-banner";
-import { Button } from "@/components/ui/button";
 import { forceInboxBackfill } from "./utils/backfill";
 import { logger } from "./utils/logger";
 
@@ -28,6 +27,49 @@ export function AgentInboxView<
   const selectedInbox = (getSearchParam(INBOX_PARAM) ||
     "interrupted") as ThreadStatusWithAll;
   const scrollableContentRef = React.useRef<HTMLDivElement>(null);
+  const [hasAttemptedRefresh, setHasAttemptedRefresh] = React.useState(false);
+
+  // Check if we've already attempted a refresh for this session
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sessionId = new Date().toDateString();
+      const hasRefreshed = localStorage.getItem(`inbox-refreshed-${sessionId}`);
+      setHasAttemptedRefresh(hasRefreshed === "true");
+    }
+  }, []);
+
+  // Auto-refresh inbox IDs once when no threads are found
+  React.useEffect(() => {
+    const autoRefreshInboxes = async () => {
+      if (typeof window === "undefined") return;
+
+      const sessionId = new Date().toDateString();
+      const hasRefreshed = localStorage.getItem(`inbox-refreshed-${sessionId}`);
+
+      if (hasRefreshed === "true") return;
+
+      if (
+        !loading &&
+        !hasAttemptedRefresh &&
+        threadData.length === 0 &&
+        agentInboxes.length > 0
+      ) {
+        // Mark that we've attempted a refresh for this session
+        localStorage.setItem(`inbox-refreshed-${sessionId}`, "true");
+        setHasAttemptedRefresh(true);
+
+        logger.log("Automatically refreshing inbox IDs...");
+        await forceInboxBackfill();
+
+        // Add a small delay before reloading to allow state to settle
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    };
+
+    autoRefreshInboxes();
+  }, [loading, threadData, agentInboxes, hasAttemptedRefresh]);
 
   // Register scroll event listener to automatically save scroll position whenever user scrolls
   React.useEffect(() => {
@@ -139,15 +181,6 @@ export function AgentInboxView<
     }
   };
 
-  // Add function to manually refresh inboxes
-  const handleBackfillAndRefreshInboxes = async () => {
-    // Force run the backfill
-    await forceInboxBackfill();
-
-    // Reload the page to see the changes
-    window.location.reload();
-  };
-
   return (
     <div ref={containerRef} className="min-w-[1000px] h-full overflow-y-auto">
       <div className="pl-5 pt-4">
@@ -174,18 +207,6 @@ export function AgentInboxView<
               <InboxIcon className="w-6 h-6" />
               <p className="font-medium">No threads found</p>
             </div>
-
-            {agentInboxes.length > 0 && (
-              <div className="flex flex-col items-center">
-                <p className="text-sm text-gray-500 mb-2">
-                  If you are expecting to see inboxes but dont, try refreshing
-                  your inbox IDs:
-                </p>
-                <Button onClick={handleBackfillAndRefreshInboxes}>
-                  Refresh Inbox IDs
-                </Button>
-              </div>
-            )}
           </div>
         )}
         {noThreadsFound && loading && (
