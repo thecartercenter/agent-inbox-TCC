@@ -22,7 +22,7 @@ export function AgentInboxView<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ saveScrollPosition, containerRef }: AgentInboxViewProps<ThreadValues>) {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
-  const { loading, threadData, agentInboxes } =
+  const { loading, threadData, agentInboxes, clearThreadData } =
     useThreadsContext<ThreadValues>();
   const selectedInbox = (getSearchParam(INBOX_PARAM) ||
     "interrupted") as ThreadStatusWithAll;
@@ -117,6 +117,10 @@ export function AgentInboxView<
   }, [containerRef, saveScrollPosition]);
 
   const changeInbox = async (inbox: ThreadStatusWithAll) => {
+    // Clear threads from state
+    clearThreadData();
+
+    // Update query params
     updateQueryParams(
       [INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM],
       [inbox, "0", "10"]
