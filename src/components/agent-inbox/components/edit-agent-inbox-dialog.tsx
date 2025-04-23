@@ -11,6 +11,7 @@ import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AgentInbox } from "../types";
 import { useInboxes } from "../hooks/use-inboxes";
+import { logger } from "../utils/logger";
 
 export function EditAgentInboxDialog({
   agentInbox,
@@ -56,7 +57,7 @@ export function EditAgentInboxDialog({
       // Force a page reload to reflect changes
       window.location.reload();
     } catch (error) {
-      console.error("Error updating agent inbox", error);
+      logger.error("Error updating agent inbox", error);
       toast({
         title: "Error",
         description: "Failed to update agent inbox",

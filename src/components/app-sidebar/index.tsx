@@ -90,7 +90,7 @@ export function AppSidebar() {
                         <Tooltip delayDuration={200}>
                           <TooltipTrigger asChild>
                             <SidebarMenuButton
-                              onClick={() => changeAgentInbox(item.id, true)}
+                              onClick={() => changeAgentInbox(item.id)}
                             >
                               {isDeployed ? (
                                 <UploadCloud className="w-5 h-5 text-blue-500" />

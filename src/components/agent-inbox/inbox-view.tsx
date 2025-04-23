@@ -7,6 +7,9 @@ import { ThreadStatusWithAll } from "./types";
 import { Pagination } from "./components/pagination";
 import { Inbox as InboxIcon, LoaderCircle } from "lucide-react";
 import { InboxButtons } from "./components/inbox-buttons";
+import { BackfillBanner } from "./components/backfill-banner";
+import { forceInboxBackfill } from "./utils/backfill";
+import { logger } from "./utils/logger";
 
 interface AgentInboxViewProps<
   _ThreadValues extends Record<string, any> = Record<string, any>,
@@ -19,10 +22,54 @@ export function AgentInboxView<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ saveScrollPosition, containerRef }: AgentInboxViewProps<ThreadValues>) {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
-  const { loading, threadData } = useThreadsContext<ThreadValues>();
+  const { loading, threadData, agentInboxes, clearThreadData } =
+    useThreadsContext<ThreadValues>();
   const selectedInbox = (getSearchParam(INBOX_PARAM) ||
     "interrupted") as ThreadStatusWithAll;
   const scrollableContentRef = React.useRef<HTMLDivElement>(null);
+  const [hasAttemptedRefresh, setHasAttemptedRefresh] = React.useState(false);
+
+  // Check if we've already attempted a refresh for this session
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sessionId = new Date().toDateString();
+      const hasRefreshed = localStorage.getItem(`inbox-refreshed-${sessionId}`);
+      setHasAttemptedRefresh(hasRefreshed === "true");
+    }
+  }, []);
+
+  // Auto-refresh inbox IDs once when no threads are found
+  React.useEffect(() => {
+    const autoRefreshInboxes = async () => {
+      if (typeof window === "undefined") return;
+
+      const sessionId = new Date().toDateString();
+      const hasRefreshed = localStorage.getItem(`inbox-refreshed-${sessionId}`);
+
+      if (hasRefreshed === "true") return;
+
+      if (
+        !loading &&
+        !hasAttemptedRefresh &&
+        threadData.length === 0 &&
+        agentInboxes.length > 0
+      ) {
+        // Mark that we've attempted a refresh for this session
+        localStorage.setItem(`inbox-refreshed-${sessionId}`, "true");
+        setHasAttemptedRefresh(true);
+
+        logger.log("Automatically refreshing inbox IDs...");
+        await forceInboxBackfill();
+
+        // Add a small delay before reloading to allow state to settle
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    };
+
+    autoRefreshInboxes();
+  }, [loading, threadData, agentInboxes, hasAttemptedRefresh]);
 
   // Register scroll event listener to automatically save scroll position whenever user scrolls
   React.useEffect(() => {
@@ -70,6 +117,10 @@ export function AgentInboxView<
   }, [containerRef, saveScrollPosition]);
 
   const changeInbox = async (inbox: ThreadStatusWithAll) => {
+    // Clear threads from state
+    clearThreadData();
+
+    // Update query params
     updateQueryParams(
       [INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM],
       [inbox, "0", "10"]
@@ -88,7 +139,7 @@ export function AgentInboxView<
         updateQueryParams(LIMIT_PARAM, "10");
       }
     } catch (e) {
-      console.error("Error updating query params", e);
+      logger.error("Error updating query params", e);
     }
   }, [searchParams]);
 
@@ -137,6 +188,7 @@ export function AgentInboxView<
   return (
     <div ref={containerRef} className="min-w-[1000px] h-full overflow-y-auto">
       <div className="pl-5 pt-4">
+        <BackfillBanner />
         <InboxButtons changeInbox={changeInbox} />
       </div>
       <div
@@ -154,8 +206,8 @@ export function AgentInboxView<
           );
         })}
         {noThreadsFound && !loading && (
-          <div className="w-full flex items-center justify-center p-4">
-            <div className="flex gap-2 items-center justify-center text-gray-700">
+          <div className="w-full flex items-center justify-center p-4 flex-col">
+            <div className="flex gap-2 items-center justify-center text-gray-700 mb-4">
               <InboxIcon className="w-6 h-6" />
               <p className="font-medium">No threads found</p>
             </div>

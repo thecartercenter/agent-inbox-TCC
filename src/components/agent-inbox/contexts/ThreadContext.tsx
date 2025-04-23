@@ -32,6 +32,7 @@ import {
 } from "./utils";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { useInboxes } from "../hooks/use-inboxes";
+import { logger } from "../utils/logger";
 
 type ThreadContentType<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -46,6 +47,7 @@ type ThreadContentType<
   updateAgentInbox: (updatedInbox: AgentInbox) => void;
   ignoreThread: (threadId: string) => Promise<void>;
   fetchThreads: (inbox: ThreadStatusWithAll) => Promise<void>;
+  clearThreadData: () => void;
   sendHumanResponse: <TStream extends boolean = false>(
     threadId: string,
     response: HumanResponse[],
@@ -121,17 +123,17 @@ const getClient = ({ agentInboxes, getItem, toast }: GetClientArgs) => {
 
 export function ThreadsProvider<
   ThreadValues extends Record<string, any> = Record<string, any>,
->({ children }: { children: React.ReactNode }) {
-  const { getSearchParam, searchParams } = useQueryParams();
+>({ children }: { children: React.ReactNode }): React.ReactElement {
   const { getItem } = useLocalStorage();
   const { toast } = useToast();
+
+  const { getSearchParam, searchParams } = useQueryParams();
   const [loading, setLoading] = React.useState(false);
   const [threadData, setThreadData] = React.useState<
     ThreadData<ThreadValues>[]
   >([]);
   const [hasMoreThreads, setHasMoreThreads] = React.useState(true);
 
-  // Using the new useInboxes hook
   const {
     agentInboxes,
     addAgentInbox,
@@ -158,13 +160,14 @@ export function ThreadsProvider<
     try {
       fetchThreads(inboxSearchParam);
     } catch (e) {
-      console.error("Error occurred while fetching threads", e);
+      logger.error("Error occurred while fetching threads", e);
     }
   }, [limitParam, offsetParam, inboxParam, agentInboxes]);
 
   const fetchThreads = React.useCallback(
     async (inbox: ThreadStatusWithAll) => {
       setLoading(true);
+
       const client = getClient({
         agentInboxes,
         getItem,
@@ -267,7 +270,7 @@ export function ThreadsProvider<
         setThreadData(sortedData);
         setHasMoreThreads(threads.length === limit);
       } catch (e) {
-        console.error("Failed to fetch threads", e);
+        logger.error("Failed to fetch threads", e);
       }
       setLoading(false);
     },
@@ -381,7 +384,7 @@ export function ThreadsProvider<
         duration: 3000,
       });
     } catch (e) {
-      console.error("Error ignoring thread", e);
+      logger.error("Error ignoring thread", e);
       toast({
         title: "Error",
         description: "Failed to ignore thread",
@@ -439,10 +442,14 @@ export function ThreadsProvider<
         },
       }) as any; // Type assertion needed due to conditional return type
     } catch (e: any) {
-      console.error("Error sending human response", e);
+      logger.error("Error sending human response", e);
       throw e;
     }
   };
+
+  const clearThreadData = React.useCallback(() => {
+    setThreadData([]);
+  }, []);
 
   const contextValue: ThreadContentType = {
     loading,
@@ -457,6 +464,7 @@ export function ThreadsProvider<
     sendHumanResponse,
     fetchThreads,
     fetchSingleThread,
+    clearThreadData,
   };
 
   return (
