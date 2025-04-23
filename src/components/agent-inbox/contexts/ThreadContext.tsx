@@ -2,7 +2,6 @@
 
 import {
   AgentInbox,
-  HumanInterrupt,
   HumanResponse,
   ThreadData,
   ThreadStatusWithAll,
@@ -55,14 +54,9 @@ type ThreadContentType<
           }>
         | undefined
     : Promise<Run> | undefined;
-  fetchSingleThread: (threadId: string) => Promise<
-    | {
-        thread: Thread<ThreadValues>;
-        status: ThreadStatus;
-        interrupts: HumanInterrupt[] | undefined;
-      }
-    | undefined
-  >;
+  fetchSingleThread: (
+    threadId: string
+  ) => Promise<ThreadData<ThreadValues> | undefined>;
 };
 
 const ThreadsContext = React.createContext<ThreadContentType | undefined>(
@@ -191,7 +185,12 @@ export function ThreadsProvider<
           return;
         }
 
-        const statusInput = inbox === "all" ? {} : { status: inbox };
+        // Handle inbox filtering differently based on type
+        let statusInput: { status?: ThreadStatus } = {};
+        if (inbox !== "all" && inbox !== "human_response_needed") {
+          statusInput = { status: inbox as ThreadStatus };
+        }
+
         const metadataInput = getThreadFilterMetadata(agentInboxes);
 
         const threadSearchArgs = {
@@ -200,11 +199,26 @@ export function ThreadsProvider<
           ...statusInput,
           ...(metadataInput ? { metadata: metadataInput } : {}),
         };
+
         const threads = await client.threads.search(threadSearchArgs);
         const processedData: ThreadData<ThreadValues>[] = [];
 
         for (const thread of threads) {
           const currentThread = thread as Thread<ThreadValues>;
+
+          // Handle special cases for human_response_needed inbox
+          if (
+            inbox === "human_response_needed" &&
+            currentThread.status !== "interrupted"
+          ) {
+            processedData.push({
+              status: "human_response_needed",
+              thread: currentThread,
+              interrupts: undefined,
+              invalidSchema: undefined,
+            });
+            continue;
+          }
 
           if (currentThread.status === "interrupted") {
             let processedThreadData: ThreadData<ThreadValues> | null = null;
@@ -283,16 +297,7 @@ export function ThreadsProvider<
   );
 
   const fetchSingleThread = React.useCallback(
-    async (
-      threadId: string
-    ): Promise<
-      | {
-          thread: Thread<ThreadValues>;
-          status: ThreadStatus;
-          interrupts: HumanInterrupt[] | undefined;
-        }
-      | undefined
-    > => {
+    async (threadId: string): Promise<ThreadData<ThreadValues> | undefined> => {
       const client = getClient({
         agentInboxes,
         getItem,
@@ -302,25 +307,55 @@ export function ThreadsProvider<
         return;
       }
       const thread = await client.threads.get(threadId);
-      let threadInterrupts: HumanInterrupt[] | undefined;
+      const currentThread = thread as Thread<ThreadValues>;
+
       if (thread.status === "interrupted") {
-        threadInterrupts = getInterruptFromThread(thread);
+        const threadInterrupts = getInterruptFromThread(currentThread);
+
         if (!threadInterrupts || !threadInterrupts.length) {
           const state = await client.threads.getState(threadId);
-          const { interrupts } = processThreadWithoutInterrupts(thread, {
-            thread_state: state,
-            thread_id: threadId,
-          });
-          threadInterrupts = interrupts;
+          const processedThread = processThreadWithoutInterrupts(
+            currentThread,
+            {
+              thread_state: state,
+              thread_id: threadId,
+            }
+          );
+
+          if (processedThread) {
+            return processedThread as ThreadData<ThreadValues>;
+          }
         }
+
+        // Return interrupted thread data
+        return {
+          thread: currentThread,
+          status: "interrupted",
+          interrupts: threadInterrupts,
+          invalidSchema: !threadInterrupts || threadInterrupts.length === 0,
+        };
       }
+
+      // Check for special human_response_needed status
+      const inbox = getSearchParam(INBOX_PARAM) as ThreadStatusWithAll;
+      if (inbox === "human_response_needed") {
+        return {
+          thread: currentThread,
+          status: "human_response_needed",
+          interrupts: undefined,
+          invalidSchema: undefined,
+        };
+      }
+
+      // Normal non-interrupted thread
       return {
-        thread: thread as Thread<ThreadValues>,
-        status: thread.status,
-        interrupts: threadInterrupts,
+        thread: currentThread,
+        status: currentThread.status,
+        interrupts: undefined,
+        invalidSchema: undefined,
       };
     },
-    [agentInboxes]
+    [agentInboxes, getItem, getSearchParam]
   );
 
   const ignoreThread = async (threadId: string) => {

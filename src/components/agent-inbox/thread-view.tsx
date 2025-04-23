@@ -6,6 +6,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "./hooks/use-query-params";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
+import useInterruptedActions from "./hooks/use-interrupted-actions";
 
 export function ThreadView<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -17,6 +18,29 @@ export function ThreadView<
   const [showDescription, setShowDescription] = React.useState(true);
   const [showState, setShowState] = React.useState(false);
   const showSidePanel = showDescription || showState;
+
+  // Create interrupt actions if we have an interrupted thread
+  const isInterrupted = threadData?.status === "interrupted";
+  const interruptedActions = useInterruptedActions({
+    threadData:
+      isInterrupted && threadData.interrupts?.length
+        ? {
+            thread: threadData.thread,
+            status: "interrupted",
+            interrupts: threadData.interrupts,
+            invalidSchema: threadData.invalidSchema,
+          }
+        : null,
+    setThreadData: setThreadData as any,
+  });
+
+  // Derive thread title
+  const threadTitle = React.useMemo(() => {
+    if (threadData?.thread.metadata?.title) {
+      return threadData.thread.metadata.title as string;
+    }
+    return `Thread: ${threadData?.thread.thread_id.slice(0, 6)}...`;
+  }, [threadData]);
 
   // Scroll to top when thread view is mounted
   React.useEffect(() => {
@@ -82,10 +106,12 @@ export function ThreadView<
       >
         <ThreadActionsView<ThreadValues>
           threadData={threadData}
-          setThreadData={setThreadData}
-          handleShowSidePanel={handleShowSidePanel}
+          interruptedActions={interruptedActions}
+          isInterrupted={isInterrupted}
+          threadTitle={threadTitle}
           showState={showState}
           showDescription={showDescription}
+          handleShowSidePanel={handleShowSidePanel}
         />
       </div>
       <div

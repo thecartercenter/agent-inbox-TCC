@@ -1,8 +1,7 @@
 import { cn } from "@/lib/utils";
-import { HumanInterrupt } from "../types";
+import { InterruptedThreadData } from "../types";
 import React from "react";
 import { InboxItemStatuses } from "./statuses";
-import { Thread } from "@langchain/langgraph-sdk";
 import { format } from "date-fns";
 import { useQueryParams } from "../hooks/use-query-params";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
@@ -11,12 +10,7 @@ import { Badge } from "@/components/ui/badge";
 interface InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
-  threadData: {
-    thread: Thread<ThreadValues>;
-    status: "interrupted";
-    interrupts?: HumanInterrupt[];
-    invalidSchema?: boolean;
-  };
+  threadData: InterruptedThreadData<ThreadValues>;
   isLast: boolean;
   onThreadClick: (id: string) => void;
 }

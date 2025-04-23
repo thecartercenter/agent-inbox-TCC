@@ -7,8 +7,7 @@ import {
   AlertCircle,
   Loader,
 } from "lucide-react";
-import { Thread, ThreadStatus } from "@langchain/langgraph-sdk";
-import { HumanInterrupt } from "../types";
+import { ThreadData, GenericThreadData } from "../types";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
 import { constructOpenInStudioURL } from "../utils";
 import { ThreadIdCopyable } from "./thread-id";
@@ -30,17 +29,13 @@ import {
 interface ThreadActionsViewProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
-  threadData: {
-    thread: Thread<ThreadValues>;
-    status: ThreadStatus;
-    interrupts?: HumanInterrupt[];
-    invalidSchema?: boolean;
-  };
+  threadData: ThreadData<ThreadValues>;
   interruptedActions: ReturnType<typeof useInterruptedActions>;
   isInterrupted: boolean;
   threadTitle: string;
   showState: boolean;
   showDescription: boolean;
+  handleShowSidePanel?: (showState: boolean, showDescription: boolean) => void;
 }
 
 function ButtonGroup({
@@ -83,6 +78,25 @@ function ButtonGroup({
   );
 }
 
+// Helper type guard functions
+function isIdleThread<T extends Record<string, any>>(
+  threadData: ThreadData<T>
+): threadData is GenericThreadData<T> & { status: "idle" } {
+  return threadData.status === "idle";
+}
+
+function isBusyThread<T extends Record<string, any>>(
+  threadData: ThreadData<T>
+): threadData is GenericThreadData<T> & { status: "busy" } {
+  return threadData.status === "busy";
+}
+
+function isErrorThread<T extends Record<string, any>>(
+  threadData: ThreadData<T>
+): threadData is GenericThreadData<T> & { status: "error" } {
+  return threadData.status === "error";
+}
+
 export function ThreadActionsView<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({
@@ -92,6 +106,7 @@ export function ThreadActionsView<
   threadTitle,
   showDescription,
   showState,
+  handleShowSidePanel,
 }: ThreadActionsViewProps<ThreadValues>) {
   const { agentInboxes, fetchSingleThread } = useThreadsContext<ThreadValues>();
   const { toast } = useToast();
@@ -158,9 +173,14 @@ export function ThreadActionsView<
     }
   };
 
-  const handleShowSidePanel = (state: boolean, description: boolean) => {
-    updateQueryParams("thread_state", String(state));
-    updateQueryParams("thread_description", String(description));
+  // Use the passed handleShowSidePanel prop or update query params directly
+  const updateSidePanel = (state: boolean, description: boolean) => {
+    if (handleShowSidePanel) {
+      handleShowSidePanel(state, description);
+    } else {
+      updateQueryParams("thread_state", String(state));
+      updateQueryParams("thread_description", String(description));
+    }
   };
 
   // Safely access config for determining allowed actions
@@ -169,19 +189,16 @@ export function ThreadActionsView<
   const ignoreAllowed = config?.allow_ignore ?? false;
   const acceptAllowed = config?.allow_accept ?? false;
 
-  // Status Icon Logic (ensure Loader is imported and handled)
+  // Status Icon Logic
   const getStatusIcon = () => {
-    switch (threadData.status) {
-      case "idle":
-        return <ClockIcon className="w-4 h-4 text-gray-500" />;
-      case "busy":
-        return <Loader className="w-4 h-4 text-blue-500 animate-spin" />;
-      case "error":
-        return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      // Add other cases if necessary
-      default:
-        return null;
+    if (isIdleThread(threadData)) {
+      return <ClockIcon className="w-4 h-4 text-gray-500" />;
+    } else if (isBusyThread(threadData)) {
+      return <Loader className="w-4 h-4 text-blue-500 animate-spin" />;
+    } else if (isErrorThread(threadData)) {
+      return <AlertTriangle className="w-4 h-4 text-red-500" />;
     }
+    return null;
   };
 
   // Handle Invalid Schema Case
@@ -290,8 +307,8 @@ export function ThreadActionsView<
               </Button>
             )}
             <ButtonGroup
-              handleShowState={() => handleShowSidePanel(true, false)}
-              handleShowDescription={() => handleShowSidePanel(false, true)}
+              handleShowState={() => updateSidePanel(true, false)}
+              handleShowDescription={() => updateSidePanel(false, true)}
               showingState={showState}
               showingDescription={showDescription}
               isInterrupted={isInterrupted}
@@ -303,23 +320,24 @@ export function ThreadActionsView<
         {!isInterrupted && (
           <div className="flex flex-col gap-6">
             {/* Status-specific UI */}
-            {(threadData.status === "idle" || threadData.status === "busy") && (
-              <div className="flex flex-row gap-2 items-center justify-start w-full">
-                <Button
-                  variant="outline"
-                  className="text-gray-800 border-gray-500 font-normal bg-white flex items-center gap-2"
-                  onClick={handleRefreshThread}
-                  disabled={refreshing}
-                >
-                  <RefreshCw
-                    className={cn("w-4 h-4", refreshing && "animate-spin")}
-                  />
-                  {refreshing ? "Refreshing..." : "Refresh Thread Status"}
-                </Button>
-              </div>
-            )}
+            {!isInterrupted &&
+              (isIdleThread(threadData) || isBusyThread(threadData)) && (
+                <div className="flex flex-row gap-2 items-center justify-start w-full">
+                  <Button
+                    variant="outline"
+                    className="text-gray-800 border-gray-500 font-normal bg-white flex items-center gap-2"
+                    onClick={handleRefreshThread}
+                    disabled={refreshing}
+                  >
+                    <RefreshCw
+                      className={cn("w-4 h-4", refreshing && "animate-spin")}
+                    />
+                    {refreshing ? "Refreshing..." : "Refresh Thread Status"}
+                  </Button>
+                </div>
+              )}
 
-            {threadData.status === "error" && (
+            {!isInterrupted && isErrorThread(threadData) && (
               <div className="p-4 border border-red-200 bg-red-50 rounded-md">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
@@ -417,8 +435,8 @@ export function ThreadActionsView<
             </Button>
           )}
           <ButtonGroup
-            handleShowState={() => handleShowSidePanel(true, false)}
-            handleShowDescription={() => handleShowSidePanel(false, true)}
+            handleShowState={() => updateSidePanel(true, false)}
+            handleShowDescription={() => updateSidePanel(false, true)}
             showingState={showState}
             showingDescription={showDescription}
             isInterrupted={isInterrupted}
@@ -430,23 +448,24 @@ export function ThreadActionsView<
       {!isInterrupted && (
         <div className="flex flex-col gap-6">
           {/* Status-specific UI */}
-          {(threadData.status === "idle" || threadData.status === "busy") && (
-            <div className="flex flex-row gap-2 items-center justify-start w-full">
-              <Button
-                variant="outline"
-                className="text-gray-800 border-gray-500 font-normal bg-white flex items-center gap-2"
-                onClick={handleRefreshThread}
-                disabled={refreshing}
-              >
-                <RefreshCw
-                  className={cn("w-4 h-4", refreshing && "animate-spin")}
-                />
-                {refreshing ? "Refreshing..." : "Refresh Thread Status"}
-              </Button>
-            </div>
-          )}
+          {!isInterrupted &&
+            (isIdleThread(threadData) || isBusyThread(threadData)) && (
+              <div className="flex flex-row gap-2 items-center justify-start w-full">
+                <Button
+                  variant="outline"
+                  className="text-gray-800 border-gray-500 font-normal bg-white flex items-center gap-2"
+                  onClick={handleRefreshThread}
+                  disabled={refreshing}
+                >
+                  <RefreshCw
+                    className={cn("w-4 h-4", refreshing && "animate-spin")}
+                  />
+                  {refreshing ? "Refreshing..." : "Refresh Thread Status"}
+                </Button>
+              </div>
+            )}
 
-          {threadData.status === "error" && (
+          {!isInterrupted && isErrorThread(threadData) && (
             <div className="p-4 border border-red-200 bg-red-50 rounded-md">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />

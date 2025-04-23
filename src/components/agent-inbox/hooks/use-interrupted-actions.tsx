@@ -1,11 +1,10 @@
-import { Thread } from "@langchain/langgraph-sdk";
 import {
-  HumanInterrupt,
   HumanResponse,
   HumanResponseWithEdits,
   SubmitType,
   ThreadData,
   ThreadStatusWithAll,
+  InterruptedThreadData,
 } from "../types";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
@@ -17,11 +16,7 @@ import { useQueryParams } from "./use-query-params";
 interface UseInterruptedActionsInput<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
-  threadData: {
-    thread: Thread<ThreadValues>;
-    status: "interrupted";
-    interrupts: HumanInterrupt[];
-  } | null;
+  threadData: InterruptedThreadData<ThreadValues> | null;
   setThreadData: React.Dispatch<
     React.SetStateAction<ThreadData<ThreadValues> | undefined>
   > | null;

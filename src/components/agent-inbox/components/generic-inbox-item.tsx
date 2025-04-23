@@ -11,15 +11,18 @@ import NextLink from "next/link";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useQueryParams } from "../hooks/use-query-params";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import { GenericThreadData } from "../types";
 
 interface GenericInboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
-  threadData: {
-    thread: Thread<ThreadValues>;
-    status: "idle" | "busy" | "error" | "interrupted";
-    interrupts?: never | undefined;
-  };
+  threadData:
+    | GenericThreadData<ThreadValues>
+    | {
+        thread: Thread<ThreadValues>;
+        status: "interrupted";
+        interrupts?: undefined;
+      };
   isLast: boolean;
 }
 

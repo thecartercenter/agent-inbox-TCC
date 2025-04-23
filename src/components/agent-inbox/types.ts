@@ -51,16 +51,46 @@ export interface ThreadValues {
   };
 }
 
-export interface ThreadData<
-  ThreadValues extends Record<string, any> = Record<string, any>,
-> {
-  status: ThreadStatus | "human_response_needed";
-  thread: Thread<ThreadValues>;
-  interrupts?: HumanInterrupt[];
+// Enhanced ThreadStatus type that includes human_response_needed
+export type EnhancedThreadStatus = ThreadStatus | "human_response_needed";
+
+// Basic thread data interface with common properties
+interface BaseThreadData<T extends Record<string, any> = Record<string, any>> {
+  thread: Thread<T>;
   invalidSchema?: boolean;
 }
 
-export type ThreadStatusWithAll = ThreadStatus | "all";
+// Generic thread data type for non-interrupted states
+export interface GenericThreadData<
+  T extends Record<string, any> = Record<string, any>,
+> extends BaseThreadData<T> {
+  status: "idle" | "busy" | "error";
+  interrupts?: undefined;
+}
+
+// Interrupted thread data type
+export interface InterruptedThreadData<
+  T extends Record<string, any> = Record<string, any>,
+> extends BaseThreadData<T> {
+  status: "interrupted";
+  interrupts?: HumanInterrupt[];
+}
+
+// Human response needed thread data type
+export interface HumanResponseNeededThreadData<
+  T extends Record<string, any> = Record<string, any>,
+> extends BaseThreadData<T> {
+  status: "human_response_needed";
+  interrupts?: HumanInterrupt[];
+}
+
+// Union type for all thread data types
+export type ThreadData<T extends Record<string, any> = Record<string, any>> =
+  | GenericThreadData<T>
+  | InterruptedThreadData<T>
+  | HumanResponseNeededThreadData<T>;
+
+export type ThreadStatusWithAll = EnhancedThreadStatus | "all";
 
 export type SubmitType = "accept" | "response" | "edit";
 
