@@ -29,7 +29,11 @@ const renderCollapsedValue = (
   }
   if (typeof value === "string") {
     // Apply truncation only to strings directly, not stringified complex types here
-    return <span className="text-purple-600">"{truncateString(value)}"</span>;
+    return (
+      <span className="text-purple-600">
+        &quot;{truncateString(value)}&quot;
+      </span>
+    );
   }
   if (isComplex) {
     // Render truncated complex value for collapsed view
@@ -54,7 +58,7 @@ const renderCollapsedValue = (
           {truncateString(strValue, 200)}
         </code>
       );
-    } catch (e) {
+    } catch (_) {
       return <span className="text-red-500">Error creating preview</span>;
     }
   }
@@ -72,7 +76,7 @@ const renderTableCellValue = (value: any): React.ReactNode => {
           {JSON.stringify(value, null, 2)}
         </code>
       );
-    } catch (e) {
+    } catch (_) {
       return <span className="text-red-500">Error stringifying</span>;
     }
   }
@@ -104,7 +108,7 @@ export function GenericInterruptValue({
       // Alternative: check string length if preferred
       // const contentStr = JSON.stringify(interrupt);
       // shouldShowExpandButton = contentStr.length > 200;
-    } catch (e) {
+    } catch (_) {
       shouldShowExpandButton = false; // Don't show button if error
     }
   }
