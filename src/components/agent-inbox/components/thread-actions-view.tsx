@@ -210,8 +210,8 @@ export function ThreadActionsView<
   /////////////////////////////////////
   if (threadData.invalidSchema) {
     return (
-      <div className="flex flex-col lg:flex-row min-h-full w-full">
-        <div className="p-12 gap-9 flex flex-col">
+      <div className="flex flex-col min-h-full w-full">
+        <div className="p-12 gap-9 flex flex-col w-full">
           {/* Header (minimal) */}
           <div className="flex flex-wrap items-center justify-between w-full gap-3">
             <div className="flex items-center justify-start gap-3">
@@ -225,12 +225,6 @@ export function ThreadActionsView<
                 <ArrowLeft className="w-5 h-5" />
               </TooltipIconButton>
               <div className="flex items-center gap-2">
-                {/* <Badge
-                  variant="outline"
-                  className="bg-destructive/10 text-destructive border-destructive/20"
-                >
-                  Invalid Interrupt
-                </Badge> */}
                 <p className="text-2xl tracking-tighter text-pretty">
                   {threadTitle}
                 </p>
@@ -262,7 +256,7 @@ export function ThreadActionsView<
           <InterruptDetailsView threadData={threadData} />
 
           {/* Invalid schema message */}
-          <div className="p-4 border border-yellow-200 bg-yellow-50 text-yellow-700 rounded-md">
+          <div className="p-4 border border-yellow-200 bg-yellow-50 text-yellow-700 rounded-md w-full">
             This thread is interrupted, but the required action data is missing
             or invalid. Standard interrupt actions cannot be performed.
           </div>
