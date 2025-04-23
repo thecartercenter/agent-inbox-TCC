@@ -29,6 +29,9 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
     firstInterrupt?.description && firstInterrupt.description.length > 65;
 
   const title = firstInterrupt?.action_request?.action ?? "Interrupt";
+  const hasNoDescription =
+    !firstInterrupt ||
+    (!firstInterrupt.description && !threadData.invalidSchema);
 
   const updatedAtDateString = format(
     new Date(threadData.thread.updated_at),
@@ -56,40 +59,44 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
       key={threadData.thread.thread_id}
       onClick={handleThreadClick}
       className={cn(
-        "grid grid-cols-12 w-full p-4 items-center cursor-pointer hover:bg-gray-50",
-        {
-          "border-b border-gray-200": !isLast,
-        }
+        "grid grid-cols-12 w-full p-4 items-center cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out",
+        !isLast && "border-b border-gray-200"
       )}
     >
       {/* Column 1: Dot - adjusted span slightly */}
-      <div className="col-span-1 flex justify-center">
+      <div className="col-span-1 flex justify-center pt-1">
         <div className="w-[6px] h-[6px] rounded-full bg-blue-400" />
       </div>
 
       {/* Column 2-9: Title and Description - merged spans */}
       <div className="col-span-8 overflow-hidden">
-        <div className="flex items-center">
+        <div className="flex items-center pt-1">
           <span className="text-sm font-semibold text-black truncate pr-1">
             {title}
           </span>
-          <ThreadIdCopyable showUUID threadId={threadData.thread.thread_id} />
+
           {threadData.invalidSchema && (
-            <Badge
-              variant="outline"
-              className="ml-1 flex-shrink-0 bg-destructive/10 text-destructive border-destructive/20"
-            >
-              Invalid Interrupt
-            </Badge>
+            <>
+              <Badge
+                variant="outline"
+                className="ml-1 flex-shrink-0 bg-destructive/10 text-destructive border-destructive/20"
+              >
+                Invalid Interrupt
+              </Badge>
+              <ThreadIdCopyable
+                showUUID
+                threadId={threadData.thread.thread_id}
+              />
+            </>
           )}
         </div>
-        <div className="text-sm text-muted-foreground truncate">
+        <div className="text-sm text-muted-foreground truncate h-[18px]">
           {descriptionPreview}
           {descriptionTruncated && "..."}
           {!firstInterrupt && threadData.invalidSchema && (
             <i>Invalid interrupt data - cannot display details.</i>
           )}
-          {!firstInterrupt && !threadData.invalidSchema && !descriptionPreview}
+          {hasNoDescription && <span>&nbsp;</span>}
         </div>
       </div>
 
