@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { forceInboxBackfill, isBackfillCompleted } from "../utils/backfill";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "../utils/logger";
+import { cn } from "@/lib/utils";
 
 export function SettingsPopover() {
   const langchainApiKeyNotSet = React.useRef(true);
@@ -161,9 +162,9 @@ export function SettingsPopover() {
                   className="flex items-center gap-2"
                 >
                   <RefreshCw
-                    className={
+                    className={cn(
                       isRunningBackfill ? "animate-spin h-4 w-4" : "h-4 w-4"
-                    }
+                    )}
                   />
                   {isRunningBackfill ? "Updating..." : "Update Inbox IDs"}
                 </Button>
