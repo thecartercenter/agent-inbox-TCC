@@ -33,8 +33,8 @@ export function InterruptDetailsView({
                       values[0]?.value === null
                         ? "null"
                         : typeof values[0]?.value === "boolean"
-                        ? String(values[0]?.value)
-                        : JSON.stringify(values[0]?.value)}
+                          ? String(values[0]?.value)
+                          : JSON.stringify(values[0]?.value)}
                     </code>
                   </div>
                   <div className="flex items-center gap-2">
