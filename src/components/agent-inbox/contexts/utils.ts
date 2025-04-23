@@ -1,6 +1,7 @@
 import { Thread, ThreadState } from "@langchain/langgraph-sdk";
 import { AgentInbox, HumanInterrupt, ThreadData } from "../types";
 import { validate } from "uuid";
+import { IMPROPER_SCHEMA } from "../constants";
 
 // TODO: Delete this once interrupt issue fixed.
 export const tmpCleanInterrupts = (interrupts: Record<string, any[]>) => {
@@ -27,7 +28,7 @@ export function getInterruptFromThread(
             if (Array.isArray(interrupt[0])) {
               if (!interrupt[0]?.[1]) {
                 return {
-                  action_request: { action: "improper_schema", args: {} },
+                  action_request: { action: IMPROPER_SCHEMA, args: {} },
                   config: {
                     allow_ignore: true,
                     allow_respond: false,
@@ -123,7 +124,7 @@ export function getInterruptFromThread(
 
                 if (!value || typeof value !== "object") {
                   return {
-                    action_request: { action: "improper_schema", args: {} },
+                    action_request: { action: IMPROPER_SCHEMA, args: {} },
                     config: {
                       allow_ignore: true,
                       allow_respond: false,
@@ -150,7 +151,7 @@ export function getInterruptFromThread(
                 }
 
                 return {
-                  action_request: { action: "improper_schema", args: {} },
+                  action_request: { action: IMPROPER_SCHEMA, args: {} },
                   config: {
                     allow_ignore: true,
                     allow_respond: false,
@@ -161,7 +162,7 @@ export function getInterruptFromThread(
               }
 
               return {
-                action_request: { action: "improper_schema", args: {} },
+                action_request: { action: IMPROPER_SCHEMA, args: {} },
                 config: {
                   allow_ignore: true,
                   allow_respond: false,
@@ -176,7 +177,7 @@ export function getInterruptFromThread(
 
           // Default fallback
           return {
-            action_request: { action: "improper_schema", args: {} },
+            action_request: { action: IMPROPER_SCHEMA, args: {} },
             config: {
               allow_ignore: true,
               allow_respond: false,
@@ -186,7 +187,7 @@ export function getInterruptFromThread(
           } as HumanInterrupt;
         } catch (_err) {
           return {
-            action_request: { action: "improper_schema", args: {} },
+            action_request: { action: IMPROPER_SCHEMA, args: {} },
             config: {
               allow_ignore: true,
               allow_respond: false,
@@ -203,7 +204,7 @@ export function getInterruptFromThread(
   } catch (_err) {
     return [
       {
-        action_request: { action: "improper_schema", args: {} },
+        action_request: { action: IMPROPER_SCHEMA, args: {} },
         config: {
           allow_ignore: true,
           allow_respond: false,
@@ -222,7 +223,7 @@ export function processInterruptedThread<
   if (interrupts) {
     // Check if any interrupt has improper_schema action
     const hasInvalidSchema = interrupts.some(
-      (interrupt) => interrupt?.action_request?.action === "improper_schema"
+      (interrupt) => interrupt?.action_request?.action === IMPROPER_SCHEMA
     );
 
     return {
@@ -309,7 +310,7 @@ export function debugInterruptStructure(thread: Thread): void {
         "Has invalid schema?",
         parsedInterrupts.some(
           (interrupt) =>
-            interrupt?.action_request?.action === "improper_schema" ||
+            interrupt?.action_request?.action === IMPROPER_SCHEMA ||
             !interrupt?.action_request?.action
         )
       );

@@ -39,7 +39,7 @@ export function GenericInboxItem<
         )
       }
       className={cn(
-        "grid grid-cols-12 w-full p-4 py-4.5 cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out",
+        "grid grid-cols-12 w-full p-4 py-4.5 cursor-pointer hover:bg-gray-50/90 transition-colors ease-in-out h-[71px]",
         !isLast && "border-b-[1px] border-gray-200"
       )}
     >
@@ -47,19 +47,18 @@ export function GenericInboxItem<
         {/* Empty space for alignment with interrupted items */}
       </div>
 
-      <div className="col-span-8 overflow-hidden">
-        <div className="flex items-center pt-2.5">
+      <div className="col-span-8 overflow-hidden my-auto">
+        <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-black">Thread ID:</p>
           <ThreadIdCopyable showUUID threadId={threadData.thread.thread_id} />
         </div>
-        <div className="text-sm text-muted-foreground h-[14px]"></div>
       </div>
 
-      <div className="col-span-1 pt-3">
+      <div className="col-span-1 my-auto">
         <InboxItemStatuses status={threadData.status} />
       </div>
 
-      <p className="col-span-2 text-right text-sm text-gray-600 font-light">
+      <p className="col-span-2 text-right text-sm text-gray-600 font-light my-auto">
         {updatedAtDateString}
       </p>
     </div>

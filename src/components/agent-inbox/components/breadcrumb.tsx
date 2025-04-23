@@ -7,6 +7,7 @@ import { ChevronRight } from "lucide-react";
 import { useQueryParams } from "../hooks/use-query-params";
 import {
   AGENT_INBOX_PARAM,
+  IMPROPER_SCHEMA,
   INBOX_PARAM,
   VIEW_STATE_THREAD_QUERY_PARAM,
 } from "../constants";
@@ -53,7 +54,7 @@ export function BreadCrumb({ className }: { className?: string }) {
         selectedThread?.interrupts as HumanInterrupt[] | undefined
       )?.[0]?.action_request?.action;
       if (selectedThreadAction) {
-        if (selectedThreadAction === "improper_schema") {
+        if (selectedThreadAction === IMPROPER_SCHEMA) {
           setSelectedThreadActionLabel("Interrupt");
         } else {
           setSelectedThreadActionLabel(prettifyText(selectedThreadAction));

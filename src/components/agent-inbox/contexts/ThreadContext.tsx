@@ -17,6 +17,7 @@ import {
   LIMIT_PARAM,
   OFFSET_PARAM,
   LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY,
+  IMPROPER_SCHEMA,
 } from "../constants";
 import {
   getInterruptFromThread,
@@ -256,7 +257,7 @@ export function ThreadsProvider<
                   interrupts: threadInterrupts,
                   invalidSchema: threadInterrupts.some(
                     (interrupt) =>
-                      interrupt?.action_request?.action === "improper_schema" ||
+                      interrupt?.action_request?.action === IMPROPER_SCHEMA ||
                       !interrupt?.action_request?.action
                   ),
                 };
@@ -343,7 +344,7 @@ export function ThreadsProvider<
             threadInterrupts.length === 0 ||
             threadInterrupts.some(
               (interrupt) =>
-                interrupt?.action_request?.action === "improper_schema" ||
+                interrupt?.action_request?.action === IMPROPER_SCHEMA ||
                 !interrupt?.action_request?.action
             ),
         };

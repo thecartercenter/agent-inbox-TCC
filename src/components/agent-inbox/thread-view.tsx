@@ -5,7 +5,7 @@ import { ThreadData } from "./types";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "./hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
+import { IMPROPER_SCHEMA, VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
 import useInterruptedActions from "./hooks/use-interrupted-actions";
 
 export function ThreadView<
@@ -39,8 +39,11 @@ export function ThreadView<
 
   // Derive thread title
   const threadTitle = React.useMemo(() => {
-    if (threadData?.thread.metadata?.title) {
-      return threadData.thread.metadata.title as string;
+    if (
+      threadData?.interrupts?.[0]?.action_request?.action &&
+      threadData.interrupts[0].action_request.action !== IMPROPER_SCHEMA
+    ) {
+      return threadData.interrupts[0].action_request.action;
     }
     return `Thread: ${threadData?.thread.thread_id.slice(0, 6)}...`;
   }, [threadData]);
