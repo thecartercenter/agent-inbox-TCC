@@ -36,7 +36,6 @@ interface ThreadActionsViewProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
 > {
   threadData: ThreadData<ThreadValues>;
-  interruptedActions: ReturnType<typeof useInterruptedActions>;
   isInterrupted: boolean;
   threadTitle: string;
   showState: boolean;
@@ -106,8 +105,7 @@ export function ThreadActionsView<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({
   threadData,
-  interruptedActions,
-  isInterrupted,
+  isInterrupted: _propIsInterrupted,
   threadTitle,
   showDescription,
   showState,
@@ -118,9 +116,9 @@ export function ThreadActionsView<
   const { updateQueryParams } = useQueryParams();
   const [refreshing, setRefreshing] = useState(false);
 
-
   // Get the selected inbox object
   const selectedInbox = agentInboxes.find((i) => i.selected);
+  const deploymentUrl = selectedInbox?.deploymentUrl;
 
   // Only use interrupted actions for interrupted threads
   const isInterrupted =
@@ -129,8 +127,7 @@ export function ThreadActionsView<
     threadData.interrupts.length > 0;
 
   // Initialize the hook outside of conditional to satisfy React rules of hooks
-  // Pass null values when not needed
-  const interruptedActions = useInterruptedActions<ThreadValues>({
+  const actions = useInterruptedActions<ThreadValues>({
     threadData: isInterrupted
       ? {
           thread: threadData.thread,
@@ -138,7 +135,7 @@ export function ThreadActionsView<
           interrupts: threadData.interrupts || [],
         }
       : null,
-    setThreadData: isInterrupted ? setThreadData : null,
+    setThreadData: null,
   });
 
   const handleOpenInStudio = () => {
@@ -316,8 +313,8 @@ export function ThreadActionsView<
             <Button
               variant="outline"
               className="text-gray-800 border-gray-500 font-normal bg-white"
-              onClick={interruptedActions?.handleIgnore} // Assuming ignore doesn't need config
-              disabled={interruptedActions?.loading}
+              onClick={actions?.handleIgnore} // Assuming ignore doesn't need config
+              disabled={actions?.loading}
             >
               Ignore Thread
             </Button>
@@ -506,8 +503,8 @@ export function ThreadActionsView<
         <Button
           variant="outline"
           className="text-gray-800 border-gray-500 font-normal bg-white"
-          onClick={interruptedActions?.handleResolve}
-          disabled={interruptedActions?.loading}
+          onClick={actions?.handleResolve}
+          disabled={actions?.loading}
         >
           Mark as Resolved
         </Button>
@@ -517,8 +514,8 @@ export function ThreadActionsView<
               <Button
                 variant="outline"
                 size="sm"
-                onClick={interruptedActions?.handleIgnore}
-                disabled={interruptedActions?.loading}
+                onClick={actions?.handleIgnore}
+                disabled={actions?.loading}
               >
                 Ignore
               </Button>
@@ -533,28 +530,20 @@ export function ThreadActionsView<
       {/* Actions */}
       <InboxItemInput
         acceptAllowed={acceptAllowed}
-        hasEdited={interruptedActions?.hasEdited ?? false}
-        hasAddedResponse={interruptedActions?.hasAddedResponse ?? false}
+        hasEdited={actions?.hasEdited ?? false}
+        hasAddedResponse={actions?.hasAddedResponse ?? false}
         interruptValue={firstInterrupt!}
-        humanResponse={interruptedActions?.humanResponse as any}
-        initialValues={
-          interruptedActions?.initialHumanInterruptEditValue.current || {}
-        }
-        setHumanResponse={interruptedActions?.setHumanResponse ?? (() => {})}
-        streaming={interruptedActions?.streaming ?? false}
-        streamFinished={interruptedActions?.streamFinished ?? false}
-        currentNode={interruptedActions?.currentNode ?? ""}
-        supportsMultipleMethods={
-          interruptedActions?.supportsMultipleMethods ?? false
-        }
-        setSelectedSubmitType={
-          interruptedActions?.setSelectedSubmitType ?? (() => {})
-        }
-        setHasAddedResponse={
-          interruptedActions?.setHasAddedResponse ?? (() => {})
-        }
-        setHasEdited={interruptedActions?.setHasEdited ?? (() => {})}
-        handleSubmit={interruptedActions?.handleSubmit ?? (async () => {})}
+        humanResponse={actions?.humanResponse as any}
+        initialValues={actions?.initialHumanInterruptEditValue.current || {}}
+        setHumanResponse={actions?.setHumanResponse ?? (() => {})}
+        streaming={actions?.streaming ?? false}
+        streamFinished={actions?.streamFinished ?? false}
+        currentNode={actions?.currentNode ?? ""}
+        supportsMultipleMethods={actions?.supportsMultipleMethods ?? false}
+        setSelectedSubmitType={actions?.setSelectedSubmitType ?? (() => {})}
+        setHasAddedResponse={actions?.setHasAddedResponse ?? (() => {})}
+        setHasEdited={actions?.setHasEdited ?? (() => {})}
+        handleSubmit={actions?.handleSubmit ?? (async () => {})}
       />
     </div>
   );

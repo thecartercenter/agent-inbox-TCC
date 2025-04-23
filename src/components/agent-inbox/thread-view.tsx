@@ -6,9 +6,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "./hooks/use-query-params";
 import { IMPROPER_SCHEMA, VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
-import useInterruptedActions from "./hooks/use-interrupted-actions";
 import { logger } from "./utils/logger";
-
 
 export function ThreadView<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -25,19 +23,6 @@ export function ThreadView<
 
   // Show side panel for all thread types
   const showSidePanel = showDescription || showState;
-
-  const interruptedActions = useInterruptedActions({
-    threadData:
-      isInterrupted && threadData.interrupts?.length
-        ? {
-            thread: threadData.thread,
-            status: "interrupted",
-            interrupts: threadData.interrupts,
-            invalidSchema: threadData.invalidSchema,
-          }
-        : null,
-    setThreadData: setThreadData as any,
-  });
 
   // Derive thread title
   const threadTitle = React.useMemo(() => {
@@ -120,7 +105,6 @@ export function ThreadView<
       >
         <ThreadActionsView<ThreadValues>
           threadData={threadData}
-          interruptedActions={interruptedActions}
           isInterrupted={isInterrupted}
           threadTitle={threadTitle}
           showState={showState}

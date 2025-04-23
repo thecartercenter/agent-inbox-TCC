@@ -4,18 +4,16 @@ import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemStatuses } from "./statuses";
 import { format } from "date-fns";
 import { useQueryParams } from "../hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
-
-import { GenericThreadData } from "../types";
-import { useToast } from "@/hooks/use-toast";
-import { constructOpenInStudioURL } from "../utils";
-import { Button } from "@/components/ui/button";
-import { useThreadsContext } from "../contexts/ThreadContext";
-import { useQueryParams } from "../hooks/use-query-params";
 import {
   STUDIO_NOT_WORKING_TROUBLESHOOTING_URL,
   VIEW_STATE_THREAD_QUERY_PARAM,
 } from "../constants";
+import { GenericThreadData } from "../types";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { useThreadsContext } from "../contexts/ThreadContext";
+
+import { constructOpenInStudioURL } from "../utils";
 
 interface GenericInboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -34,6 +32,8 @@ export function GenericInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >({ threadData, isLast }: GenericInboxItemProps<ThreadValues>) {
   const { updateQueryParams } = useQueryParams();
+  const { toast } = useToast();
+  const { agentInboxes } = useThreadsContext();
 
   const selectedInbox = agentInboxes.find((i) => i.selected);
 
@@ -82,7 +82,6 @@ export function GenericInboxItem<
     }
   };
 
-
   const updatedAtDateString = format(
     new Date(threadData.thread.updated_at),
     "MM/dd h:mm a"
@@ -101,22 +100,22 @@ export function GenericInboxItem<
         !isLast && "border-b-[1px] border-gray-200"
       )}
     >
-        <div className="flex items-center gap-2">
-          <div className="col-span-1 flex justify-center pt-6">
+      <div className="col-span-1 flex justify-center items-center">
         {/* Empty space for alignment with interrupted items */}
       </div>
+
       <div
         className={cn(
-          "flex items-center justify-start gap-2",
-          selectedInbox ? "col-span-7" : "col-span-9"
+          "col-span-6 flex items-center justify-start gap-2",
+          !selectedInbox && "col-span-9"
         )}
       >
-       <p className="text-sm font-semibold text-black">Thread ID:</p>
+        <p className="text-sm font-semibold text-black">Thread ID:</p>
         <ThreadIdCopyable showUUID threadId={threadData.thread.thread_id} />
       </div>
 
       {selectedInbox && (
-        <div className="col-span-2">
+        <div className="col-span-2 flex items-center">
           <Button
             size="sm"
             variant="outline"
@@ -126,19 +125,18 @@ export function GenericInboxItem<
             Studio
           </Button>
         </div>
-      </div>
+      )}
 
-
-      <div className={cn("col-span-2", !selectedInbox && "col-start-10")}>
+      <div
+        className={cn(
+          "col-span-2 flex items-center",
+          !selectedInbox && "col-start-10"
+        )}
+      >
         <InboxItemStatuses status={threadData.status} />
       </div>
 
-      <p
-        className={cn(
-          "col-span-1 text-gray-600 font-light text-sm",
-          !selectedInbox && "col-start-12"
-        )}
-      >
+      <p className="col-span-1 text-right text-sm text-gray-600 font-light pt-2">
         {updatedAtDateString}
       </p>
     </div>

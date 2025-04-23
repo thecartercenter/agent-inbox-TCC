@@ -121,38 +121,13 @@ export function useInboxes() {
         return;
       }
 
-    // Ensure each agent inbox has an ID, and if not, add one
-    parsedAgentInboxes = parsedAgentInboxes.map((i) => {
-      return {
-        ...i,
-        id: i.id || uuidv4(),
-      };
-    });
-
-    // If there is no agent inbox search param, or the search param is not
-    // a valid UUID, update search param and local storage
-    if (!agentInboxSearchParam || !validate(agentInboxSearchParam)) {
-      const selectedInbox = parsedAgentInboxes.find((i) => i.selected);
-      if (!selectedInbox) {
-        parsedAgentInboxes[0].selected = true;
-        updateQueryParams(
-          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
-          [parsedAgentInboxes[0].id, "0", "10", "interrupted"]
-        );
-        setAgentInboxes(parsedAgentInboxes);
-        setItem(
-          AGENT_INBOXES_LOCAL_STORAGE_KEY,
-          JSON.stringify(parsedAgentInboxes)
-        );
-      } else {
-        updateQueryParams(
-          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
-          [selectedInbox.id, "0", "10", "interrupted"]
-        );
-        setAgentInboxes(parsedAgentInboxes);
-        setItem(
-          AGENT_INBOXES_LOCAL_STORAGE_KEY,
-          JSON.stringify(parsedAgentInboxes)
+      // Ensure each agent inbox has an ID, and if not, add one
+      currentInboxes = currentInboxes.map((inbox) => {
+        return {
+          ...inbox,
+          id: inbox.id || uuidv4(),
+        };
+      });
 
       const agentInboxSearchParam = getSearchParam(AGENT_INBOX_PARAM);
       logger.log(
@@ -160,39 +135,61 @@ export function useInboxes() {
         agentInboxSearchParam
       );
 
+      // If there is no agent inbox search param, or the search param does not match any inbox
+      // update search param and local storage
+      if (!agentInboxSearchParam) {
+        const selectedInbox = currentInboxes.find((inbox) => inbox.selected);
+        if (!selectedInbox) {
+          currentInboxes[0].selected = true;
+          updateQueryParams(
+            [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+            [currentInboxes[0].id, "0", "10", "interrupted"]
+          );
+          setAgentInboxes(currentInboxes);
+          setItem(
+            AGENT_INBOXES_LOCAL_STORAGE_KEY,
+            JSON.stringify(currentInboxes)
+          );
+        } else {
+          updateQueryParams(
+            [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+            [selectedInbox.id, "0", "10", "interrupted"]
+          );
+          setAgentInboxes(currentInboxes);
+          setItem(
+            AGENT_INBOXES_LOCAL_STORAGE_KEY,
+            JSON.stringify(currentInboxes)
+          );
+        }
+
+        // Mark initial load as complete
+        if (!initialLoadComplete.current) {
+          initialLoadComplete.current = true;
+        }
+
+        return;
+      }
+
       let finalSelectedInboxId: string | null = null;
 
-      if (!agentInboxSearchParam) {
-        // No param: Select first or already selected (in memory)
-        const alreadySelected = currentInboxes.find((inbox) => inbox.selected);
-        finalSelectedInboxId =
-          alreadySelected?.id || currentInboxes[0]?.id || null;
-        logger.log("No search param, selecting inbox:", finalSelectedInboxId);
-        if (finalSelectedInboxId && !initialLoadComplete.current) {
-          initialLoadComplete.current = true;
-          // Update URL only on initial load if needed
-          updateQueryParams(AGENT_INBOX_PARAM, finalSelectedInboxId);
-        }
-      } else {
-        // Param exists: Find inbox by param ID
-        const selectedByParam = currentInboxes.find(
-          (inbox) => inbox.id === agentInboxSearchParam
+      // Param exists: Find inbox by param ID
+      const selectedByParam = currentInboxes.find(
+        (inbox) => inbox.id === agentInboxSearchParam
+      );
 
+      if (selectedByParam) {
+        finalSelectedInboxId = selectedByParam.id;
+        logger.log("Found inbox by search param:", finalSelectedInboxId);
+      } else {
+        // Param exists but inbox not found: Select first
+        finalSelectedInboxId = currentInboxes[0]?.id || null;
+        logger.log(
+          "Inbox for search param not found, selecting first inbox:",
+          finalSelectedInboxId
         );
-        if (selectedByParam) {
-          finalSelectedInboxId = selectedByParam.id;
-          logger.log("Found inbox by search param:", finalSelectedInboxId);
-        } else {
-          // Param exists but inbox not found: Select first
-          finalSelectedInboxId = currentInboxes[0]?.id || null;
-          logger.log(
-            "Inbox for search param not found, selecting first inbox:",
-            finalSelectedInboxId
-          );
-          if (finalSelectedInboxId) {
-            // Update URL to reflect the actual selection
-            updateQueryParams(AGENT_INBOX_PARAM, finalSelectedInboxId);
-          }
+        if (finalSelectedInboxId) {
+          // Update URL to reflect the actual selection
+          updateQueryParams(AGENT_INBOX_PARAM, finalSelectedInboxId);
         }
       }
 
@@ -243,19 +240,6 @@ export function useInboxes() {
         );
         return;
       }
-
-      const parsedAgentInboxes = JSON.parse(agentInboxes);
-      parsedAgentInboxes.push(newInbox);
-      setAgentInboxes(parsedAgentInboxes);
-      setItem(
-        AGENT_INBOXES_LOCAL_STORAGE_KEY,
-        JSON.stringify(parsedAgentInboxes)
-      );
-      // Set agent inbox, offset, and limit
-      updateQueryParams(
-        [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
-        [newInbox.id, "0", "10", "interrupted"]
-      );
 
       try {
         const parsedAgentInboxes: AgentInbox[] = JSON.parse(agentInboxesStr);
@@ -402,7 +386,6 @@ export function useInboxes() {
 
       // Update URL parameters
       if (!replaceAll) {
-
         // Set agent inbox, offset, limit, and inbox param
         updateQueryParams(
           [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
@@ -418,7 +401,6 @@ export function useInboxes() {
         });
         const newUrl = url.pathname + "?" + newParams.toString();
         window.location.href = newUrl;
-
       }
     },
     [getItem, setItem, updateQueryParams, router]
