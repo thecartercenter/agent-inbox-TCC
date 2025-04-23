@@ -6,7 +6,10 @@ import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import {
+  STUDIO_NOT_WORKING_TROUBLESHOOTING_URL,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+} from "../constants";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "../hooks/use-query-params";
@@ -122,10 +125,26 @@ export function ThreadActionsView<
       // Handle case where URL construction failed (e.g., missing data)
       toast({
         title: "Error",
-        description:
-          "Could not construct Studio URL. Check if inbox has necessary details (Project ID, Tenant ID).",
+        description: (
+          <>
+            <p>
+              Could not construct Studio URL. Check if inbox has necessary
+              details (Project ID, Tenant ID).
+            </p>
+            <p>
+              If the issue persists, see the{" "}
+              <a
+                href={STUDIO_NOT_WORKING_TROUBLESHOOTING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                troubleshooting section
+              </a>
+            </p>
+          </>
+        ),
         variant: "destructive",
-        duration: 5000,
+        duration: 10000,
       });
     } else {
       window.open(studioUrl, "_blank");

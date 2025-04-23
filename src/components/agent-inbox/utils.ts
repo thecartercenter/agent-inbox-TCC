@@ -8,6 +8,7 @@ import {
   AgentInbox,
 } from "./types";
 import { logger } from "./utils/logger";
+import { validate } from "uuid";
 
 export function prettifyText(action: string) {
   return startCase(action.replace(/_/g, " "));
@@ -329,10 +330,8 @@ export function extractProjectId(inboxId: string): string | null {
   }
   const parts = inboxId.split(":");
   if (parts.length === 2) {
-    // Basic check if the first part looks like a UUID v4
-    const uuidV4Regex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (uuidV4Regex.test(parts[0])) {
+    // Ensure the first part is a valid UUID
+    if (validate(parts[0])) {
       return parts[0];
     }
   }

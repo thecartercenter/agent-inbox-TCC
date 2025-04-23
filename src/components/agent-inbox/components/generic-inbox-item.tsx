@@ -9,7 +9,10 @@ import { constructOpenInStudioURL } from "../utils";
 import { Button } from "@/components/ui/button";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useQueryParams } from "../hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import {
+  STUDIO_NOT_WORKING_TROUBLESHOOTING_URL,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+} from "../constants";
 
 interface GenericInboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -50,10 +53,26 @@ export function GenericInboxItem<
     if (studioUrl === "#") {
       toast({
         title: "Error",
-        description:
-          "Could not construct Studio URL. Check if inbox has necessary details (Project ID, Tenant ID).",
+        description: (
+          <>
+            <p>
+              Could not construct Studio URL. Check if inbox has necessary
+              details (Project ID, Tenant ID).
+            </p>
+            <p>
+              If the issue persists, see the{" "}
+              <a
+                href={STUDIO_NOT_WORKING_TROUBLESHOOTING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                troubleshooting section
+              </a>
+            </p>
+          </>
+        ),
         variant: "destructive",
-        duration: 5000,
+        duration: 10000,
       });
     } else {
       window.open(studioUrl, "_blank");
