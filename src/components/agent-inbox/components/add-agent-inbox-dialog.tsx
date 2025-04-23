@@ -24,6 +24,7 @@ import { isDeployedUrl, fetchDeploymentInfo } from "../utils";
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { LoaderCircle } from "lucide-react";
 import { logger } from "../utils/logger";
+import { AgentInbox } from "../types";
 
 export function AddAgentInboxDialog({
   hideTrigger,
@@ -73,9 +74,9 @@ export function AddAgentInboxDialog({
     try {
       const isDeployed = isDeployedUrl(deploymentUrl);
       let inboxId = uuidv4();
-      let tenantId: string | undefined = undefined;
+      let fetchedTenantId: string | undefined | null = undefined;
 
-      // For deployed graphs, get the deployment info to generate the ID
+      // For deployed graphs, get the deployment info to generate the ID and fetch tenantId
       if (isDeployed) {
         logger.log(
           "Deployed graph detected, getting info from:",
@@ -87,8 +88,6 @@ export function AddAgentInboxDialog({
           getItem(LANGCHAIN_API_KEY_LOCAL_STORAGE_KEY) || undefined;
         const apiKey = langchainApiKey || storedApiKey;
 
-        // Note: The API key is still required for deployed graphs for other operations,
-        // but not for fetching deployment info
         if (!apiKey && isDeployed) {
           setErrorMessage(
             "API key is required for deployed LangGraph instances"
@@ -102,16 +101,20 @@ export function AddAgentInboxDialog({
           const deploymentInfo = await fetchDeploymentInfo(deploymentUrl);
           logger.log("Got deployment info:", deploymentInfo);
 
-          if (
-            deploymentInfo?.host?.project_id &&
-            deploymentInfo?.host?.tenant_id
-          ) {
+          if (deploymentInfo?.host?.project_id) {
             // Generate ID in format: project_id:graphId
             inboxId = `${deploymentInfo.host.project_id}:${graphId}`;
-            tenantId = deploymentInfo.host.tenant_id;
+            fetchedTenantId = deploymentInfo.host.tenant_id;
             logger.log(`Created new inbox ID: ${inboxId}`);
+            logger.log(`Fetched tenant ID: ${fetchedTenantId}`);
           } else {
-            logger.log("No project_id in deployment info, using UUID");
+            logger.log(
+              "No project_id in deployment info, using UUID for inbox ID"
+            );
+            fetchedTenantId = deploymentInfo?.host?.tenant_id;
+            logger.log(
+              `Fetched tenant ID (without project_id): ${fetchedTenantId}`
+            );
           }
         } catch (error) {
           logger.error("Error fetching deployment info:", error);
@@ -125,16 +128,19 @@ export function AddAgentInboxDialog({
         logger.log("Local graph, using UUID for inbox ID");
       }
 
-      // Add the inbox with the generated ID
-      logger.log("Adding inbox with ID:", inboxId);
-      addAgentInbox({
+      // Create the new inbox object fully conforming to AgentInbox
+      const newInbox: AgentInbox = {
         id: inboxId,
         graphId,
         deploymentUrl,
         name,
         selected: true,
-        tenantId,
-      });
+        createdAt: new Date().toISOString(),
+        ...(fetchedTenantId && { tenantId: fetchedTenantId }),
+      };
+
+      logger.log("Adding inbox:", newInbox);
+      addAgentInbox(newInbox);
 
       toast({
         title: "Success",
@@ -153,7 +159,7 @@ export function AddAgentInboxDialog({
     } catch (error) {
       logger.error("Error adding agent inbox:", error);
       setErrorMessage(
-        "Failed to add the agent inbox. Please try again or check the console for details."
+        `Failed to add the agent inbox: ${error instanceof Error ? error.message : String(error)}. Please try again or check the console.`
       );
     } finally {
       setIsSubmitting(false);

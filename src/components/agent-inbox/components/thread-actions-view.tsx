@@ -6,7 +6,10 @@ import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import {
+  STUDIO_NOT_WORKING_TROUBLESHOOTING_URL,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+} from "../constants";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQueryParams } from "../hooks/use-query-params";
@@ -80,6 +83,9 @@ export function ThreadActionsView<
   const { updateQueryParams } = useQueryParams();
   const [refreshing, setRefreshing] = useState(false);
 
+  // Get the selected inbox object
+  const selectedInbox = agentInboxes.find((i) => i.selected);
+
   // Only use interrupted actions for interrupted threads
   const isInterrupted =
     threadData.status === "interrupted" &&
@@ -99,30 +105,59 @@ export function ThreadActionsView<
     setThreadData: isInterrupted ? setThreadData : null,
   });
 
-  const deploymentUrl = agentInboxes.find((i) => i.selected)?.deploymentUrl;
-
   const handleOpenInStudio = () => {
-    if (!deploymentUrl) {
+    if (!selectedInbox) {
       toast({
         title: "Error",
-        description: "Please set the LangGraph deployment URL in settings.",
+        description: "No agent inbox selected.",
+        variant: "destructive",
         duration: 5000,
       });
       return;
     }
 
     const studioUrl = constructOpenInStudioURL(
-      deploymentUrl,
+      selectedInbox, // Pass the full inbox object
       threadData.thread.thread_id
     );
-    window.open(studioUrl, "_blank");
+
+    if (studioUrl === "#") {
+      // Handle case where URL construction failed (e.g., missing data)
+      toast({
+        title: "Error",
+        description: (
+          <>
+            <p>
+              Could not construct Studio URL. Check if inbox has necessary
+              details (Project ID, Tenant ID).
+            </p>
+            <p>
+              If the issue persists, see the{" "}
+              <a
+                href={STUDIO_NOT_WORKING_TROUBLESHOOTING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                troubleshooting section
+              </a>
+            </p>
+          </>
+        ),
+        variant: "destructive",
+        duration: 10000,
+      });
+    } else {
+      window.open(studioUrl, "_blank");
+    }
   };
 
   const handleRefreshThread = async () => {
-    if (!deploymentUrl) {
+    // Use selectedInbox here as well
+    if (!selectedInbox) {
       toast({
         title: "Error",
-        description: "Please set the LangGraph deployment URL in settings.",
+        description: "No agent inbox selected.",
+        variant: "destructive",
         duration: 5000,
       });
       return;
@@ -232,7 +267,7 @@ export function ThreadActionsView<
           <ThreadIdCopyable threadId={threadData.thread.thread_id} />
         </div>
         <div className="flex flex-row gap-2 items-center justify-start">
-          {deploymentUrl && (
+          {selectedInbox && (
             <Button
               size="sm"
               variant="outline"

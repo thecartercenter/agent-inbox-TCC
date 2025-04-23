@@ -7,10 +7,12 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { constructOpenInStudioURL } from "../utils";
 import { Button } from "@/components/ui/button";
-import NextLink from "next/link";
 import { useThreadsContext } from "../contexts/ThreadContext";
 import { useQueryParams } from "../hooks/use-query-params";
-import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
+import {
+  STUDIO_NOT_WORKING_TROUBLESHOOTING_URL,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+} from "../constants";
 
 interface GenericInboxItemProps<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -30,23 +32,51 @@ export function GenericInboxItem<
   const { toast } = useToast();
   const { updateQueryParams } = useQueryParams();
 
-  const deploymentUrl = agentInboxes.find((i) => i.selected)?.deploymentUrl;
+  const selectedInbox = agentInboxes.find((i) => i.selected);
 
   const handleOpenInStudio = () => {
-    if (!deploymentUrl) {
+    if (!selectedInbox) {
       toast({
         title: "Error",
-        description: "Please set the LangGraph deployment URL in settings.",
+        description: "No agent inbox selected.",
+        variant: "destructive",
         duration: 5000,
       });
       return;
     }
 
     const studioUrl = constructOpenInStudioURL(
-      deploymentUrl,
+      selectedInbox,
       threadData.thread.thread_id
     );
-    window.open(studioUrl, "_blank");
+
+    if (studioUrl === "#") {
+      toast({
+        title: "Error",
+        description: (
+          <>
+            <p>
+              Could not construct Studio URL. Check if inbox has necessary
+              details (Project ID, Tenant ID).
+            </p>
+            <p>
+              If the issue persists, see the{" "}
+              <a
+                href={STUDIO_NOT_WORKING_TROUBLESHOOTING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                troubleshooting section
+              </a>
+            </p>
+          </>
+        ),
+        variant: "destructive",
+        duration: 10000,
+      });
+    } else {
+      window.open(studioUrl, "_blank");
+    }
   };
 
   const updatedAtDateString = format(
@@ -70,40 +100,36 @@ export function GenericInboxItem<
       <div
         className={cn(
           "flex items-center justify-start gap-2",
-          deploymentUrl ? "col-span-7" : "col-span-9"
+          selectedInbox ? "col-span-7" : "col-span-9"
         )}
       >
         <p className="text-black text-sm font-semibold">Thread ID:</p>
         <ThreadIdCopyable showUUID threadId={threadData.thread.thread_id} />
       </div>
 
-      {deploymentUrl && (
+      {selectedInbox && (
         <div className="col-span-2">
-          <NextLink
-            href={constructOpenInStudioURL(
-              deploymentUrl,
-              threadData.thread.thread_id
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex items-center gap-1 bg-white"
+            onClick={handleOpenInStudio}
           >
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex items-center gap-1 bg-white"
-              onClick={handleOpenInStudio}
-            >
-              Studio
-            </Button>
-          </NextLink>
+            Studio
+          </Button>
         </div>
       )}
 
-      <div className="col-span-2">
+      <div className={cn("col-span-2", !selectedInbox && "col-start-10")}>
         <InboxItemStatuses status={threadData.status} />
       </div>
 
-      <p className="col-span-1 text-gray-600 font-light text-sm">
+      <p
+        className={cn(
+          "col-span-1 text-gray-600 font-light text-sm",
+          !selectedInbox && "col-start-12"
+        )}
+      >
         {updatedAtDateString}
       </p>
     </div>
