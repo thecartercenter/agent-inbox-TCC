@@ -133,19 +133,11 @@ export function constructOpenInStudioURL(
       return "#"; // Return a placeholder/non-functional link
     }
   } else {
-    // --- Existing logic for local/non-deployed URLs ---
-    // TODO: Review if this logic is still appropriate for local development.
-    // Currently appends `baseUrl` and `threadId` to the path.
-    // This might be incorrect if the intention is different for local.
+    // --- Logic for local/non-deployed URLs ---
     const smithStudioURL = new URL(smithStudioBaseUrl);
-    // trim the trailing slash from deploymentUrl
     const trimmedDeploymentUrl = inbox.deploymentUrl.replace(/\/$/, "");
 
     if (threadId) {
-      // The original logic appended threadId to the path, which might be wrong.
-      // Let's try adding it as a query param for now, similar to deployed.
-      // Revisit if local URLs need a different structure.
-      // smithStudioURL.pathname += `/${threadId}`; // Original way
       smithStudioURL.searchParams.append("threadId", threadId);
     }
 
