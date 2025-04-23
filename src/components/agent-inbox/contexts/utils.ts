@@ -292,35 +292,40 @@ export function getThreadFilterMetadata(
  */
 export function debugInterruptStructure(thread: Thread): void {
   if (!thread.interrupts || Object.keys(thread.interrupts).length === 0) {
-    console.log('No interrupts found in thread');
+    console.log("No interrupts found in thread");
     return;
   }
-  
-  console.group('Interrupt Structure Debug');
-  console.log('Thread ID:', thread.thread_id);
-  console.log('Raw interrupts:', thread.interrupts);
-  
+
+  console.group("Interrupt Structure Debug");
+  console.log("Thread ID:", thread.thread_id);
+  console.log("Raw interrupts:", thread.interrupts);
+
   try {
     const parsedInterrupts = getInterruptFromThread(thread);
-    console.log('Parsed interrupts:', parsedInterrupts);
-    
+    console.log("Parsed interrupts:", parsedInterrupts);
+
     if (parsedInterrupts) {
-      console.log('Has invalid schema?', parsedInterrupts.some(
-        interrupt => interrupt?.action_request?.action === "improper_schema" || !interrupt?.action_request?.action
-      ));
-      
+      console.log(
+        "Has invalid schema?",
+        parsedInterrupts.some(
+          (interrupt) =>
+            interrupt?.action_request?.action === "improper_schema" ||
+            !interrupt?.action_request?.action
+        )
+      );
+
       parsedInterrupts.forEach((interrupt, index) => {
         console.group(`Interrupt ${index + 1}`);
-        console.log('Action:', interrupt?.action_request?.action);
-        console.log('Args:', interrupt?.action_request?.args);
-        console.log('Config:', interrupt?.config);
-        console.log('Description length:', interrupt?.description?.length || 0);
+        console.log("Action:", interrupt?.action_request?.action);
+        console.log("Args:", interrupt?.action_request?.args);
+        console.log("Config:", interrupt?.config);
+        console.log("Description length:", interrupt?.description?.length || 0);
         console.groupEnd();
       });
     }
   } catch (err) {
-    console.error('Error parsing interrupts:', err);
+    console.error("Error parsing interrupts:", err);
   }
-  
+
   console.groupEnd();
 }
