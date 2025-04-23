@@ -89,9 +89,7 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
           {!firstInterrupt && threadData.invalidSchema && (
             <i>Invalid interrupt data - cannot display details.</i>
           )}
-          {!firstInterrupt &&
-            !threadData.invalidSchema &&
-            !descriptionPreview && <i>No description provided.</i>}
+          {!firstInterrupt && !threadData.invalidSchema && !descriptionPreview}
         </div>
       </div>
 
