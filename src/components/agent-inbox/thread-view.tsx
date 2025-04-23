@@ -110,6 +110,7 @@ export function ThreadView<
           showState={showState}
           showDescription={showDescription}
           handleShowSidePanel={handleShowSidePanel}
+          setThreadData={setThreadData}
         />
       </div>
       <div

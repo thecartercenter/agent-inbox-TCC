@@ -41,6 +41,9 @@ interface ThreadActionsViewProps<
   showState: boolean;
   showDescription: boolean;
   handleShowSidePanel?: (showState: boolean, showDescription: boolean) => void;
+  setThreadData: React.Dispatch<
+    React.SetStateAction<ThreadData<ThreadValues> | undefined>
+  >;
 }
 
 function ButtonGroup({
@@ -110,6 +113,7 @@ export function ThreadActionsView<
   showDescription,
   showState,
   handleShowSidePanel,
+  setThreadData,
 }: ThreadActionsViewProps<ThreadValues>) {
   const { agentInboxes, fetchSingleThread } = useThreadsContext<ThreadValues>();
   const { toast } = useToast();
@@ -125,7 +129,7 @@ export function ThreadActionsView<
     threadData.status === "interrupted" &&
     threadData.interrupts !== undefined &&
     threadData.interrupts.length > 0;
-
+  console.log("isInterrupted", isInterrupted);
   // Initialize the hook outside of conditional to satisfy React rules of hooks
   const actions = useInterruptedActions<ThreadValues>({
     threadData: isInterrupted
@@ -135,7 +139,7 @@ export function ThreadActionsView<
           interrupts: threadData.interrupts || [],
         }
       : null,
-    setThreadData: null,
+    setThreadData,
   });
 
   const handleOpenInStudio = () => {

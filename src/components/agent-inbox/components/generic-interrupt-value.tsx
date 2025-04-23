@@ -153,93 +153,91 @@ export function GenericInterruptValue({
         animate={{ height: "auto" }} // Let content dictate height
         transition={{ duration: 0.3, ease: "easeInOut" }}
       >
-        <div className="p-3">
-          <AnimatePresence mode="wait" initial={false}>
-            {
-              // Determine rendering mode
-              (() => {
-                const showTable =
-                  complex && (!shouldShowExpandButton || isExpanded);
-                const showCollapsedPreview =
-                  complex && shouldShowExpandButton && !isExpanded;
-                const showSimpleValue = !complex;
+        <AnimatePresence mode="wait" initial={false}>
+          {
+            // Determine rendering mode
+            (() => {
+              const showTable =
+                complex && (!shouldShowExpandButton || isExpanded);
+              const showCollapsedPreview =
+                complex && shouldShowExpandButton && !isExpanded;
+              const showSimpleValue = !complex;
 
-                return (
-                  <motion.div
-                    key={showTable ? "table" : "preview"} // Key based on what's visible
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                    style={{ overflow: "hidden" }} // Important for height animation
-                  >
-                    {showSimpleValue && (
-                      <div className="px-4 py-2 text-sm">
-                        {renderCollapsedValue(interrupt, false)}
-                      </div>
-                    )}
-                    {showCollapsedPreview && (
-                      <div className="px-4 py-2 text-sm">
-                        {renderCollapsedValue(interrupt, true)}{" "}
-                        {/* Render the preview */}
-                      </div>
-                    )}
-                    {showTable && (
-                      // Render expanded table
-                      <div
-                        className="overflow-x-auto"
-                        style={{
-                          maxHeight:
-                            "500px" /* Limit height for very long tables */,
-                        }}
-                      >
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50 sticky top-0 z-10">
-                            {" "}
-                            {/* Sticky header */}
+              return (
+                <motion.div
+                  key={showTable ? "table" : "preview"} // Key based on what's visible
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }} // Important for height animation
+                >
+                  {showSimpleValue && (
+                    <div className="px-4 py-2 text-sm">
+                      {renderCollapsedValue(interrupt, false)}
+                    </div>
+                  )}
+                  {showCollapsedPreview && (
+                    <div className="px-4 py-2 text-sm">
+                      {renderCollapsedValue(interrupt, true)}{" "}
+                      {/* Render the preview */}
+                    </div>
+                  )}
+                  {showTable && (
+                    // Render expanded table
+                    <div
+                      className="overflow-x-auto"
+                      style={{
+                        maxHeight:
+                          "500px" /* Limit height for very long tables */,
+                      }}
+                    >
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50 sticky top-0 z-10">
+                          {" "}
+                          {/* Sticky header */}
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              {Array.isArray(interrupt) ? "Index" : "Key"}
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                          {displayEntries.length === 0 && (
                             <tr>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {Array.isArray(interrupt) ? "Index" : "Key"}
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Value
-                              </th>
+                              <td
+                                colSpan={2}
+                                className="px-4 py-4 text-center text-sm text-gray-500"
+                              >
+                                {Array.isArray(interrupt)
+                                  ? "Array is empty"
+                                  : "Object is empty"}
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200 bg-white">
-                            {displayEntries.length === 0 && (
-                              <tr>
-                                <td
-                                  colSpan={2}
-                                  className="px-4 py-4 text-center text-sm text-gray-500"
-                                >
-                                  {Array.isArray(interrupt)
-                                    ? "Array is empty"
-                                    : "Object is empty"}
-                                </td>
-                              </tr>
-                            )}
-                            {displayEntries.map(([key, value]) => (
-                              <tr key={key}>
-                                <td className="px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-900 align-top">
-                                  {key}
-                                </td>
-                                <td className="px-4 py-2 text-sm text-gray-500 align-top">
-                                  {/* Render cell value using the helper */}
-                                  {renderTableCellValue(value)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })()
-            }
-          </AnimatePresence>
-        </div>
+                          )}
+                          {displayEntries.map(([key, value]) => (
+                            <tr key={key}>
+                              <td className="px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-900 align-top">
+                                {key}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-500 align-top">
+                                {/* Render cell value using the helper */}
+                                {renderTableCellValue(value)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })()
+          }
+        </AnimatePresence>
       </motion.div>
     </div>
   );
