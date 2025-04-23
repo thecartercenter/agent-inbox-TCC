@@ -17,10 +17,12 @@ export function ThreadView<
     React.useState<ThreadData<ThreadValues>>();
   const [showDescription, setShowDescription] = React.useState(true);
   const [showState, setShowState] = React.useState(false);
-  const showSidePanel = showDescription || showState;
 
   // Create interrupt actions if we have an interrupted thread
   const isInterrupted = threadData?.status === "interrupted";
+  // Only show side panel for non-interrupted threads
+  const showSidePanel = (showDescription || showState) && !isInterrupted;
+
   const interruptedActions = useInterruptedActions({
     threadData:
       isInterrupted && threadData.interrupts?.length
