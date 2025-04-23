@@ -20,8 +20,12 @@ export function ThreadView<
 
   // Create interrupt actions if we have an interrupted thread
   const isInterrupted = threadData?.status === "interrupted";
-  // Only show side panel for non-interrupted threads
-  const showSidePanel = (showDescription || showState) && !isInterrupted;
+  console.log("[ThreadView] Thread data:", threadData);
+  console.log("[ThreadView] Is interrupted?", isInterrupted);
+  console.log("[ThreadView] Invalid schema?", threadData?.invalidSchema);
+
+  // Show side panel for all thread types
+  const showSidePanel = showDescription || showState;
 
   const interruptedActions = useInterruptedActions({
     threadData:
@@ -60,8 +64,14 @@ export function ThreadView<
       );
       if (selectedThread) {
         setThreadData(selectedThread);
-        if (selectedThread.status !== "interrupted") {
-          // If the status is not interrupted, we should default to show state as there will be no description
+        // Default to description first, state if no description
+        if (
+          selectedThread.status === "interrupted" &&
+          selectedThread.interrupts?.[0]?.description
+        ) {
+          setShowDescription(true);
+          setShowState(false);
+        } else {
           setShowState(true);
           setShowDescription(false);
         }

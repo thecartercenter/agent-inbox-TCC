@@ -17,19 +17,92 @@ export const tmpCleanInterrupts = (interrupts: Record<string, any[]>) => {
 export function getInterruptFromThread(
   thread: Thread
 ): HumanInterrupt[] | undefined {
-  if (thread.interrupts && Object.values(thread.interrupts).length > 0) {
-    return Object.values(thread.interrupts).flatMap((interrupt) => {
-      if (Array.isArray(interrupt[0])) {
-        if (!interrupt[0]?.[1]) {
-          throw new Error("Interrupt is an array but has no value");
+  console.log("[getInterruptFromThread] Thread interrupts:", thread.interrupts);
+
+  try {
+    if (thread.interrupts && Object.values(thread.interrupts).length > 0) {
+      console.log(
+        "[getInterruptFromThread] Interrupt values:",
+        Object.values(thread.interrupts)
+      );
+
+      const result = Object.values(thread.interrupts).flatMap((interrupt) => {
+        try {
+          if (Array.isArray(interrupt[0])) {
+            if (!interrupt[0]?.[1]) {
+              console.warn("Interrupt is an array but has no value");
+              return {
+                action_request: { action: "improper_schema", args: {} },
+                config: {
+                  allow_ignore: true,
+                  allow_respond: false,
+                  allow_edit: false,
+                  allow_accept: false,
+                },
+              } as HumanInterrupt;
+            }
+            console.log(
+              "[getInterruptFromThread] Array interrupt value:",
+              interrupt[0][1].value
+            );
+            return interrupt[0][1].value as HumanInterrupt;
+          } else {
+            const values = interrupt.flatMap((i) => {
+              // Check if it's a valid HumanInterrupt structure
+              const value = i.value as any;
+              console.log(
+                "[getInterruptFromThread] Checking interrupt value:",
+                value
+              );
+
+              if (!value || !value.action_request || !value.config) {
+                console.warn("Invalid interrupt structure", value);
+                return {
+                  action_request: { action: "improper_schema", args: {} },
+                  config: {
+                    allow_ignore: true,
+                    allow_respond: false,
+                    allow_edit: false,
+                    allow_accept: false,
+                  },
+                } as HumanInterrupt;
+              }
+              return value as HumanInterrupt;
+            });
+            return values;
+          }
+        } catch (err) {
+          console.warn("Error processing interrupt", err);
+          return {
+            action_request: { action: "improper_schema", args: {} },
+            config: {
+              allow_ignore: true,
+              allow_respond: false,
+              allow_edit: false,
+              allow_accept: false,
+            },
+          } as HumanInterrupt;
         }
-        return interrupt[0][1].value as HumanInterrupt;
-      } else {
-        return interrupt.flatMap((i) => i.value as HumanInterrupt);
-      }
-    });
+      });
+
+      console.log("[getInterruptFromThread] Final result:", result);
+      return result;
+    }
+    return undefined;
+  } catch (err) {
+    console.error("Error extracting interrupts from thread", err);
+    return [
+      {
+        action_request: { action: "improper_schema", args: {} },
+        config: {
+          allow_ignore: true,
+          allow_respond: false,
+          allow_edit: false,
+          allow_accept: false,
+        },
+      },
+    ] as HumanInterrupt[];
   }
-  return undefined;
 }
 
 export function processInterruptedThread<
@@ -37,10 +110,21 @@ export function processInterruptedThread<
 >(thread: Thread<ThreadValues>): ThreadData<ThreadValues> | undefined {
   const interrupts = getInterruptFromThread(thread);
   if (interrupts) {
+    // Check if any interrupt has improper_schema action
+    const hasInvalidSchema = interrupts.some(
+      (interrupt) => interrupt?.action_request?.action === "improper_schema"
+    );
+
+    console.log(
+      "[processInterruptedThread] Has invalid schema?",
+      hasInvalidSchema
+    );
+
     return {
       thread,
       interrupts,
       status: "interrupted",
+      invalidSchema: hasInvalidSchema,
     };
   }
   return undefined;

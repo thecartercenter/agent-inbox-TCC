@@ -5,7 +5,6 @@ import { InboxItemStatuses } from "./statuses";
 import { format } from "date-fns";
 import { useQueryParams } from "../hooks/use-query-params";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
-import { Badge } from "@/components/ui/badge";
 import { ThreadIdCopyable } from "./thread-id";
 
 interface InterruptedInboxItem<
@@ -28,7 +27,8 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
   const descriptionTruncated =
     firstInterrupt?.description && firstInterrupt.description.length > 65;
 
-  const title = firstInterrupt?.action_request?.action ?? "Interrupt";
+  const action = firstInterrupt?.action_request?.action;
+  const title = !action || action === "improper_schema" ? "Interrupt" : action;
   const hasNoDescription =
     !firstInterrupt ||
     (!firstInterrupt.description && !threadData.invalidSchema);
@@ -77,12 +77,12 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
 
           {threadData.invalidSchema && (
             <>
-              <Badge
+              {/* <Badge
                 variant="outline"
                 className="ml-1 flex-shrink-0 bg-destructive/10 text-destructive border-destructive/20"
               >
                 Invalid Interrupt
-              </Badge>
+              </Badge> */}
               <ThreadIdCopyable
                 showUUID
                 threadId={threadData.thread.thread_id}

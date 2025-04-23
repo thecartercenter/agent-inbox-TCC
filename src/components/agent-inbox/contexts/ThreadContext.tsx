@@ -332,7 +332,14 @@ export function ThreadsProvider<
           thread: currentThread,
           status: "interrupted",
           interrupts: threadInterrupts,
-          invalidSchema: !threadInterrupts || threadInterrupts.length === 0,
+          invalidSchema:
+            !threadInterrupts ||
+            threadInterrupts.length === 0 ||
+            threadInterrupts.some(
+              (interrupt) =>
+                interrupt?.action_request?.action === "improper_schema" ||
+                !interrupt?.action_request?.action
+            ),
         };
       }
 

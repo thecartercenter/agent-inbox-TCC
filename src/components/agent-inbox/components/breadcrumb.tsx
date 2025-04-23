@@ -53,7 +53,11 @@ export function BreadCrumb({ className }: { className?: string }) {
         selectedThread?.interrupts as HumanInterrupt[] | undefined
       )?.[0]?.action_request?.action;
       if (selectedThreadAction) {
-        setSelectedThreadActionLabel(prettifyText(selectedThreadAction));
+        if (selectedThreadAction === "improper_schema") {
+          setSelectedThreadActionLabel("Interrupt");
+        } else {
+          setSelectedThreadActionLabel(prettifyText(selectedThreadAction));
+        }
       } else {
         setSelectedThreadActionLabel(undefined);
       }
