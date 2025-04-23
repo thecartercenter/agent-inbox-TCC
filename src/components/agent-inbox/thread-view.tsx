@@ -20,9 +20,6 @@ export function ThreadView<
 
   // Create interrupt actions if we have an interrupted thread
   const isInterrupted = threadData?.status === "interrupted";
-  console.log("[ThreadView] Thread data:", threadData);
-  console.log("[ThreadView] Is interrupted?", isInterrupted);
-  console.log("[ThreadView] Invalid schema?", threadData?.invalidSchema);
 
   // Show side panel for all thread types
   const showSidePanel = showDescription || showState;

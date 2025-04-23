@@ -1,6 +1,11 @@
 import React from "react";
 import { useQueryParams } from "./hooks/use-query-params";
-import { INBOX_PARAM, VIEW_STATE_THREAD_QUERY_PARAM } from "./constants";
+import {
+  INBOX_PARAM,
+  VIEW_STATE_THREAD_QUERY_PARAM,
+  OFFSET_PARAM,
+  LIMIT_PARAM,
+} from "./constants";
 import { ThreadStatusWithAll } from "./types";
 import { AgentInboxView } from "./inbox-view";
 import { ThreadView } from "./thread-view";
@@ -11,7 +16,7 @@ export function AgentInbox<
   ThreadValues extends Record<string, any> = Record<string, any>,
 >() {
   const { searchParams, updateQueryParams, getSearchParam } = useQueryParams();
-  const [selectedInbox, setSelectedInbox] =
+  const [_selectedInbox, setSelectedInbox] =
     React.useState<ThreadStatusWithAll>("interrupted");
   const { saveScrollPosition, restoreScrollPosition } = useScrollPosition();
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -103,10 +108,36 @@ export function AgentInbox<
         | ThreadStatusWithAll
         | undefined;
       if (!currentInbox) {
-        // Set default inbox if none selected
-        updateQueryParams(INBOX_PARAM, selectedInbox);
+        // Set default inbox if none selected, and ensure offset, limit, and inbox (tab) are set
+        updateQueryParams(
+          [INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM],
+          ["interrupted", "0", "10"]
+        );
       } else {
         setSelectedInbox(currentInbox);
+
+        // Ensure offset and limit exist whenever inbox is changed
+        const offsetParam = getSearchParam(OFFSET_PARAM);
+        const limitParam = getSearchParam(LIMIT_PARAM);
+
+        if (!offsetParam || !limitParam) {
+          const paramsToUpdate = [];
+          const valuesToUpdate = [];
+
+          if (!offsetParam) {
+            paramsToUpdate.push(OFFSET_PARAM);
+            valuesToUpdate.push("0");
+          }
+
+          if (!limitParam) {
+            paramsToUpdate.push(LIMIT_PARAM);
+            valuesToUpdate.push("10");
+          }
+
+          if (paramsToUpdate.length > 0) {
+            updateQueryParams(paramsToUpdate, valuesToUpdate);
+          }
+        }
       }
     } catch (e) {
       console.error("Error updating query params & setting inbox", e);

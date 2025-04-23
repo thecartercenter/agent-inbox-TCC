@@ -160,6 +160,7 @@ export function ThreadsProvider<
         toast,
       });
       if (!client) {
+        setLoading(false);
         return;
       }
 
@@ -182,6 +183,7 @@ export function ThreadsProvider<
             variant: "destructive",
             duration: 3000,
           });
+          setLoading(false);
           return;
         }
 
@@ -203,81 +205,85 @@ export function ThreadsProvider<
         const threads = await client.threads.search(threadSearchArgs);
         const processedData: ThreadData<ThreadValues>[] = [];
 
-        for (const thread of threads) {
-          const currentThread = thread as Thread<ThreadValues>;
+        // Process threads in batches with Promise.all for better performance
+        const processPromises = threads.map(
+          async (thread): Promise<ThreadData<ThreadValues>> => {
+            const currentThread = thread as Thread<ThreadValues>;
 
-          // Handle special cases for human_response_needed inbox
-          if (
-            inbox === "human_response_needed" &&
-            currentThread.status !== "interrupted"
-          ) {
-            processedData.push({
-              status: "human_response_needed",
-              thread: currentThread,
-              interrupts: undefined,
-              invalidSchema: undefined,
-            });
-            continue;
-          }
+            // Handle special cases for human_response_needed inbox
+            if (
+              inbox === "human_response_needed" &&
+              currentThread.status !== "interrupted"
+            ) {
+              return {
+                status: "human_response_needed" as const,
+                thread: currentThread,
+                interrupts: undefined,
+                invalidSchema: undefined,
+              };
+            }
 
-          if (currentThread.status === "interrupted") {
-            let processedThreadData: ThreadData<ThreadValues> | null = null;
-            try {
-              const attempt1Result = processInterruptedThread(currentThread);
-              processedThreadData = attempt1Result
-                ? (attempt1Result as ThreadData<ThreadValues>)
-                : null;
-
+            if (currentThread.status === "interrupted") {
+              // Try the faster processing method first
+              const processedThreadData =
+                processInterruptedThread(currentThread);
               if (
-                !processedThreadData ||
-                !processedThreadData.interrupts?.length
+                processedThreadData &&
+                processedThreadData.interrupts?.length
               ) {
-                if (!getInterruptFromThread(currentThread)?.length) {
+                return processedThreadData as ThreadData<ThreadValues>;
+              }
+
+              // Only if necessary, do the more expensive thread state fetch
+              try {
+                // Attempt to get interrupts from state only if necessary
+                const threadInterrupts = getInterruptFromThread(currentThread);
+                if (!threadInterrupts || threadInterrupts.length === 0) {
                   const state = await client.threads.getState<ThreadValues>(
                     currentThread.thread_id
                   );
-                  const attempt2Result = processThreadWithoutInterrupts(
-                    currentThread,
-                    {
-                      thread_id: currentThread.thread_id,
-                      thread_state: state,
-                    }
-                  );
-                  processedThreadData = attempt2Result
-                    ? (attempt2Result as ThreadData<ThreadValues>)
-                    : null;
-                }
-                if (!processedThreadData?.interrupts?.length) {
-                  processedThreadData = null;
-                }
-              }
-            } catch (e) {
-              console.error(
-                `Error processing interrupted thread ${currentThread.thread_id}:`,
-                e
-              );
-              processedThreadData = null;
-            }
 
-            if (processedThreadData) {
-              processedData.push(processedThreadData);
+                  return processThreadWithoutInterrupts(currentThread, {
+                    thread_id: currentThread.thread_id,
+                    thread_state: state,
+                  }) as ThreadData<ThreadValues>;
+                }
+
+                // Return with the interrupts we found
+                return {
+                  status: "interrupted" as const,
+                  thread: currentThread,
+                  interrupts: threadInterrupts,
+                  invalidSchema: threadInterrupts.some(
+                    (interrupt) =>
+                      interrupt?.action_request?.action === "improper_schema" ||
+                      !interrupt?.action_request?.action
+                  ),
+                };
+              } catch (_e) {
+                // If all else fails, mark as invalid schema
+                return {
+                  status: "interrupted" as const,
+                  thread: currentThread,
+                  interrupts: undefined,
+                  invalidSchema: true,
+                };
+              }
             } else {
-              processedData.push({
-                status: "interrupted",
+              // Non-interrupted threads are simple
+              return {
+                status: currentThread.status,
                 thread: currentThread,
                 interrupts: undefined,
-                invalidSchema: true,
-              });
+                invalidSchema: undefined,
+              } as ThreadData<ThreadValues>;
             }
-          } else {
-            processedData.push({
-              status: currentThread.status,
-              thread: currentThread,
-              interrupts: undefined,
-              invalidSchema: undefined,
-            });
           }
-        }
+        );
+
+        // Process all threads concurrently
+        const results = await Promise.all(processPromises);
+        processedData.push(...results);
 
         const sortedData = processedData.sort((a, b) => {
           return (

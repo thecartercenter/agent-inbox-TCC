@@ -5,6 +5,9 @@ import {
   AGENT_INBOX_PARAM,
   AGENT_INBOXES_LOCAL_STORAGE_KEY,
   NO_INBOXES_FOUND_PARAM,
+  OFFSET_PARAM,
+  LIMIT_PARAM,
+  INBOX_PARAM,
 } from "../constants";
 import { useLocalStorage } from "./use-local-storage";
 import { useState, useCallback, useEffect } from "react";
@@ -91,14 +94,20 @@ export function useInboxes() {
       const selectedInbox = parsedAgentInboxes.find((i) => i.selected);
       if (!selectedInbox) {
         parsedAgentInboxes[0].selected = true;
-        updateQueryParams(AGENT_INBOX_PARAM, parsedAgentInboxes[0].id);
+        updateQueryParams(
+          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+          [parsedAgentInboxes[0].id, "0", "10", "interrupted"]
+        );
         setAgentInboxes(parsedAgentInboxes);
         setItem(
           AGENT_INBOXES_LOCAL_STORAGE_KEY,
           JSON.stringify(parsedAgentInboxes)
         );
       } else {
-        updateQueryParams(AGENT_INBOX_PARAM, selectedInbox.id);
+        updateQueryParams(
+          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+          [selectedInbox.id, "0", "10", "interrupted"]
+        );
         setAgentInboxes(parsedAgentInboxes);
         setItem(
           AGENT_INBOXES_LOCAL_STORAGE_KEY,
@@ -158,7 +167,11 @@ export function useInboxes() {
       if (!agentInboxes || !agentInboxes.length) {
         setAgentInboxes([newInbox]);
         setItem(AGENT_INBOXES_LOCAL_STORAGE_KEY, JSON.stringify([newInbox]));
-        updateQueryParams(AGENT_INBOX_PARAM, newInbox.id);
+        // Set agent inbox, offset, and limit
+        updateQueryParams(
+          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+          [newInbox.id, "0", "10", "interrupted"]
+        );
         return;
       }
       const parsedAgentInboxes = JSON.parse(agentInboxes);
@@ -168,7 +181,11 @@ export function useInboxes() {
         AGENT_INBOXES_LOCAL_STORAGE_KEY,
         JSON.stringify(parsedAgentInboxes)
       );
-      updateQueryParams(AGENT_INBOX_PARAM, newInbox.id);
+      // Set agent inbox, offset, and limit
+      updateQueryParams(
+        [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+        [newInbox.id, "0", "10", "interrupted"]
+      );
     },
     [getItem, setItem, updateQueryParams]
   );
@@ -234,11 +251,18 @@ export function useInboxes() {
       }
 
       if (!replaceAll) {
-        updateQueryParams(AGENT_INBOX_PARAM, id);
+        // Set agent inbox, offset, limit, and inbox param
+        updateQueryParams(
+          [AGENT_INBOX_PARAM, OFFSET_PARAM, LIMIT_PARAM, INBOX_PARAM],
+          [id, "0", "10", "interrupted"]
+        );
       } else {
         const url = new URL(window.location.href);
         const newParams = new URLSearchParams({
           [AGENT_INBOX_PARAM]: id,
+          [OFFSET_PARAM]: "0",
+          [LIMIT_PARAM]: "10",
+          [INBOX_PARAM]: "interrupted",
         });
         const newUrl = url.pathname + "?" + newParams.toString();
         window.location.href = newUrl;

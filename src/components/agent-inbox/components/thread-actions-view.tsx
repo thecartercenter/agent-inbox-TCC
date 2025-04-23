@@ -208,18 +208,7 @@ export function ThreadActionsView<
 
   // Handle Invalid  Interrupt Threads
   /////////////////////////////////////
-  console.log("[ThreadActionsView] Thread data:", threadData);
-  console.log(
-    "[ThreadActionsView] Is invalid schema?",
-    threadData.invalidSchema
-  );
-  console.log(
-    "[ThreadActionsView] First interrupt:",
-    threadData.interrupts?.[0]
-  );
-
   if (threadData.invalidSchema) {
-    console.log("[ThreadActionsView] Rendering invalid schema view");
     return (
       <div className="flex flex-col lg:flex-row min-h-full w-full">
         <div className="p-12 gap-9 flex flex-col">

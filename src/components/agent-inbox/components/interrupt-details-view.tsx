@@ -6,17 +6,6 @@ export function InterruptDetailsView({
 }: {
   threadData: ThreadData<any>;
 }) {
-  console.log("[InterruptDetailsView] Rendering with thread data:", threadData);
-  console.log(
-    "[InterruptDetailsView] Thread interrupts:",
-    threadData.thread.interrupts
-  );
-  console.log(
-    "[InterruptDetailsView] Invalid schema flag:",
-    threadData.invalidSchema
-  );
-  console.log("[InterruptDetailsView] Thread status:", threadData.status);
-
   return (
     <div className="flex flex-col h-full">
       <h3 className="text-sm font-medium mb-4">Interrupt Details</h3>
@@ -38,9 +27,12 @@ export function InterruptDetailsView({
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-gray-700">Value:</span>
                     <code className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
-                      {typeof values[0]?.value === "boolean"
-                        ? String(values[0]?.value)
-                        : JSON.stringify(values[0]?.value)}
+                      {values[0]?.value === undefined ||
+                      values[0]?.value === null
+                        ? "null"
+                        : typeof values[0]?.value === "boolean"
+                          ? String(values[0]?.value)
+                          : JSON.stringify(values[0]?.value)}
                     </code>
                   </div>
                   <div className="flex items-center gap-2">

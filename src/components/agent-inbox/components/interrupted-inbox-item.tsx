@@ -64,13 +64,13 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
       )}
     >
       {/* Column 1: Dot - adjusted span slightly */}
-      <div className="col-span-1 flex justify-center pt-1">
+      <div className="col-span-1 flex justify-center mb-2.5">
         <div className="w-[6px] h-[6px] rounded-full bg-blue-400" />
       </div>
 
       {/* Column 2-9: Title and Description - merged spans */}
       <div className="col-span-8 overflow-hidden">
-        <div className="flex items-center pt-1">
+        <div className="flex items-center pt-2">
           <span className="text-sm font-semibold text-black truncate pr-1">
             {title}
           </span>
