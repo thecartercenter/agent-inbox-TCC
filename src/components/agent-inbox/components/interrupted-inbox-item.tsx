@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { useQueryParams } from "../hooks/use-query-params";
 import { VIEW_STATE_THREAD_QUERY_PARAM } from "../constants";
 import { Badge } from "@/components/ui/badge";
+import { ThreadIdCopyable } from "./thread-id";
 
 interface InterruptedInboxItem<
   ThreadValues extends Record<string, any> = Record<string, any>,
@@ -27,7 +28,7 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
   const descriptionTruncated =
     firstInterrupt?.description && firstInterrupt.description.length > 65;
 
-  const title = firstInterrupt?.action_request?.action ?? "Unknown Action";
+  const title = firstInterrupt?.action_request?.action ?? "Interrupt";
 
   const updatedAtDateString = format(
     new Date(threadData.thread.updated_at),
@@ -72,6 +73,7 @@ export const InterruptedInboxItem = <ThreadValues extends Record<string, any>>({
           <span className="text-sm font-semibold text-black truncate pr-1">
             {title}
           </span>
+          <ThreadIdCopyable showUUID threadId={threadData.thread.thread_id} />
           {threadData.invalidSchema && (
             <Badge
               variant="outline"

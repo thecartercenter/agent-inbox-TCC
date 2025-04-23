@@ -112,7 +112,6 @@ export function ThreadActionsView<
   const { toast } = useToast();
   const { updateQueryParams } = useQueryParams();
   const [refreshing, setRefreshing] = useState(false);
-  const [showRawJson, setShowRawJson] = useState(false);
 
   // Determine deployment URL for Studio link
   const deploymentUrl = agentInboxes.find((i) => i.selected)?.deploymentUrl;
@@ -583,20 +582,11 @@ export function ThreadActionsView<
 
       {/* Unified Show Raw JSON Section - Placed at the end */}
       <div className="mt-6 border-t pt-6">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowRawJson(!showRawJson)}
-        >
-          {showRawJson ? "Hide" : "Show"} Raw Thread JSON
-        </Button>
-        {showRawJson && (
-          <div className="mt-2 p-2 border rounded bg-gray-50 overflow-x-auto">
-            <pre className="text-xs">
-              <code>{JSON.stringify(threadData.thread, null, 2)}</code>
-            </pre>
-          </div>
-        )}
+        <div className="mt-2 p-2 border rounded bg-gray-50 overflow-x-auto">
+          <pre className="text-xs">
+            <code>{JSON.stringify(threadData.thread, null, 2)}</code>
+          </pre>
+        </div>
       </div>
     </div>
   );
