@@ -129,7 +129,7 @@ export function ThreadActionsView<
     threadData.status === "interrupted" &&
     threadData.interrupts !== undefined &&
     threadData.interrupts.length > 0;
-  console.log("isInterrupted", isInterrupted);
+
   // Initialize the hook outside of conditional to satisfy React rules of hooks
   const actions = useInterruptedActions<ThreadValues>({
     threadData: isInterrupted
