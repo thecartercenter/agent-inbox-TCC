@@ -1,6 +1,6 @@
 # Agent Inbox
 
-![Agent Inbox Diagram](./public/agent_inbox_diagram.png)
+![Agent Inbox Screenshot](./public/inbox_screenshot.png)
 
 > [!NOTE]
 > Want to use the Agent Inbox without deploying it yourself? Check out the hosted version here: [dev.agentinbox.ai](https://dev.agentinbox.ai/)
@@ -18,7 +18,9 @@ Before getting started, ensure you have:
 > 🎥 Prefer a video walkthrough? Checkout [this video](https://youtu.be/gF341XMN8cY) for a step-by-step guide.
 
 > [!TIP]
-> You can also view a minimum working version of a LangGraph agent using the Agent Inbox in [Python here](https://github.com/langchain-ai/agent-inbox-langgraph-example), and [TypeScript here](https://github.com/langchain-ai/agent-inbox-langgraphjs-example). 
+> You can also view a minimum working version of a LangGraph agent using the Agent Inbox in [Python here](https://github.com/langchain-ai/agent-inbox-langgraph-example), and [TypeScript here](https://github.com/langchain-ai/agent-inbox-langgraphjs-example).
+
+![Agent Inbox Diagram](./public/agent_inbox_diagram.png)
 
 To start running the Agent Inbox, first clone the repository and install dependencies:
 
