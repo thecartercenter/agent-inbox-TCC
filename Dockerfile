@@ -62,5 +62,9 @@ COPY --from=build /usr/src/app/.next        ./.next
 COPY --from=build /usr/src/app/public       ./public
 
 # talk on 3000
-EXPOSE 3000
-CMD ["yarn","start","-p","3000"]
+# choose 3000 if nothing is supplied
+ENV PORT 3000
+EXPOSE $PORT
+
+# Run the application.
+CMD ["sh","-c","yarn start -p ${PORT}"]
